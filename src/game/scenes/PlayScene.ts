@@ -8,10 +8,14 @@ import { Memory } from '../actors/Memory';
 import { Exit } from '../actors/Exit';
 import { CameraFollow } from '../camera/CameraFollow';
 import { Hud } from '../ui/Hud';
+import { setMode } from '../ui/mode';
 
 export interface PlaySceneOptions {
   fromEditor?: boolean;
+  showHud?: boolean;
   onOpenEditor?: (level: LevelData) => void;
+  onLevelSelect?: () => void;
+  onTitle?: () => void;
 }
 
 export class PlayScene extends Scene {
@@ -24,6 +28,14 @@ export class PlayScene extends Scene {
   private collected = 0;
   private completed = false;
   private levelHeightPx = 0;
+  private paused = false;
+
+  private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.togglePause();
+    }
+  };
 
   constructor(
     private readonly level: LevelData,
@@ -34,16 +46,17 @@ export class PlayScene extends Scene {
   }
 
   override onActivate(_context: unknown): void {
-    document.body.classList.remove('editing');
-    const button = document.getElementById('open-editor');
-    if (button instanceof HTMLButtonElement) {
-      button.textContent = this.options.fromEditor ? 'Back to editor' : 'Open editor';
-      button.hidden = false;
-      button.onclick = () => this.options.onOpenEditor?.(this.level);
-    }
+    setMode('playing');
+    this.hud.setLevelName(this.level.name);
+    this.hud.setVisible(this.options.showHud ?? true);
+    this.wireEditorButton();
+    this.renderPauseMenu();
+    document.addEventListener('keydown', this.onKeyDown);
   }
 
   override onDeactivate(): void {
+    document.removeEventListener('keydown', this.onKeyDown);
+    this.setPaused(false);
     const button = document.getElementById('open-editor');
     if (button instanceof HTMLButtonElement) {
       button.onclick = null;
@@ -75,15 +88,80 @@ export class PlayScene extends Scene {
   }
 
   override onPreUpdate(_engine: Engine, elapsed: number): void {
+    if (this.paused) {
+      return;
+    }
     this.cameraFollow.update(this.player.pos, elapsed / 1000);
     this.checkFall();
   }
 
   override onPostUpdate(engine: Engine): void {
+    if (this.paused) {
+      return;
+    }
     if (engine.input.keyboard.wasPressed(Keys.R)) {
       this.restart();
     }
   }
+
+  // ---- pause ----------------------------------------------------------------
+
+  private wireEditorButton(): void {
+    const button = document.getElementById('open-editor');
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    const visible = this.options.fromEditor === true || import.meta.env.DEV;
+    button.hidden = !visible;
+    if (!visible) {
+      return;
+    }
+    button.textContent = this.options.fromEditor ? 'Back to editor' : 'Open editor';
+    button.onclick = () => this.options.onOpenEditor?.(this.level);
+  }
+
+  private renderPauseMenu(): void {
+    const root = document.getElementById('pause-ui');
+    if (!root) {
+      return;
+    }
+    root.innerHTML = `
+      <div class="menu-panel">
+        <h2 class="menu-heading">Paused</h2>
+        <div class="menu-buttons">
+          <button id="pause-resume" class="menu-button primary">Resume</button>
+          <button id="pause-restart" class="menu-button">Restart</button>
+          <button id="pause-levels" class="menu-button">Level select</button>
+          <button id="pause-title" class="menu-button">Title</button>
+        </div>
+      </div>`;
+    root.querySelector('#pause-resume')?.addEventListener('click', () => this.setPaused(false));
+    root.querySelector('#pause-restart')?.addEventListener('click', () => {
+      this.restart();
+      this.setPaused(false);
+    });
+    root.querySelector('#pause-levels')?.addEventListener('click', () => {
+      this.setPaused(false);
+      this.options.onLevelSelect?.();
+    });
+    root.querySelector('#pause-title')?.addEventListener('click', () => {
+      this.setPaused(false);
+      this.options.onTitle?.();
+    });
+  }
+
+  private togglePause(): void {
+    this.setPaused(!this.paused);
+  }
+
+  private setPaused(paused: boolean): void {
+    this.paused = paused;
+    this.engine.timescale = paused ? 0 : 1;
+    document.body.classList.toggle('paused', paused);
+    document.getElementById('pause-ui')?.classList.toggle('show', paused);
+  }
+
+  // ---- gameplay -------------------------------------------------------------
 
   private get totalMemories(): number {
     return this.built.memories.length;

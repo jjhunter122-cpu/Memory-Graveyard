@@ -4,13 +4,29 @@ import { rankFor } from '../systems/graveyard';
 export class Hud {
   private readonly collectedEl: HTMLElement | null;
   private readonly rankEl: HTMLElement | null;
+  private readonly levelEl: HTMLElement | null;
+  private readonly panelEl: HTMLElement | null;
   private readonly toastEl: HTMLElement | null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.collectedEl = document.getElementById('collected');
     this.rankEl = document.getElementById('rank');
+    this.levelEl = document.getElementById('level-name');
+    this.panelEl = document.getElementById('hud-panel');
     this.toastEl = document.getElementById('toast');
+  }
+
+  setLevelName(name: string): void {
+    if (this.levelEl) {
+      this.levelEl.textContent = name;
+    }
+  }
+
+  setVisible(visible: boolean): void {
+    if (this.panelEl) {
+      this.panelEl.hidden = !visible;
+    }
   }
 
   setProgress(collected: number, total: number): void {

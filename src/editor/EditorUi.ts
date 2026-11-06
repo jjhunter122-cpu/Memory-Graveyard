@@ -1,5 +1,6 @@
 import type { AssetManifest } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
+import type { DraftSummary } from '../game/storage/levels';
 import type { EditorEntityType, EditorTool } from './types';
 
 export interface EditorUiCallbacks {
@@ -12,8 +13,13 @@ export interface EditorUiCallbacks {
   onRedo(): void;
   onNew(): void;
   onSave(): void;
+  onSaveDraft(): void;
+  onSaveToProject(): void;
+  onLoadDraft(id: string): void;
+  onDeleteDraft(id: string): void;
   onLoadFile(file: File): void;
   onTestPlay(): void;
+  onMenu(): void;
   onRename(name: string): void;
 }
 
@@ -35,6 +41,8 @@ export class EditorUi {
   private readonly undoButton: HTMLButtonElement;
   private readonly redoButton: HTMLButtonElement;
   private readonly fileInput: HTMLInputElement;
+  private readonly projectButton: HTMLButtonElement;
+  private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
   private readonly countEl: HTMLElement;
   private readonly toastEl: HTMLElement;
@@ -50,6 +58,7 @@ export class EditorUi {
 
     root.innerHTML = `
       <div class="ed-toolbar">
+        <button id="ed-menu" class="ed-ghost">Menu</button>
         <input id="ed-name" class="ed-name" value="${escapeAttr(level.name)}" aria-label="Level name" />
         <div class="ed-group" role="group" aria-label="Tool">
           <button data-tool="paint">Paint</button>
@@ -63,8 +72,12 @@ export class EditorUi {
         <button id="ed-grid" class="ed-toggle">Grid</button>
         <div class="ed-group" role="group" aria-label="File">
           <button id="ed-new">New</button>
-          <button id="ed-save">Save</button>
-          <label class="ed-load">Load<input id="ed-file" type="file" accept="application/json,.json" hidden /></label>
+          <button id="ed-save">Export</button>
+          <label class="ed-load">Import<input id="ed-file" type="file" accept="application/json,.json" hidden /></label>
+        </div>
+        <div class="ed-group" role="group" aria-label="Storage">
+          <button id="ed-save-draft">Save draft</button>
+          <button id="ed-save-project" class="ed-project">Save to project</button>
         </div>
         <button id="ed-test" class="ed-primary">Test play</button>
       </div>
@@ -76,6 +89,8 @@ export class EditorUi {
           <div id="ed-entities" class="ed-swatches"></div>
           <h3>Layer</h3>
           <select id="ed-layer" class="ed-layer"></select>
+          <h3>My drafts</h3>
+          <div id="ed-drafts" class="ed-drafts"></div>
         </aside>
         <div class="ed-statusbar">
           <span id="ed-cursor">tile —</span>
@@ -92,6 +107,8 @@ export class EditorUi {
     this.redoButton = this.get<HTMLButtonElement>('ed-redo');
     this.fileInput = this.get<HTMLInputElement>('ed-file');
     this.layerSelect = this.get<HTMLSelectElement>('ed-layer');
+    this.projectButton = this.get<HTMLButtonElement>('ed-save-project');
+    this.draftsHost = this.get<HTMLElement>('ed-drafts');
     this.cursorEl = this.get<HTMLElement>('ed-cursor');
     this.countEl = this.get<HTMLElement>('ed-count');
     this.toastEl = this.get<HTMLElement>('ed-toast');
@@ -111,7 +128,6 @@ export class EditorUi {
     for (const type of Object.keys(ENTITY_LABELS) as EditorEntityType[]) {
       const button = document.createElement('button');
       button.className = 'ed-swatch ed-entity';
-      button.dataset.entity = type;
       button.textContent = ENTITY_LABELS[type];
       button.addEventListener('click', () => this.callbacks.onEntity(type));
       entityHost.append(button);
@@ -134,9 +150,12 @@ export class EditorUi {
     this.gridButton.addEventListener('click', () => this.callbacks.onToggleGrid());
     this.undoButton.addEventListener('click', () => this.callbacks.onUndo());
     this.redoButton.addEventListener('click', () => this.callbacks.onRedo());
-    this.get<HTMLButtonElement>('ed-new').addEventListener('click', () => this.callbacks.onNew());
-    this.get<HTMLButtonElement>('ed-save').addEventListener('click', () => this.callbacks.onSave());
-    this.get<HTMLButtonElement>('ed-test').addEventListener('click', () => this.callbacks.onTestPlay());
+    this.get('ed-menu').addEventListener('click', () => this.callbacks.onMenu());
+    this.get('ed-new').addEventListener('click', () => this.callbacks.onNew());
+    this.get('ed-save').addEventListener('click', () => this.callbacks.onSave());
+    this.get('ed-save-draft').addEventListener('click', () => this.callbacks.onSaveDraft());
+    this.projectButton.addEventListener('click', () => this.callbacks.onSaveToProject());
+    this.get('ed-test').addEventListener('click', () => this.callbacks.onTestPlay());
     this.fileInput.addEventListener('change', () => {
       const file = this.fileInput.files?.[0];
       if (file) {
@@ -150,12 +169,16 @@ export class EditorUi {
     this.nameInput.addEventListener('change', () => this.callbacks.onRename(this.nameInput.value));
   }
 
-  private get<T extends HTMLElement>(id: string): T {
+  private get<T extends HTMLElement = HTMLElement>(id: string): T {
     const element = document.getElementById(id);
     if (!element) {
       throw new Error(`editor UI element #${id} is missing`);
     }
     return element as T;
+  }
+
+  setDevMode(dev: boolean): void {
+    this.projectButton.hidden = !dev;
   }
 
   setName(name: string): void {
@@ -201,6 +224,38 @@ export class EditorUi {
 
   setEntityCount(count: number): void {
     this.countEl.textContent = `${count} ${count === 1 ? 'entity' : 'entities'}`;
+  }
+
+  setDrafts(drafts: DraftSummary[]): void {
+    if (drafts.length === 0) {
+      this.draftsHost.innerHTML = '<p class="ed-empty">no drafts</p>';
+      return;
+    }
+    this.draftsHost.innerHTML = drafts
+      .map(
+        (draft) => `
+        <div class="ed-draft">
+          <button class="ed-draft-open" data-open="${escapeAttr(draft.id)}">${escapeAttr(draft.name)}</button>
+          <button class="ed-draft-del" data-del="${escapeAttr(draft.id)}" title="delete">×</button>
+        </div>`,
+      )
+      .join('');
+    this.draftsHost.querySelectorAll<HTMLElement>('[data-open]').forEach((element) => {
+      element.addEventListener('click', () => {
+        const id = element.dataset.open;
+        if (id) {
+          this.callbacks.onLoadDraft(id);
+        }
+      });
+    });
+    this.draftsHost.querySelectorAll<HTMLElement>('[data-del]').forEach((element) => {
+      element.addEventListener('click', () => {
+        const id = element.dataset.del;
+        if (id) {
+          this.callbacks.onDeleteDraft(id);
+        }
+      });
+    });
   }
 
   toast(message: string, ms = 1800): void {

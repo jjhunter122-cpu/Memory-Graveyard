@@ -22,7 +22,9 @@ pnpm install
 pnpm dev
 ```
 
-Then open the printed local URL.
+Then open the printed local URL — the app boots to the **title screen**. The
+level editor is a dev tool: open it from the title (dev builds only) or with
+`?editor`.
 
 ```bash
 pnpm test       # headless logic / level-format tests
@@ -64,16 +66,21 @@ src/
     camera/CameraFollow.ts    deadzone follow, clamped to level bounds
     scenes/PlayScene.ts       level assembly and loop
     systems/graveyard.ts      pure clamp + rank helpers
-    app.ts                    scene navigation (play <-> editor)
-    ui/Hud.ts                 DOM overlay writer
+    app.ts                    menu graph + scene navigation
+    menus/                    Title / LevelSelect / Options (DOM overlays)
+    storage/                  level index, drafts (localStorage), settings
+    ui/                       Hud + mode helpers
   editor/
     history.ts                snapshot undo/redo stack
     ops.ts                    immutable level-document operations
     EditorUi.ts               DOM toolbar / palette / status bar
-    EditorScene.ts            painting, pan/zoom, save/load, test-play
+    EditorScene.ts            painting, pan/zoom, save/load, drafts, test-play
+  util/slug.ts
 public/
+  levels/index.json           registry of shipped levels
   levels/test-course.json     the test course, authored as data
   assets/manifest.json        placeholder tile manifest
+plugins/devLevels.ts          dev-only write-back (Save to project)
 scripts/smoke.mjs             headless Firefox end-to-end smoke test
 tests/                        headless vitest suite
 ```
@@ -96,6 +103,9 @@ tests/                        headless vitest suite
 - **Levels and art are data.** A level is versioned JSON; a manifest maps tile
   ids to collision behaviour and (eventually) real art. Swapping in tilesets
   later is a manifest-only change. See `docs/LEVELS.md`.
+- **DOM menus, gated editor.** Title / level select / options / pause are HTML
+  overlays over the canvas. The editor ships in the bundle but is only revealed
+  from the title in dev builds (and via `?editor`).
 - **DOM HUD over engine text** keeps labels crisp at any resolution.
 
 ## Level format
@@ -106,10 +116,23 @@ comes from each tile's definition in the manifest, not from the level, so
 painting a tile automatically gives it the right physics. Full details are in
 [`docs/LEVELS.md`](docs/LEVELS.md).
 
+## Menus & flow
+
+```
+Boot ─► Title ─► Level select ─► Play
+             └► Options
+Play:  Esc ─► Pause  (Resume / Restart / Level select / Title)
+```
+
+The title's **Play** starts your last-played level (falling back to the first
+course). **Level select** lists every course from `public/levels/index.json`
+plus a **My levels** section for browser drafts. In dev builds the title also
+shows a **Level editor** entry.
+
 ## Level editor
 
-Open the editor with the **Open editor** button in-game, or go straight to it
-with `?editor`:
+The editor is a development tool — open it from the title (dev builds) or go
+straight to it with `?editor`:
 
 ```
 http://localhost:5173/?editor
@@ -124,10 +147,24 @@ http://localhost:5173/?editor
 | Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or the buttons) |
 | Grid | Grid button |
 
-The toolbar has **New**, **Save** (downloads `<name>.json`) and **Load** (reads
-a level file back). **Test play** drops you into the level with the current
-edits; **Back to editor** returns. Editing operates on immutable snapshots, so
-undo/redo is exact.
+The toolbar has the tools, **New**, **Export** (downloads `<name>.json`),
+**Import** (reads a level file back), **Save draft** (browser storage),
+**Save to project** (dev write-back), **Test play** and **Menu**. The left panel
+lists your **My drafts**. Editing operates on immutable snapshots, so undo/redo
+is exact.
+
+## Saving & shipping levels
+
+| Tier | Lives in | How it gets there |
+| --- | --- | --- |
+| Draft | `localStorage` | Editor autosaves; **Save draft**; shows under *My levels* |
+| Shipped | `public/levels/*.json` + `index.json` | **Save to project** (dev), or drop an exported file in and add an index entry |
+| Live | editor buffer | **Test play** — played directly, no file round-trip |
+
+**Save to project** only appears when running `pnpm dev` (it POSTs to the
+`devLevels` Vite plugin, which writes the file and updates `index.json`). A
+production build still edits and exports/imports files, but has no server to
+write to.
 
 ## Testing
 
@@ -144,6 +181,6 @@ undo/redo is exact.
   tiles, `LevelLoader`.
 - [x] **M3 — Level designer:** in-browser editor (paint tiles, place entities,
   undo/redo, save/load, test-play).
-- [ ] **M4 — Title screen & general UI:** Boot → Title → Level Select → Play →
-  Pause → Settings.
+- [x] **M4 — Title screen & general UI:** Boot → Title → Level select → Play →
+  Pause → Options, level registry, drafts library, dev write-back.
 - [ ] **M5 — Asset integration:** drop real tilesets into the manifest.

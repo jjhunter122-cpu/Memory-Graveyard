@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "levels": [
+    {
+      "id": "test-course",
+      "name": "Test Course",
+      "file": "levels/test-course.json"
+    }
+  ]
+}

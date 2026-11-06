@@ -96,10 +96,39 @@ tile ids do not change:
 }
 ```
 
-## Adding a level
+## Level index
 
-1. Create `public/levels/my-level.json` following the schema above.
-2. Point the boot code in `src/main.ts` at the new file, or load it in the level
-   editor (`?editor` → **Load**) and **Test play**.
-3. Run `pnpm test` — the schema and layout tests will catch malformed levels.
-4. Run `pnpm smoke` with `pnpm dev` to confirm it plays.
+The game discovers shipped levels through `public/levels/index.json`:
+
+```jsonc
+{
+  "version": 1,
+  "levels": [
+    { "id": "test-course", "name": "Test Course", "file": "levels/test-course.json" }
+  ]
+}
+```
+
+`file` is relative to the app base. The title screen's **Play** uses
+`lastPlayed` (or the first entry); **Level select** lists every entry. Browser
+drafts are listed separately under *My levels*.
+
+## Saving a level (drafts, shipping)
+
+The editor works in three tiers:
+
+- **Draft** — kept in `localStorage` under `memory-graveyard:drafts:v1`.
+  Autosaved while you edit; listable, loadable and deletable from the editor's
+  *My drafts* panel and the in-game *My levels* section.
+- **Shipped** — a file in `public/levels/` plus an entry in `index.json`.
+- **Live** — the editor buffer, played straight into the game by **Test play**.
+
+To ship a level:
+
+1. **Save to project** (only shown while running `pnpm dev`). This POSTs to the
+   `devLevels` Vite plugin, which writes `public/levels/<id>.json` and adds the
+   `index.json` entry for you.
+2. Or **Export** the JSON and place it in `public/levels/` manually, adding the
+   index entry yourself.
+3. Run `pnpm test` (schema/index validation) and `pnpm smoke` with `pnpm dev` to
+   confirm it plays.

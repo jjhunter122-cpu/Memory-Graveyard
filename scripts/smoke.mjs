@@ -64,6 +64,10 @@ try {
   await wd('POST', `${sid}/url`, { url: GAME_URL });
   await sleep(3500);
 
+  // Start a level from the title screen.
+  await $(`document.getElementById('menu-play')?.click(); return true;`);
+  await sleep(1800);
+
   const diag = await $(
     `const g = window.graveyard; const s = g && g.currentScene; const p = s && s.player;
      const c = document.getElementById('game');

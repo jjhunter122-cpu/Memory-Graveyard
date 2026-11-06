@@ -26,9 +26,14 @@ import {
 } from './ops';
 import { EditorUi, type EditorUiCallbacks } from './EditorUi';
 import type { EditorEntityType, EditorTool } from './types';
+import { DraftStore } from '../game/storage/levels';
+import { setMode } from '../game/ui/mode';
+import { slug } from '../game/util/slug';
 
 export interface EditorSceneOptions {
   onTestPlay: (level: LevelData) => void;
+  onMenu: () => void;
+  drafts: DraftStore;
 }
 
 const PAN_SPEED = 420;
@@ -62,6 +67,7 @@ export class EditorScene extends Scene {
 
   private painting = false;
   private lastPaintedIndex = -1;
+  private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private subscriptions: Subscription[] = [];
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     const ctrl = event.ctrlKey || event.metaKey;
@@ -109,6 +115,8 @@ export class EditorScene extends Scene {
       this.ui.setEntity(this.selectedEntity);
       this.ui.setLayer(this.activeLayer);
       this.ui.setGrid(this.showGrid);
+      this.ui.setDevMode(import.meta.env.DEV);
+      this.ui.setDrafts(this.options.drafts.list());
     }
 
     this.refreshAll();
@@ -116,7 +124,7 @@ export class EditorScene extends Scene {
   }
 
   override onActivate(context: { engine: Engine }): void {
-    document.body.classList.add('editing');
+    setMode('editing');
     window.addEventListener('keydown', this.onKeyDown);
     const { engine } = context;
     this.subscriptions = [
@@ -132,7 +140,7 @@ export class EditorScene extends Scene {
   }
 
   override onDeactivate(): void {
-    document.body.classList.remove('editing');
+    this.flushAutosave();
     window.removeEventListener('keydown', this.onKeyDown);
     for (const subscription of this.subscriptions) {
       subscription.close();
@@ -285,6 +293,75 @@ export class EditorScene extends Scene {
     this.history.commit(next);
     this.level = next;
     this.ui?.setHistory(this.history.canUndo, this.history.canRedo);
+    this.scheduleAutosave();
+  }
+
+  // ---- drafts & project save ------------------------------------------------
+
+  private scheduleAutosave(): void {
+    if (this.autosaveTimer !== null) {
+      clearTimeout(this.autosaveTimer);
+    }
+    this.autosaveTimer = setTimeout(() => {
+      this.autosaveTimer = null;
+      this.options.drafts.save(this.level);
+      this.ui?.setDrafts(this.options.drafts.list());
+    }, 500);
+  }
+
+  private flushAutosave(): void {
+    if (this.autosaveTimer !== null) {
+      clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+      this.options.drafts.save(this.level);
+    }
+  }
+
+  private saveDraft(): void {
+    this.options.drafts.save(this.level);
+    this.ui?.setDrafts(this.options.drafts.list());
+    this.ui?.toast('saved draft');
+  }
+
+  private deleteDraft(id: string): void {
+    this.options.drafts.remove(id);
+    this.ui?.setDrafts(this.options.drafts.list());
+    this.ui?.toast('draft deleted');
+  }
+
+  private loadDraft(id: string): void {
+    const level = this.options.drafts.get(id);
+    if (!level) {
+      this.ui?.toast('draft not found');
+      return;
+    }
+    this.level = level;
+    this.history.reset(level);
+    this.activeLayer = 0;
+    this.ui?.setName(level.name);
+    this.ui?.setLayer(0);
+    this.ui?.setHistory(false, false);
+    this.refreshAll();
+    this.centerCamera();
+    this.ui?.toast(`loaded draft ${level.name}`);
+  }
+
+  private async saveToProject(): Promise<void> {
+    const id = slug(this.level.name);
+    try {
+      const response = await fetch('/__levels/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, name: this.level.name, level: this.level }),
+      });
+      if (!response.ok) {
+        throw new Error(`server returned ${response.status}`);
+      }
+      const result = (await response.json()) as { file?: string };
+      this.ui?.toast(`saved to ${result.file ?? `public/levels/${id}.json`}`, 2600);
+    } catch (error) {
+      this.ui?.toast(`project save failed: ${(error as Error).message}`, 4000);
+    }
   }
 
   private undo(): void {
@@ -455,8 +532,13 @@ export class EditorScene extends Scene {
         this.ui?.toast('cleared the level');
       },
       onSave: () => this.save(),
+      onSaveDraft: () => this.saveDraft(),
+      onSaveToProject: () => void this.saveToProject(),
+      onLoadDraft: (id) => this.loadDraft(id),
+      onDeleteDraft: (id) => this.deleteDraft(id),
       onLoadFile: (file) => void this.load(file),
       onTestPlay: () => this.options.onTestPlay(this.level),
+      onMenu: () => this.options.onMenu(),
       onRename: (name) => {
         this.commit(renameLevel(this.level, name));
         this.ui?.setName(this.level.name);
@@ -506,8 +588,4 @@ function firstTileId(tiles: Map<number, TileDef>): number | undefined {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
-}
-
-function slug(name: string): string {
-  return name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'level';
 }

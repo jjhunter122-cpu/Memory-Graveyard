@@ -1,8 +1,15 @@
 import { Color, DisplayMode, Engine, SolverStrategy, Vector } from 'excalibur';
 import { COLORS, PHYSICS, VIEW } from './game/config';
-import { validateLevel } from './game/level/schema';
 import { validateManifest } from './game/level/manifest';
+import type { LevelData } from './game/level/schema';
 import { GameApp } from './game/app';
+import {
+  DraftStore,
+  LevelLibrary,
+  validateLevelIndex,
+} from './game/storage/levels';
+import { SettingsStore } from './game/storage/settings';
+import { safeLocalStorage } from './game/storage/storage';
 import './style.css';
 
 async function fetchJson(url: string): Promise<unknown> {
@@ -15,14 +22,29 @@ async function fetchJson(url: string): Promise<unknown> {
 
 async function boot(): Promise<void> {
   const base = import.meta.env.BASE_URL;
-  const [levelRaw, manifestRaw] = await Promise.all([
-    fetchJson(`${base}levels/test-course.json`),
+  const [manifestRaw, indexRaw] = await Promise.all([
     fetchJson(`${base}assets/manifest.json`),
+    fetchJson(`${base}levels/index.json`),
   ]);
 
-  const level = validateLevel(levelRaw);
   const manifest = validateManifest(manifestRaw);
-  const startInEditor = new URLSearchParams(window.location.search).has('editor');
+  const index = validateLevelIndex(indexRaw);
+
+  const storage = safeLocalStorage();
+  const drafts = new DraftStore(storage);
+  const settings = new SettingsStore(storage);
+  const library = new LevelLibrary(base, index, drafts);
+
+  const params = new URLSearchParams(window.location.search);
+  let startInEditor = params.has('editor');
+  let initialLevel: LevelData | undefined;
+  if (startInEditor) {
+    const first = index.levels[0];
+    initialLevel = first ? await library.loadShipped(first.id).catch(() => undefined) : undefined;
+    if (!initialLevel) {
+      startInEditor = false;
+    }
+  }
 
   const engine = new Engine({
     canvasElementId: 'game',
@@ -42,20 +64,8 @@ async function boot(): Promise<void> {
     antialiasing: true,
   });
 
-  // Stop the page from scrolling while playing.
-  const prevent = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
-  window.addEventListener(
-    'keydown',
-    (event) => {
-      if (prevent.has(event.code) || prevent.has(event.key)) {
-        event.preventDefault();
-      }
-    },
-    { passive: false },
-  );
-
-  const app = new GameApp(engine, manifest);
-  await app.start(level, startInEditor);
+  const app = new GameApp(engine, manifest, library, drafts, settings);
+  await app.start({ startInEditor, initialLevel });
 
   // Runtime handles for debugging in the console.
   (window as unknown as { graveyard: Engine }).graveyard = engine;

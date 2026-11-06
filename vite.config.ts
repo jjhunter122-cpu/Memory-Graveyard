@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import { devLevels } from './plugins/devLevels.ts';
 
 export default defineConfig({
   base: './',
+  plugins: [devLevels()],
   server: {
     host: true,
   },

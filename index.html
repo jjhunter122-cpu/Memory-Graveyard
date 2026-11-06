@@ -16,7 +16,11 @@
           <p>collect what the dead left behind</p>
         </header>
 
-        <section class="panel" aria-label="Progress">
+        <section id="hud-panel" class="panel" aria-label="Progress">
+          <div class="row">
+            <span class="label">LEVEL</span>
+            <span id="level-name" class="value">—</span>
+          </div>
           <div class="row">
             <span class="label">MEMORIES</span>
             <span id="collected" class="value">0 / 0</span>
@@ -40,6 +44,9 @@
       </div>
 
       <div id="editor-ui" class="editor-ui"></div>
+
+      <div id="menu-ui" class="menu-ui"></div>
+      <div id="pause-ui" class="pause-ui"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
