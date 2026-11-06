@@ -5,30 +5,54 @@ export const VIEW = {
   height: 540,
 } as const;
 
+/** Logical tile size in pixels. Levels are authored on this grid. */
+export const TILE = 32;
+
+export const PHYSICS = {
+  gravityY: 1500,
+  fixedFps: 120,
+} as const;
+
+export const GRAVITY = PHYSICS.gravityY;
+
 export const PLAYER = {
-  speed: 235,
-  radius: 15,
+  width: 22,
+  height: 30,
+  runSpeed: 225,
+  groundAccel: 2600,
+  airAccel: 1600,
+  groundFriction: 3000,
+  airFriction: 300,
+  jumpSpeed: 470,
+  maxFallSpeed: 980,
+  jumpCutMultiplier: 0.45,
+  coyoteTime: 0.09,
+  jumpBufferTime: 0.12,
+  apexVelocity: 130,
+  apexGravityScale: 0.62,
+  dropThroughTime: 0.18,
   color: '#e9e4d4',
-  aura: '#8f7bff',
 } as const;
 
 export const MEMORY = {
-  radius: 11,
-  reach: 6,
+  radius: 9,
   bob: 4,
-  bobSpeed: 2.4,
+  bobSpeed: 2.2,
   color: '#7ce7ff',
 } as const;
 
-export const GRAVE = {
-  color: '#2a2f45',
-  cap: '#3b4162',
+export const COLORS = {
+  background: '#0a0b10',
+  fog: '#12121c',
+  solid: '#2a2f45',
+  solidTop: '#3b4162',
+  oneWay: '#4a3c28',
+  oneWayTop: '#8a754e',
+  exit: '#b6ff7c',
+  text: '#eae6ff',
 } as const;
 
-export const COLORS = {
-  sky: '#0a0b10',
-  fog: '#12121c',
-  moon: '#d9d6ff',
-  text: '#eae6ff',
-  accent: '#7ce7ff',
+export const LEVEL = {
+  /** Falling past this distance below the level respawns the player. */
+  killMargin: 220,
 } as const;
