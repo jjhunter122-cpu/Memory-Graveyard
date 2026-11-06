@@ -9,6 +9,11 @@ import { Exit } from '../actors/Exit';
 import { CameraFollow } from '../camera/CameraFollow';
 import { Hud } from '../ui/Hud';
 
+export interface PlaySceneOptions {
+  fromEditor?: boolean;
+  onOpenEditor?: (level: LevelData) => void;
+}
+
 export class PlayScene extends Scene {
   private readonly hud = new Hud();
 
@@ -23,8 +28,26 @@ export class PlayScene extends Scene {
   constructor(
     private readonly level: LevelData,
     private readonly manifest: AssetManifest,
+    private readonly options: PlaySceneOptions = {},
   ) {
     super();
+  }
+
+  override onActivate(_context: unknown): void {
+    document.body.classList.remove('editing');
+    const button = document.getElementById('open-editor');
+    if (button instanceof HTMLButtonElement) {
+      button.textContent = this.options.fromEditor ? 'Back to editor' : 'Open editor';
+      button.hidden = false;
+      button.onclick = () => this.options.onOpenEditor?.(this.level);
+    }
+  }
+
+  override onDeactivate(): void {
+    const button = document.getElementById('open-editor');
+    if (button instanceof HTMLButtonElement) {
+      button.onclick = null;
+    }
   }
 
   override onInitialize(_engine: Engine): void {

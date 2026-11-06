@@ -2,7 +2,7 @@ import { Color, DisplayMode, Engine, SolverStrategy, Vector } from 'excalibur';
 import { COLORS, PHYSICS, VIEW } from './game/config';
 import { validateLevel } from './game/level/schema';
 import { validateManifest } from './game/level/manifest';
-import { PlayScene } from './game/scenes/PlayScene';
+import { GameApp } from './game/app';
 import './style.css';
 
 async function fetchJson(url: string): Promise<unknown> {
@@ -22,8 +22,9 @@ async function boot(): Promise<void> {
 
   const level = validateLevel(levelRaw);
   const manifest = validateManifest(manifestRaw);
+  const startInEditor = new URLSearchParams(window.location.search).has('editor');
 
-  const game = new Engine({
+  const engine = new Engine({
     canvasElementId: 'game',
     width: VIEW.width,
     height: VIEW.height,
@@ -41,8 +42,6 @@ async function boot(): Promise<void> {
     antialiasing: true,
   });
 
-  game.addScene('play', new PlayScene(level, manifest));
-
   // Stop the page from scrolling while playing.
   const prevent = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
   window.addEventListener(
@@ -55,11 +54,12 @@ async function boot(): Promise<void> {
     { passive: false },
   );
 
-  await game.start();
-  await game.goToScene('play');
+  const app = new GameApp(engine, manifest);
+  await app.start(level, startInEditor);
 
-  // Runtime handle for debugging in the console.
-  (window as unknown as { graveyard: Engine }).graveyard = game;
+  // Runtime handles for debugging in the console.
+  (window as unknown as { graveyard: Engine }).graveyard = engine;
+  (window as unknown as { graveyardApp: GameApp }).graveyardApp = app;
 }
 
 void boot().catch((error: unknown) => {

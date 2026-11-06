@@ -122,3 +122,228 @@ kbd {
   color: #d9d6ff;
   font-size: 10px;
 }
+
+.mode-button {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  pointer-events: auto;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #d9d6ff;
+  background: rgba(20, 22, 34, 0.85);
+  border: 1px solid rgba(143, 123, 255, 0.4);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mode-button:hover {
+  background: rgba(143, 123, 255, 0.2);
+}
+
+/* ---- level editor chrome ---- */
+
+body.editing #hud,
+body.editing #open-editor {
+  display: none;
+}
+
+.editor-ui {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+  color: #eae6ff;
+}
+
+body.editing .editor-ui {
+  display: block;
+}
+
+.ed-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  background: rgba(9, 10, 16, 0.94);
+  border-bottom: 1px solid rgba(143, 123, 255, 0.25);
+  pointer-events: auto;
+}
+
+.ed-name {
+  width: 180px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 13px;
+  color: #eae6ff;
+  background: rgba(20, 22, 34, 0.9);
+  border: 1px solid rgba(143, 123, 255, 0.35);
+  border-radius: 5px;
+}
+
+.ed-group {
+  display: flex;
+  gap: 4px;
+}
+
+.ed-toolbar button,
+.ed-load {
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cfd0e6;
+  background: rgba(20, 22, 34, 0.9);
+  border: 1px solid rgba(143, 123, 255, 0.28);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ed-toolbar button:hover,
+.ed-load:hover {
+  background: rgba(143, 123, 255, 0.16);
+}
+
+.ed-toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ed-toolbar button.active,
+.ed-toggle.active {
+  color: #05060a;
+  background: #7ce7ff;
+  border-color: #7ce7ff;
+}
+
+.ed-primary {
+  margin-left: auto;
+  color: #05060a !important;
+  background: #b6ff7c !important;
+  border-color: #b6ff7c !important;
+}
+
+.ed-body {
+  position: absolute;
+  top: 56px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.ed-palette {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 190px;
+  padding: 12px;
+  overflow: auto;
+  background: rgba(9, 10, 16, 0.88);
+  border-right: 1px solid rgba(143, 123, 255, 0.2);
+  pointer-events: auto;
+}
+
+.ed-palette h3 {
+  margin: 12px 0 6px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #6f7291;
+}
+
+.ed-swatches {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ed-swatch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  color: #d9d6ff;
+  background: rgba(20, 22, 34, 0.8);
+  border: 1px solid rgba(143, 123, 255, 0.2);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.ed-swatch i {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.ed-swatch.active {
+  outline: 2px solid #7ce7ff;
+}
+
+.ed-entity {
+  justify-content: center;
+}
+
+.ed-layer {
+  width: 100%;
+  padding: 6px;
+  font: inherit;
+  font-size: 12px;
+  color: #eae6ff;
+  background: rgba(20, 22, 34, 0.9);
+  border: 1px solid rgba(143, 123, 255, 0.28);
+  border-radius: 5px;
+}
+
+.ed-statusbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 16px;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: #9a9dbb;
+  background: rgba(9, 10, 16, 0.88);
+  border-top: 1px solid rgba(143, 123, 255, 0.2);
+  pointer-events: auto;
+}
+
+.ed-hint {
+  margin-left: auto;
+  color: #6f7291;
+}
+
+.ed-toast {
+  position: absolute;
+  bottom: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 14px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #ffd9a0;
+  background: rgba(20, 22, 34, 0.92);
+  border: 1px solid rgba(143, 123, 255, 0.35);
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.ed-toast.show {
+  opacity: 1;
+}

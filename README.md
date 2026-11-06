@@ -64,7 +64,13 @@ src/
     camera/CameraFollow.ts    deadzone follow, clamped to level bounds
     scenes/PlayScene.ts       level assembly and loop
     systems/graveyard.ts      pure clamp + rank helpers
+    app.ts                    scene navigation (play <-> editor)
     ui/Hud.ts                 DOM overlay writer
+  editor/
+    history.ts                snapshot undo/redo stack
+    ops.ts                    immutable level-document operations
+    EditorUi.ts               DOM toolbar / palette / status bar
+    EditorScene.ts            painting, pan/zoom, save/load, test-play
 public/
   levels/test-course.json     the test course, authored as data
   assets/manifest.json        placeholder tile manifest
@@ -100,6 +106,29 @@ comes from each tile's definition in the manifest, not from the level, so
 painting a tile automatically gives it the right physics. Full details are in
 [`docs/LEVELS.md`](docs/LEVELS.md).
 
+## Level editor
+
+Open the editor with the **Open editor** button in-game, or go straight to it
+with `?editor`:
+
+```
+http://localhost:5173/?editor
+```
+
+| Action | Control |
+| --- | --- |
+| Pan | `W` `A` `S` `D` / arrow keys |
+| Zoom | mouse wheel |
+| Paint / erase | left-click-drag with the Paint / Erase tool |
+| Place entity | Entity tool, then click |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or the buttons) |
+| Grid | Grid button |
+
+The toolbar has **New**, **Save** (downloads `<name>.json`) and **Load** (reads
+a level file back). **Test play** drops you into the level with the current
+edits; **Back to editor** returns. Editing operates on immutable snapshots, so
+undo/redo is exact.
+
 ## Testing
 
 - `pnpm test` — pure logic and the level/manifest formats in Vitest.
@@ -113,7 +142,7 @@ painting a tile automatically gives it the right physics. Full details are in
   one-way planks, test course.
 - [x] **M2 — Level pipeline:** JSON level schema, asset manifest, placeholder
   tiles, `LevelLoader`.
-- [ ] **M3 — Level designer:** in-browser editor (paint tiles, place entities,
+- [x] **M3 — Level designer:** in-browser editor (paint tiles, place entities,
   undo/redo, save/load, test-play).
 - [ ] **M4 — Title screen & general UI:** Boot → Title → Level Select → Play →
   Pause → Settings.

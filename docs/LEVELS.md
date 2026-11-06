@@ -99,7 +99,7 @@ tile ids do not change:
 ## Adding a level
 
 1. Create `public/levels/my-level.json` following the schema above.
-2. Point the boot code in `src/main.ts` at the new file, or (from M3 onward)
-   pick it in the level-select menu.
+2. Point the boot code in `src/main.ts` at the new file, or load it in the level
+   editor (`?editor` → **Load**) and **Test play**.
 3. Run `pnpm test` — the schema and layout tests will catch malformed levels.
 4. Run `pnpm smoke` with `pnpm dev` to confirm it plays.
