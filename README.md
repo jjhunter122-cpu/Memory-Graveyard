@@ -50,7 +50,7 @@ respawns you at the start.
 
 ```
 src/
-  main.ts                     boot: load level + manifest, engine, fixed step
+  main.ts                     boot: index + sequences + manifest, engine
   game/
     config.ts                 gameplay tunables + palette + tile size
     physics/collisionGroups.ts bitmask groups (solid / one-way / player / trigger)
@@ -64,12 +64,12 @@ src/
       tiles.ts                grid reshaping + horizontal run merging
       loader.ts               level + manifest -> live actors
     camera/CameraFollow.ts    deadzone follow, clamped to level bounds
-    scenes/PlayScene.ts       level assembly and loop
+    scenes/PlayScene.ts       level assembly, loop, pause, completion
     systems/graveyard.ts      pure clamp + rank helpers
-    app.ts                    menu graph + scene navigation
-    menus/                    Title / LevelSelect / Options (DOM overlays)
-    storage/                  level index, drafts (localStorage), settings
-    ui/                       Hud + mode helpers
+    app.ts                    menu graph + scene navigation + campaign
+    menus/                    Title / LevelSelect / Options / Sequence (DOM)
+    storage/                  index + tiers, drafts, sequences, settings
+    ui/                       Hud, mode helpers, F3 debug overlay
   editor/
     history.ts                snapshot undo/redo stack
     ops.ts                    immutable level-document operations
@@ -77,10 +77,11 @@ src/
     EditorScene.ts            painting, pan/zoom, save/load, drafts, test-play
   util/slug.ts
 public/
-  levels/index.json           registry of shipped levels
-  levels/test-course.json     the test course, authored as data
+  levels/index.json           registry of shipped levels (+ tier)
+  levels/sequences.json       the main campaign order
+  levels/*.json               authored levels
   assets/manifest.json        placeholder tile manifest
-plugins/devLevels.ts          dev-only write-back (Save to project)
+plugins/devLevels.ts          dev-only write-back (levels + sequences)
 scripts/smoke.mjs             headless Firefox end-to-end smoke test
 tests/                        headless vitest suite
 ```
@@ -88,12 +89,15 @@ tests/                        headless vitest suite
 ### Key decisions
 
 - **Excalibur's built-in Arcade solver**, not the Realistic (matter.js) solver.
-  Arcade is Excalibur's simple AABB solver, designed for platforming, and we run
-  it on a **fixed 120 Hz step** (`fixedUpdateFps`).
+  Arcade is Excalibur's simple AABB solver, designed for platforming. It runs on
+  the engine's **variable timestep** (smoother on high-refresh displays); a fixed
+  step is opt-in via `PHYSICS.fixedFps`.
 - **Pure movement decisions.** Gravity, acceleration, variable-height jump,
   coyote time and jump buffering live in `PlayerController`, which has no
   Excalibur imports and is replayed deterministically in tests. The engine only
   resolves collisions.
+- **Collision owner pattern.** Actor collision events carry the geometry
+  `Collider`, not the actor — pickups test `event.other.owner instanceof Memory`.
 - **Deterministic ground probe.** Arcade does not report a resting ground contact
   on every step, so the player also probes the level's collision grid directly.
   A short event latch bridges gaps; coyote time keeps jumps forgiving.
@@ -101,11 +105,14 @@ tests/                        headless vitest suite
   platforms, so the player swaps to a group that ignores one-way planks while
   rising or while dropping through (`S` + `Space`).
 - **Levels and art are data.** A level is versioned JSON; a manifest maps tile
-  ids to collision behaviour and (eventually) real art. Swapping in tilesets
-  later is a manifest-only change. See `docs/LEVELS.md`.
-- **DOM menus, gated editor.** Title / level select / options / pause are HTML
-  overlays over the canvas. The editor ships in the bundle but is only revealed
-  from the title in dev builds (and via `?editor`).
+  ids to collision behaviour and (eventually) real art. See `docs/LEVELS.md`.
+- **Dev Made vs community, and one campaign.** Levels are tagged `dev` or
+  `community`; a shipped `sequences.json` orders the dev levels into the main
+  campaign that **Play** runs.
+- **DOM menus, gated editor.** Title / level select / options / sequence / pause
+  are HTML overlays over the canvas. The editor ships in the bundle but is only
+  revealed from the title in dev builds (and via `?editor`).
+- **`F3` debug overlay** shows FPS, frame time, velocity and grounded state.
 - **DOM HUD over engine text** keeps labels crisp at any resolution.
 
 ## Level format
@@ -119,15 +126,24 @@ painting a tile automatically gives it the right physics. Full details are in
 ## Menus & flow
 
 ```
-Boot ─► Title ─► Level select ─► Play
-             └► Options
+Boot ─► Title ─► Play campaign ─► Level 1 ─► Level 2 ─► …
+             ├► Level select ─► Courses / Community / My levels / Play campaign
+             ├► Options
+             └► Edit campaign (dev)   Level editor (dev)
 Play:  Esc ─► Pause  (Resume / Restart / Level select / Title)
 ```
 
-The title's **Play** starts your last-played level (falling back to the first
-course). **Level select** lists every course from `public/levels/index.json`
-plus a **My levels** section for browser drafts. In dev builds the title also
-shows a **Level editor** entry.
+The title's **Play campaign** runs the shipped **main campaign** — the ordered
+list of **Dev Made** levels from `public/levels/sequences.json`. Completing a
+level (all memories + exit) shows *level complete* and advances; the last level
+returns to Level select.
+
+**Level select** is split into **Courses** (dev-made), **Community**, and
+**My levels** (browser drafts), with a **Play campaign** button when a campaign
+exists. In dev builds each course/draft also has an **edit** action.
+
+In dev builds the title additionally shows **Edit campaign** (drag levels into
+order and save to project) and **Level editor**.
 
 ## Level editor
 
@@ -147,31 +163,38 @@ http://localhost:5173/?editor
 | Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or the buttons) |
 | Grid | Grid button |
 
-The toolbar has the tools, **New**, **Export** (downloads `<name>.json`),
-**Import** (reads a level file back), **Save draft** (browser storage),
-**Save to project** (dev write-back), **Test play** and **Menu**. The left panel
-lists your **My drafts**. Editing operates on immutable snapshots, so undo/redo
-is exact.
+The toolbar has the tools, **New**, **Export**, **Import**, the **Dev Made**
+tier toggle, **Save draft**, **Save to project**, **Test play** and **Menu**.
+The left panel lists your **My drafts**. Editing operates on immutable
+snapshots, so undo/redo is exact.
 
-## Saving & shipping levels
+## Levels: tiers, drafts & shipping
 
-| Tier | Lives in | How it gets there |
+| Kind | Lives in | Shows up in |
 | --- | --- | --- |
-| Draft | `localStorage` | Editor autosaves; **Save draft**; shows under *My levels* |
-| Shipped | `public/levels/*.json` + `index.json` | **Save to project** (dev), or drop an exported file in and add an index entry |
-| Live | editor buffer | **Test play** — played directly, no file round-trip |
+| **Dev Made** | `index.json` (`tier: "dev"`) | Play campaign + Level select → Courses |
+| **Community** | `index.json` (`tier: "community"`) | Level select → Community |
+| **Draft** | `localStorage` | Level select → My levels |
 
-**Save to project** only appears when running `pnpm dev` (it POSTs to the
-`devLevels` Vite plugin, which writes the file and updates `index.json`). A
-production build still edits and exports/imports files, but has no server to
-write to.
+**Save to project** (dev only) POSTs to the `devLevels` Vite plugin, which writes
+`public/levels/<id>.json`, records the tier in `index.json`, and (from the
+sequence screen) writes `sequences.json`. A production build still edits and
+exports/imports files, but has no server to write to.
+
+The **campaign** is a `sequences.json` entry:
+
+```jsonc
+{ "version": 1, "sequences": [ { "id": "main", "name": "Main Campaign", "levels": ["test-course", "first-test"] } ] }
+```
 
 ## Testing
 
-- `pnpm test` — pure logic and the level/manifest formats in Vitest.
+- `pnpm test` — pure logic, level/manifest formats, tiers and sequences in Vitest.
 - `pnpm smoke` — boots the real app in headless Firefox via WebDriver and checks
-  that the scene builds and the character moves and jumps. Requires a running
-  server (`pnpm dev`) and `geckodriver --port 4444`.
+  that the scene builds, the character moves and jumps, and a memory is
+  collected. Requires a running server (`pnpm dev`) and `geckodriver --port 4444`.
+
+Press **`F3`** in-game for the debug overlay (FPS, frame time, velocity).
 
 ## Roadmap
 
@@ -183,4 +206,7 @@ write to.
   undo/redo, save/load, test-play).
 - [x] **M4 — Title screen & general UI:** Boot → Title → Level select → Play →
   Pause → Options, level registry, drafts library, dev write-back.
-- [ ] **M5 — Asset integration:** drop real tilesets into the manifest.
+- [x] **M4.5 — Polish & authoring:** collectable/exit collision fix, variable
+  timestep + `F3` overlay, Dev Made / community tiers, main campaign sequences.
+- [ ] **M5 — Asset integration:** drop real tilesets into the manifest
+  *(pinned until assets are ready)*.

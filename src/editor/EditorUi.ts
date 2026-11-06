@@ -20,6 +20,7 @@ export interface EditorUiCallbacks {
   onLoadFile(file: File): void;
   onTestPlay(): void;
   onMenu(): void;
+  onToggleTier(dev: boolean): void;
   onRename(name: string): void;
 }
 
@@ -42,6 +43,7 @@ export class EditorUi {
   private readonly redoButton: HTMLButtonElement;
   private readonly fileInput: HTMLInputElement;
   private readonly projectButton: HTMLButtonElement;
+  private readonly tierInput: HTMLInputElement;
   private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
   private readonly countEl: HTMLElement;
@@ -76,6 +78,9 @@ export class EditorUi {
           <label class="ed-load">Import<input id="ed-file" type="file" accept="application/json,.json" hidden /></label>
         </div>
         <div class="ed-group" role="group" aria-label="Storage">
+          <label class="ed-tier" title="Dev Made levels join the campaign; community levels live in the selector">
+            <input id="ed-tier" type="checkbox" checked /> Dev Made
+          </label>
           <button id="ed-save-draft">Save draft</button>
           <button id="ed-save-project" class="ed-project">Save to project</button>
         </div>
@@ -108,6 +113,7 @@ export class EditorUi {
     this.fileInput = this.get<HTMLInputElement>('ed-file');
     this.layerSelect = this.get<HTMLSelectElement>('ed-layer');
     this.projectButton = this.get<HTMLButtonElement>('ed-save-project');
+    this.tierInput = this.get<HTMLInputElement>('ed-tier');
     this.draftsHost = this.get<HTMLElement>('ed-drafts');
     this.cursorEl = this.get<HTMLElement>('ed-cursor');
     this.countEl = this.get<HTMLElement>('ed-count');
@@ -155,6 +161,9 @@ export class EditorUi {
     this.get('ed-save').addEventListener('click', () => this.callbacks.onSave());
     this.get('ed-save-draft').addEventListener('click', () => this.callbacks.onSaveDraft());
     this.projectButton.addEventListener('click', () => this.callbacks.onSaveToProject());
+    this.tierInput.addEventListener('change', () =>
+      this.callbacks.onToggleTier(this.tierInput.checked),
+    );
     this.get('ed-test').addEventListener('click', () => this.callbacks.onTestPlay());
     this.fileInput.addEventListener('change', () => {
       const file = this.fileInput.files?.[0];
@@ -179,6 +188,10 @@ export class EditorUi {
 
   setDevMode(dev: boolean): void {
     this.projectButton.hidden = !dev;
+  }
+
+  setDevMade(value: boolean): void {
+    this.tierInput.checked = value;
   }
 
   setName(name: string): void {

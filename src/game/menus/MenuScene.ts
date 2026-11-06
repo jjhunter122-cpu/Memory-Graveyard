@@ -35,6 +35,14 @@ export abstract class MenuScene extends Scene {
       element.addEventListener('click', () => handler(element.dataset));
     });
   }
+
+  /** Re-renders and re-binds the current screen in place. */
+  protected redraw(): void {
+    if (this.root) {
+      this.root.innerHTML = this.render();
+      this.bind();
+    }
+  }
 }
 
 export function escapeHtml(value: string): string {

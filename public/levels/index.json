@@ -4,7 +4,14 @@
     {
       "id": "test-course",
       "name": "Test Course",
-      "file": "levels/test-course.json"
+      "file": "levels/test-course.json",
+      "tier": "dev"
+    },
+    {
+      "id": "first-test",
+      "name": "First test",
+      "file": "levels/first-test.json",
+      "tier": "dev"
     }
   ]
 }

@@ -34,6 +34,7 @@ export interface EditorSceneOptions {
   onTestPlay: (level: LevelData) => void;
   onMenu: () => void;
   drafts: DraftStore;
+  onProjectSaved?: () => void;
 }
 
 const PAN_SPEED = 420;
@@ -58,6 +59,7 @@ export class EditorScene extends Scene {
   private selectedEntity: EditorEntityType = 'memory';
   private activeLayer = 0;
   private showGrid = true;
+  private devMade = true;
 
   private ui: EditorUi | null = null;
   private readonly gridActors: Actor[] = [];
@@ -116,6 +118,7 @@ export class EditorScene extends Scene {
       this.ui.setLayer(this.activeLayer);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
+      this.ui.setDevMade(this.devMade);
       this.ui.setDrafts(this.options.drafts.list());
     }
 
@@ -352,13 +355,19 @@ export class EditorScene extends Scene {
       const response = await fetch('/__levels/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, name: this.level.name, level: this.level }),
+        body: JSON.stringify({
+          id,
+          name: this.level.name,
+          tier: this.devMade ? 'dev' : 'community',
+          level: this.level,
+        }),
       });
       if (!response.ok) {
         throw new Error(`server returned ${response.status}`);
       }
       const result = (await response.json()) as { file?: string };
       this.ui?.toast(`saved to ${result.file ?? `public/levels/${id}.json`}`, 2600);
+      this.options.onProjectSaved?.();
     } catch (error) {
       this.ui?.toast(`project save failed: ${(error as Error).message}`, 4000);
     }
@@ -539,6 +548,9 @@ export class EditorScene extends Scene {
       onLoadFile: (file) => void this.load(file),
       onTestPlay: () => this.options.onTestPlay(this.level),
       onMenu: () => this.options.onMenu(),
+      onToggleTier: (dev) => {
+        this.devMade = dev;
+      },
       onRename: (name) => {
         this.commit(renameLevel(this.level, name));
         this.ui?.setName(this.level.name);

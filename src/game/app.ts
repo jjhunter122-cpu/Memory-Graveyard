@@ -6,6 +6,7 @@ import { EditorScene } from '../editor/EditorScene';
 import { TitleScene } from './menus/TitleScene';
 import { LevelSelectScene } from './menus/LevelSelectScene';
 import { OptionsScene } from './menus/OptionsScene';
+import { SequenceScene } from './menus/SequenceScene';
 import type { DraftStore, LevelLibrary } from './storage/levels';
 import type { SettingsStore } from './storage/settings';
 
@@ -14,13 +15,20 @@ export interface StartOptions {
   initialLevel?: LevelData;
 }
 
+interface PlayOptions {
+  fromEditor?: boolean;
+  sequence?: { index: number; total: number };
+  onLevelComplete?: () => void;
+}
+
 /**
  * Owns Excalibur scenes and the menu graph between them. Scenes are recreated on
  * every switch so each starts clean with the data it was handed.
  */
 export class GameApp {
-  private readonly keys = new Set<string>();
   private readonly dev = import.meta.env.DEV;
+  private lastKey: string | null = null;
+  private counter = 0;
 
   constructor(
     private readonly engine: Engine,
@@ -31,15 +39,15 @@ export class GameApp {
   ) {}
 
   async start(options: StartOptions): Promise<void> {
-    if (options.startInEditor && options.initialLevel) {
-      this.prepare('editor', this.editorScene(options.initialLevel));
-      await this.engine.start();
-      await this.engine.goToScene('editor');
-      return;
-    }
-    this.prepare('title', this.titleScene());
+    const editor = options.startInEditor && options.initialLevel;
+    const scene = editor
+      ? this.editorScene(options.initialLevel as LevelData)
+      : this.titleScene();
+    const key = this.uniqueKey(editor ? 'editor' : 'title');
+    this.engine.addScene(key, scene);
+    this.lastKey = key;
     await this.engine.start();
-    await this.engine.goToScene('title');
+    await this.engine.goToScene(key);
   }
 
   // ---- menu navigation ------------------------------------------------------
@@ -56,11 +64,24 @@ export class GameApp {
     return this.show('options', this.optionsScene());
   }
 
+  showSequence(): Promise<void> {
+    return this.show('sequence', this.sequenceScene());
+  }
+
+  async playCampaign(): Promise<void> {
+    const entries = this.library.campaignEntries();
+    if (entries.length === 0) {
+      await this.showLevelSelect();
+      return;
+    }
+    await this.playCampaignAt(entries, 0);
+  }
+
   async playShipped(id: string): Promise<void> {
     try {
       const level = await this.library.loadShipped(id);
       this.settings.update({ lastLevelId: id });
-      await this.play(level);
+      await this.play(level, {});
     } catch (error) {
       console.error('failed to load level', error);
       await this.showLevelSelect();
@@ -69,16 +90,15 @@ export class GameApp {
 
   playDraft(id: string): Promise<void> {
     try {
-      const level = this.library.loadDraft(id);
-      return this.play(level);
+      return this.play(this.library.loadDraft(id), {});
     } catch (error) {
       console.error('failed to load draft', error);
       return this.showLevelSelect();
     }
   }
 
-  play(level: LevelData, fromEditor = false): Promise<void> {
-    return this.show('play', this.playScene(level, fromEditor));
+  play(level: LevelData, options: PlayOptions): Promise<void> {
+    return this.show('play', this.playScene(level, options));
   }
 
   edit(level: LevelData): Promise<void> {
@@ -90,19 +110,24 @@ export class GameApp {
   private titleScene(): TitleScene {
     return new TitleScene({
       dev: this.dev,
-      onPlay: () => void this.playLast(),
+      onPlay: () => void this.playCampaign(),
       onLevelSelect: () => void this.showLevelSelect(),
       onOptions: () => void this.showOptions(),
       onEditor: () => void this.editInitial(),
+      onSequence: () => void this.showSequence(),
     });
   }
 
   private levelSelectScene(): LevelSelectScene {
     return new LevelSelectScene({
-      shipped: this.library.shipped(),
+      devLevels: this.library.devLevels(),
+      communityLevels: this.library.communityLevels(),
       drafts: this.library.draftsList(),
+      hasCampaign: this.library.campaignEntries().length > 0,
       dev: this.dev,
+      onPlayCampaign: () => void this.playCampaign(),
       onPlayShipped: (id) => void this.playShipped(id),
+      onEditLevel: (id) => void this.editShipped(id),
       onPlayDraft: (id) => void this.playDraft(id),
       onEditDraft: (id) => void this.editDraft(id),
       onDeleteDraft: (id) => {
@@ -129,10 +154,23 @@ export class GameApp {
     });
   }
 
-  private playScene(level: LevelData, fromEditor: boolean): PlayScene {
+  private sequenceScene(): SequenceScene {
+    const main = this.library.mainSequence();
+    return new SequenceScene({
+      devLevels: this.library.devLevels(),
+      campaignName: main?.name ?? 'Main Campaign',
+      initial: main?.levels ?? [],
+      onSave: (levels, name) => this.saveSequence(levels, name),
+      onBack: () => void this.showTitle(),
+    });
+  }
+
+  private playScene(level: LevelData, options: PlayOptions): PlayScene {
     return new PlayScene(level, this.manifest, {
-      fromEditor,
+      fromEditor: options.fromEditor,
       showHud: this.settings.load().showHud,
+      sequence: options.sequence,
+      onLevelComplete: options.onLevelComplete,
       onOpenEditor: (edited) => void this.edit(edited),
       onLevelSelect: () => void this.showLevelSelect(),
       onTitle: () => void this.showTitle(),
@@ -141,36 +179,73 @@ export class GameApp {
 
   private editorScene(level: LevelData): EditorScene {
     return new EditorScene(level, this.manifest, {
-      onTestPlay: (tested) => void this.play(tested, true),
+      onTestPlay: (tested) => void this.play(tested, { fromEditor: true }),
       onMenu: () => void this.showTitle(),
       drafts: this.drafts,
+      onProjectSaved: () => void this.library.reload(),
     });
   }
 
   // ---- helpers --------------------------------------------------------------
 
-  private async playLast(): Promise<void> {
-    const shipped = this.library.shipped();
+  private async playCampaignAt(
+    entries: ReturnType<LevelLibrary['campaignEntries']>,
+    index: number,
+  ): Promise<void> {
+    if (index >= entries.length) {
+      await this.showLevelSelect();
+      return;
+    }
+    const entry = entries[index];
+    if (!entry) {
+      await this.showLevelSelect();
+      return;
+    }
+    try {
+      const level = await this.library.loadShipped(entry.id);
+      this.settings.update({ lastLevelId: entry.id });
+      await this.play(level, {
+        sequence: { index, total: entries.length },
+        onLevelComplete: () => void this.playCampaignAt(entries, index + 1),
+      });
+    } catch (error) {
+      console.error('campaign level failed to load', error);
+      await this.showLevelSelect();
+    }
+  }
+
+  private async saveSequence(
+    levels: string[],
+    name: string,
+  ): Promise<{ ok: boolean; message: string }> {
+    try {
+      const response = await fetch('/__sequences/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sequences: [{ id: 'main', name, levels }] }),
+      });
+      if (!response.ok) {
+        throw new Error(`server returned ${response.status}`);
+      }
+      await this.library.reload();
+      return { ok: true, message: `saved ${levels.length} level(s) to the campaign` };
+    } catch (error) {
+      return { ok: false, message: `save failed: ${(error as Error).message}` };
+    }
+  }
+
+  private async editInitial(): Promise<void> {
+    const shipped = this.library.devLevels();
     const last = this.settings.load().lastLevelId;
     const entry = shipped.find((level) => level.id === last) ?? shipped[0];
     if (!entry) {
       await this.showLevelSelect();
       return;
     }
-    await this.playShipped(entry.id);
+    await this.editShipped(entry.id);
   }
 
-  private editInitial(): Promise<void> {
-    const shipped = this.library.shipped();
-    const last = this.settings.load().lastLevelId;
-    const entry = shipped.find((level) => level.id === last) ?? shipped[0];
-    if (!entry) {
-      return this.showLevelSelect();
-    }
-    return this.playShippedForEdit(entry.id);
-  }
-
-  private async playShippedForEdit(id: string): Promise<void> {
+  private async editShipped(id: string): Promise<void> {
     try {
       await this.edit(await this.library.loadShipped(id));
     } catch (error) {
@@ -180,21 +255,27 @@ export class GameApp {
   }
 
   private editDraft(id: string): void {
-    const level = this.library.loadDraft(id);
-    void this.edit(level);
+    try {
+      void this.edit(this.library.loadDraft(id));
+    } catch (error) {
+      console.error('failed to open draft', error);
+      void this.showLevelSelect();
+    }
   }
 
-  private prepare(key: string, scene: Scene): void {
-    if (this.keys.has(key)) {
-      this.engine.removeScene(key);
-      this.keys.delete(key);
-    }
-    this.engine.addScene(key, scene);
-    this.keys.add(key);
+  private uniqueKey(base: string): string {
+    this.counter += 1;
+    return `${base}-${this.counter}`;
   }
 
   private async show(key: string, scene: Scene): Promise<void> {
-    this.prepare(key, scene);
-    await this.engine.goToScene(key);
+    const previous = this.lastKey;
+    const unique = this.uniqueKey(key);
+    this.engine.addScene(unique, scene);
+    this.lastKey = unique;
+    await this.engine.goToScene(unique);
+    if (previous && previous !== unique) {
+      this.engine.removeScene(previous);
+    }
   }
 }

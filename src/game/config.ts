@@ -10,7 +10,12 @@ export const TILE = 32;
 
 export const PHYSICS = {
   gravityY: 1500,
-  fixedFps: 120,
+  /**
+   * Fixed simulation rate. `0` disables the fixed step and uses the engine's
+   * natural variable timestep (smoother on high-refresh displays; the player
+   * controller is dt-correct either way).
+   */
+  fixedFps: 0,
 } as const;
 
 export const GRAVITY = PHYSICS.gravityY;

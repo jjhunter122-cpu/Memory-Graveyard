@@ -5,8 +5,10 @@ import type { LevelData } from './game/level/schema';
 import { GameApp } from './game/app';
 import {
   DraftStore,
+  EMPTY_SEQUENCES,
   LevelLibrary,
   validateLevelIndex,
+  validateSequences,
 } from './game/storage/levels';
 import { SettingsStore } from './game/storage/settings';
 import { safeLocalStorage } from './game/storage/storage';
@@ -22,18 +24,20 @@ async function fetchJson(url: string): Promise<unknown> {
 
 async function boot(): Promise<void> {
   const base = import.meta.env.BASE_URL;
-  const [manifestRaw, indexRaw] = await Promise.all([
+  const [manifestRaw, indexRaw, sequencesRaw] = await Promise.all([
     fetchJson(`${base}assets/manifest.json`),
     fetchJson(`${base}levels/index.json`),
+    fetchJson(`${base}levels/sequences.json`).catch(() => undefined),
   ]);
 
   const manifest = validateManifest(manifestRaw);
   const index = validateLevelIndex(indexRaw);
+  const sequences = sequencesRaw === undefined ? EMPTY_SEQUENCES : validateSequences(sequencesRaw);
 
   const storage = safeLocalStorage();
   const drafts = new DraftStore(storage);
   const settings = new SettingsStore(storage);
-  const library = new LevelLibrary(base, index, drafts);
+  const library = new LevelLibrary(base, index, drafts, sequences);
 
   const params = new URLSearchParams(window.location.search);
   let startInEditor = params.has('editor');
@@ -54,8 +58,9 @@ async function boot(): Promise<void> {
     backgroundColor: Color.fromHex(COLORS.background),
     // No external resources yet, so skip the "click to play" overlay.
     suppressPlayButton: true,
-    // Deterministic fixed step so the platformer feels identical on every machine.
-    fixedUpdateFps: PHYSICS.fixedFps,
+    // Fixed step is opt-in via config; variable step avoids judder on
+    // high-refresh displays.
+    ...(PHYSICS.fixedFps > 0 ? { fixedUpdateFps: PHYSICS.fixedFps } : {}),
     physics: {
       // The Arcade solver is Excalibur's simple AABB solver, built for platformers.
       solver: SolverStrategy.Arcade,

@@ -119,6 +119,25 @@ try {
       `y ${Math.round(beforeJumpY)} -> ${Math.round(jumpY)}`,
     );
 
+    // Collectables: the actor-level event carries the collider's owner.
+    const beforeCollect = await $(
+      `const s = window.graveyard.currentScene;
+       if (!s.built.memories.length) return null;
+       const p = s.player; const m = s.built.memories[0];
+       p.pos.setTo(m.pos.x, m.pos.y); p.vel.setTo(0, 0);
+       return s.collected;`,
+    );
+    await sleep(300);
+    const afterCollect = await $(
+      `const s = window.graveyard.currentScene;
+       return { collected: s.collected, counter: document.getElementById('collected')?.textContent };`,
+    );
+    check(
+      'collects a memory',
+      beforeCollect !== null && afterCollect.collected === beforeCollect + 1,
+      `collected ${beforeCollect} -> ${afterCollect.collected} (${afterCollect.counter})`,
+    );
+
     const shot = await wd('GET', `${sid}/screenshot`);
     fs.writeFileSync(SHOT, Buffer.from(shot.value, 'base64'));
     console.log(`screenshot: ${SHOT}`);

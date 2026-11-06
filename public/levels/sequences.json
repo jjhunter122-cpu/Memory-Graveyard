@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "sequences": [
+    {
+      "id": "main",
+      "name": "Main Campaign",
+      "levels": [
+        "test-course",
+        "first-test"
+      ]
+    }
+  ]
+}

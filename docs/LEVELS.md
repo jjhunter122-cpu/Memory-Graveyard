@@ -96,7 +96,7 @@ tile ids do not change:
 }
 ```
 
-## Level index
+## Level index & tiers
 
 The game discovers shipped levels through `public/levels/index.json`:
 
@@ -104,14 +104,36 @@ The game discovers shipped levels through `public/levels/index.json`:
 {
   "version": 1,
   "levels": [
-    { "id": "test-course", "name": "Test Course", "file": "levels/test-course.json" }
+    { "id": "test-course", "name": "Test Course", "file": "levels/test-course.json", "tier": "dev" }
   ]
 }
 ```
 
-`file` is relative to the app base. The title screen's **Play** uses
-`lastPlayed` (or the first entry); **Level select** lists every entry. Browser
-drafts are listed separately under *My levels*.
+`file` is relative to the app base. `tier` is `"dev"` or `"community"`
+(missing defaults to `"dev"`):
+
+- **dev** — appears under *Courses* and is eligible for the main campaign.
+- **community** — appears under *Community* only.
+
+The title's **Play campaign** uses `sequences.json`; **Level select** lists dev,
+community, and browser drafts separately.
+
+## Sequences (the campaign)
+
+`public/levels/sequences.json` orders the campaign:
+
+```jsonc
+{
+  "version": 1,
+  "sequences": [
+    { "id": "main", "name": "Main Campaign", "levels": ["test-course", "first-test"] }
+  ]
+}
+```
+
+Level ids that are missing from the index are skipped, so a sequence can be
+saved before every level exists. The **Edit campaign** dev screen reorders this
+and saves via the dev write-back (`POST /__sequences/save`).
 
 ## Saving a level (drafts, shipping)
 

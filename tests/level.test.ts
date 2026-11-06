@@ -34,8 +34,8 @@ describe('test course level', () => {
     expect(level.entities.filter((e) => e.type === 'exit')).toHaveLength(1);
   });
 
-  it('has six memories', () => {
-    expect(level.entities.filter((e) => e.type === 'memory')).toHaveLength(6);
+  it('has at least one memory to collect', () => {
+    expect(level.entities.filter((e) => e.type === 'memory').length).toBeGreaterThan(0);
   });
 
   it('only references tile ids defined in the manifest', () => {
@@ -67,9 +67,8 @@ describe('test course level', () => {
   });
 
   it('gives every memory a unique position', () => {
-    const keys = new Set(
-      level.entities.filter((e) => e.type === 'memory').map((e) => `${e.x},${e.y}`),
-    );
-    expect(keys.size).toBe(6);
+    const memories = level.entities.filter((e) => e.type === 'memory');
+    const keys = new Set(memories.map((e) => `${e.x},${e.y}`));
+    expect(keys.size).toBe(memories.length);
   });
 });

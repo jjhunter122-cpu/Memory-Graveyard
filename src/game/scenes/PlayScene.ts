@@ -9,13 +9,16 @@ import { Exit } from '../actors/Exit';
 import { CameraFollow } from '../camera/CameraFollow';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
+import { debugOverlay } from '../ui/DebugOverlay';
 
 export interface PlaySceneOptions {
   fromEditor?: boolean;
   showHud?: boolean;
+  sequence?: { index: number; total: number };
   onOpenEditor?: (level: LevelData) => void;
   onLevelSelect?: () => void;
   onTitle?: () => void;
+  onLevelComplete?: (level: LevelData) => void;
 }
 
 export class PlayScene extends Scene {
@@ -29,6 +32,7 @@ export class PlayScene extends Scene {
   private completed = false;
   private levelHeightPx = 0;
   private paused = false;
+  private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
@@ -56,6 +60,10 @@ export class PlayScene extends Scene {
 
   override onDeactivate(): void {
     document.removeEventListener('keydown', this.onKeyDown);
+    if (this.completeTimer !== null) {
+      clearTimeout(this.completeTimer);
+      this.completeTimer = null;
+    }
     this.setPaused(false);
     const button = document.getElementById('open-editor');
     if (button instanceof HTMLButtonElement) {
@@ -73,10 +81,12 @@ export class PlayScene extends Scene {
       this.built.groundProbe,
     );
     this.player.on('collisionstart', (event) => {
-      const other = event.other;
-      if (other instanceof Memory) {
-        this.collectMemory(other);
-      } else if (other instanceof Exit) {
+      // Actor-level collision events carry the geometry Collider; the actor is
+      // its `owner`.
+      const owner = event.other.owner;
+      if (owner instanceof Memory) {
+        this.collectMemory(owner);
+      } else if (owner instanceof Exit) {
         this.reachExit();
       }
     });
@@ -93,6 +103,17 @@ export class PlayScene extends Scene {
     }
     this.cameraFollow.update(this.player.pos, elapsed / 1000);
     this.checkFall();
+
+    const overlay = debugOverlay();
+    const fps = overlay.frame();
+    overlay.render({
+      FPS: fps.toFixed(0),
+      'frame ms': (1000 / Math.max(fps, 1)).toFixed(1),
+      velocity: `${this.player.vel.x.toFixed(0)}, ${this.player.vel.y.toFixed(0)}`,
+      grounded: String(this.player.controller.isGrounded),
+      level: this.level.name,
+      memories: `${this.collected}/${this.totalMemories}`,
+    });
   }
 
   override onPostUpdate(engine: Engine): void {
@@ -191,7 +212,14 @@ export class PlayScene extends Scene {
       return;
     }
     this.completed = true;
-    this.hud.toast('the graveyard releases you', 4000);
+    const inSequence = this.options.sequence !== undefined;
+    this.hud.toast(inSequence ? 'level complete' : 'the graveyard releases you', 1600);
+    if (this.options.onLevelComplete) {
+      this.completeTimer = setTimeout(() => {
+        this.completeTimer = null;
+        this.options.onLevelComplete?.(this.level);
+      }, 900);
+    }
   }
 
   private checkFall(): void {
