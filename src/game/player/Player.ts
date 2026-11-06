@@ -5,15 +5,23 @@ import {
   PLAYER_IGNORE_ONEWAY_GROUP,
 } from '../physics/collisionGroups';
 import { PlayerController, type PlayerInput } from './PlayerController';
+import type { GroundProbe } from '../level/loader';
+
+/**
+ * The Arcade solver does not report a ground contact on every physics step
+ * while resting, so a raw per-frame flag flaps. The tile-level `groundProbe`
+ * is the source of truth; a short event latch bridges the gaps.
+ */
+const GROUND_GRACE = 0.09;
 
 /** The living caretaker, now a proper platformer character. */
 export class Player extends Actor {
   readonly controller = new PlayerController();
 
-  private groundContact = false;
+  private groundTimer = 0;
   private dropTimer = 0;
 
-  constructor(x: number, y: number) {
+  constructor(x: number, y: number, private readonly groundProbe?: GroundProbe) {
     super({
       x,
       y,
@@ -29,7 +37,7 @@ export class Player extends Actor {
 
     const markGround = (side: Side): void => {
       if (side === Side.Bottom) {
-        this.groundContact = true;
+        this.groundTimer = GROUND_GRACE;
       }
     };
     this.on('collisionstart', (event) => markGround(event.side));
@@ -39,9 +47,19 @@ export class Player extends Actor {
   override onPreUpdate(engine: Engine, elapsed: number): void {
     const dt = elapsed / 1000;
 
-    // Consume last frame's ground contact, then clear it; the solver refills it.
-    this.controller.setGrounded(this.groundContact);
-    this.groundContact = false;
+    // Grounded if the tile probe says so, or a bottom contact fired recently.
+    const risen = this.vel.y < -1;
+    const ignoreOneWay = risen || this.dropTimer > 0;
+    const probeGrounded =
+      !risen && this.groundProbe
+        ? this.groundProbe(
+            this.pos.x,
+            this.pos.y + PLAYER.height / 2,
+            PLAYER.width / 2,
+            ignoreOneWay,
+          )
+        : false;
+    this.controller.setGrounded(probeGrounded || this.groundTimer > 0);
 
     const keyboard = engine.input.keyboard;
     const right = keyboard.isHeld(Keys.Right) || keyboard.isHeld(Keys.D);
@@ -64,6 +82,9 @@ export class Player extends Actor {
     const step = this.controller.update({ vx: this.vel.x, vy: this.vel.y }, input, dt);
     this.vel.setTo(step.vx, step.vy);
 
+    // A jump clears the latch immediately so it cannot re-ground while rising.
+    this.groundTimer = step.jumped ? 0 : Math.max(0, this.groundTimer - dt);
+
     if (step.dropThrough) {
       this.dropTimer = PLAYER.dropThroughTime;
     } else {
@@ -80,7 +101,7 @@ export class Player extends Actor {
   respawn(x: number, y: number): void {
     this.pos.setTo(x, y);
     this.vel.setTo(0, 0);
-    this.groundContact = false;
+    this.groundTimer = 0;
     this.dropTimer = 0;
     this.controller.reset();
   }

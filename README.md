@@ -25,10 +25,11 @@ pnpm dev
 Then open the printed local URL.
 
 ```bash
-pnpm test       # headless physics-decision / level-layout tests
+pnpm test       # headless logic / level-format tests
 pnpm typecheck
 pnpm build      # static production build in dist/
 pnpm preview
+pnpm smoke      # headless Firefox end-to-end check (see below)
 ```
 
 ## Controls
@@ -47,21 +48,27 @@ respawns you at the start.
 
 ```
 src/
-  main.ts                     boot: engine, fixed step, Arcade physics
+  main.ts                     boot: load level + manifest, engine, fixed step
   game/
     config.ts                 gameplay tunables + palette + tile size
     physics/collisionGroups.ts bitmask groups (solid / one-way / player / trigger)
     player/
       PlayerController.ts     pure run/jump/coyote/buffer decisions (testable)
-      Player.ts               Excalibur actor: input, body, one-way pass-through
+      Player.ts               Excalibur actor: input, body, tile ground probe
     actors/{Memory,Exit}.ts   passive trigger actors
     level/
-      geometry.ts             tile <-> pixel helpers
-      testLevel.ts            the M1 course as data
+      schema.ts               level JSON format (v1) + validator + round-trip
+      manifest.ts             asset manifest: tile id -> art + collision
+      tiles.ts                grid reshaping + horizontal run merging
+      loader.ts               level + manifest -> live actors
     camera/CameraFollow.ts    deadzone follow, clamped to level bounds
     scenes/PlayScene.ts       level assembly and loop
     systems/graveyard.ts      pure clamp + rank helpers
     ui/Hud.ts                 DOM overlay writer
+public/
+  levels/test-course.json     the test course, authored as data
+  assets/manifest.json        placeholder tile manifest
+scripts/smoke.mjs             headless Firefox end-to-end smoke test
 tests/                        headless vitest suite
 ```
 
@@ -74,18 +81,37 @@ tests/                        headless vitest suite
   coyote time and jump buffering live in `PlayerController`, which has no
   Excalibur imports and is replayed deterministically in tests. The engine only
   resolves collisions.
+- **Deterministic ground probe.** Arcade does not report a resting ground contact
+  on every step, so the player also probes the level's collision grid directly.
+  A short event latch bridges gaps; coyote time keeps jumps forgiving.
 - **One-way platforms via collision groups.** Arcade has no native one-way
   platforms, so the player swaps to a group that ignores one-way planks while
   rising or while dropping through (`S` + `Space`).
-- **Levels are data.** `testLevel.ts` describes solids, planks, spawn, exit and
-  memories in tile coordinates. This becomes a JSON format in the next milestone.
+- **Levels and art are data.** A level is versioned JSON; a manifest maps tile
+  ids to collision behaviour and (eventually) real art. Swapping in tilesets
+  later is a manifest-only change. See `docs/LEVELS.md`.
 - **DOM HUD over engine text** keeps labels crisp at any resolution.
+
+## Level format
+
+A level is a small JSON document (`public/levels/*.json`): a grid of tile ids
+per layer plus a list of entities (`spawn`, `memory`, `exit`, ...). Collision
+comes from each tile's definition in the manifest, not from the level, so
+painting a tile automatically gives it the right physics. Full details are in
+[`docs/LEVELS.md`](docs/LEVELS.md).
+
+## Testing
+
+- `pnpm test` — pure logic and the level/manifest formats in Vitest.
+- `pnpm smoke` — boots the real app in headless Firefox via WebDriver and checks
+  that the scene builds and the character moves and jumps. Requires a running
+  server (`pnpm dev`) and `geckodriver --port 4444`.
 
 ## Roadmap
 
 - [x] **M1 — Platformer core:** Arcade physics, player controller, camera,
   one-way planks, test course.
-- [ ] **M2 — Level pipeline:** JSON level schema, asset manifest, placeholder
+- [x] **M2 — Level pipeline:** JSON level schema, asset manifest, placeholder
   tiles, `LevelLoader`.
 - [ ] **M3 — Level designer:** in-browser editor (paint tiles, place entities,
   undo/redo, save/load, test-play).

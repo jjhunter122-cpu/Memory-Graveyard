@@ -26,7 +26,7 @@ export const PLAYER = {
   jumpSpeed: 470,
   maxFallSpeed: 980,
   jumpCutMultiplier: 0.45,
-  coyoteTime: 0.09,
+  coyoteTime: 0.04,
   jumpBufferTime: 0.12,
   apexVelocity: 130,
   apexGravityScale: 0.62,

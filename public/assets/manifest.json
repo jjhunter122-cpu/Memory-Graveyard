@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "tileSize": 32,
+  "tilesets": [
+    {
+      "name": "placeholder",
+      "tiles": [
+        {
+          "id": 1,
+          "name": "stone",
+          "collision": "solid",
+          "color": "#2a2f45",
+          "cap": "#3b4162"
+        },
+        {
+          "id": 2,
+          "name": "plank",
+          "collision": "oneway",
+          "color": "#8a754e"
+        }
+      ]
+    }
+  ]
+}

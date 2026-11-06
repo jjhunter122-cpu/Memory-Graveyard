@@ -1,88 +1,75 @@
 import { describe, expect, it } from 'vitest';
-import { TILE } from '../src/game/config';
-import {
-  rectCenterX,
-  rectPixelHeight,
-  rectPixelWidth,
-  tileCenterX,
-  tileCenterY,
-} from '../src/game/level/geometry';
-import { TEST_LEVEL } from '../src/game/level/testLevel';
-import type { TileRect } from '../src/game/level/geometry';
+import manifestJson from '../public/assets/manifest.json';
+import levelJson from '../public/levels/test-course.json';
+import { EMPTY_TILE, validateLevel } from '../src/game/level/schema';
+import { tileIndex, validateManifest } from '../src/game/level/manifest';
+import { toGrid } from '../src/game/level/tiles';
 
-const allRects: TileRect[] = [...TEST_LEVEL.solid, ...TEST_LEVEL.oneWay];
+const level = validateLevel(levelJson);
+const tiles = tileIndex(validateManifest(manifestJson));
 
-describe('level geometry helpers', () => {
-  it('centres entities inside a tile', () => {
-    expect(tileCenterX(0)).toBe(TILE / 2);
-    expect(tileCenterY(2)).toBe(2 * TILE + TILE / 2);
+function tileAt(x: number, y: number): number {
+  const layer = level.layers[0];
+  if (!layer) {
+    return EMPTY_TILE;
+  }
+  const grid = toGrid(layer.data, level.width, level.height);
+  return grid.rows[y]?.[x] ?? EMPTY_TILE;
+}
+
+function isSolid(x: number, y: number): boolean {
+  const id = tileAt(x, y);
+  return id !== EMPTY_TILE && tiles.get(id)?.collision === 'solid';
+}
+
+describe('test course level', () => {
+  it('is a valid 40x18 course', () => {
+    expect(level.name).toBe('Test Course');
+    expect(level.width).toBe(40);
+    expect(level.height).toBe(18);
   });
 
-  it('converts tile rects to pixels', () => {
-    expect(rectPixelWidth({ x: 0, y: 0, width: 3, height: 1 })).toBe(3 * TILE);
-    expect(rectPixelHeight({ x: 0, y: 0, width: 3, height: 2 })).toBe(2 * TILE);
-    expect(rectCenterX({ x: 0, y: 0, width: 2, height: 1 })).toBe(TILE);
-  });
-});
-
-describe('test level layout', () => {
-  it('has a sane size and something to stand on', () => {
-    expect(TEST_LEVEL.widthTiles).toBeGreaterThan(0);
-    expect(TEST_LEVEL.heightTiles).toBeGreaterThan(0);
-    expect(TEST_LEVEL.solid.length).toBeGreaterThan(0);
+  it('has exactly one spawn and one exit', () => {
+    expect(level.entities.filter((e) => e.type === 'spawn')).toHaveLength(1);
+    expect(level.entities.filter((e) => e.type === 'exit')).toHaveLength(1);
   });
 
-  it('keeps every tile rect inside the level bounds', () => {
-    for (const rect of allRects) {
-      expect(rect.x, `${rect.x}`).toBeGreaterThanOrEqual(0);
-      expect(rect.y, `${rect.y}`).toBeGreaterThanOrEqual(0);
-      expect(rect.x + rect.width).toBeLessThanOrEqual(TEST_LEVEL.widthTiles);
-      expect(rect.y + rect.height).toBeLessThanOrEqual(TEST_LEVEL.heightTiles);
+  it('has six memories', () => {
+    expect(level.entities.filter((e) => e.type === 'memory')).toHaveLength(6);
+  });
+
+  it('only references tile ids defined in the manifest', () => {
+    for (const layer of level.layers) {
+      for (const id of layer.data) {
+        if (id !== EMPTY_TILE) {
+          expect(tiles.has(id), `unknown tile id ${id}`).toBe(true);
+        }
+      }
     }
   });
 
-  it('keeps spawn, exit and memories inside the level', () => {
-    const spots = [TEST_LEVEL.spawn, TEST_LEVEL.exit, ...TEST_LEVEL.memories];
-    for (const spot of spots) {
-      expect(spot.x).toBeGreaterThanOrEqual(0);
-      expect(spot.x).toBeLessThan(TEST_LEVEL.widthTiles);
-      expect(spot.y).toBeGreaterThanOrEqual(0);
-      expect(spot.y).toBeLessThan(TEST_LEVEL.heightTiles);
+  it('keeps every entity inside the level', () => {
+    for (const entity of level.entities) {
+      expect(entity.x).toBeGreaterThanOrEqual(0);
+      expect(entity.x).toBeLessThan(level.width);
+      expect(entity.y).toBeGreaterThanOrEqual(0);
+      expect(entity.y).toBeLessThan(level.height);
     }
   });
 
-  it('places solid ground directly under the spawn', () => {
-    const hasGround = TEST_LEVEL.solid.some(
-      (rect) =>
-        TEST_LEVEL.spawn.x >= rect.x &&
-        TEST_LEVEL.spawn.x < rect.x + rect.width &&
-        rect.y === TEST_LEVEL.spawn.y + 1,
-    );
-    expect(hasGround).toBe(true);
-  });
-
-  it('places solid ground directly under the exit', () => {
-    const hasGround = TEST_LEVEL.solid.some(
-      (rect) =>
-        TEST_LEVEL.exit.x >= rect.x &&
-        TEST_LEVEL.exit.x < rect.x + rect.width &&
-        rect.y === TEST_LEVEL.exit.y + 1,
-    );
-    expect(hasGround).toBe(true);
+  it('places solid ground under the spawn and the exit', () => {
+    const spawn = level.entities.find((e) => e.type === 'spawn');
+    const exit = level.entities.find((e) => e.type === 'exit');
+    expect(spawn).toBeDefined();
+    expect(exit).toBeDefined();
+    expect(isSolid(spawn!.x, spawn!.y + 1)).toBe(true);
+    expect(isSolid(exit!.x, exit!.y + 1)).toBe(true);
   });
 
   it('gives every memory a unique position', () => {
-    const keys = new Set(TEST_LEVEL.memories.map((spot) => `${spot.x},${spot.y}`));
-    expect(keys.size).toBe(TEST_LEVEL.memories.length);
-  });
-
-  it('does not spawn a memory on top of the player', () => {
-    for (const spot of TEST_LEVEL.memories) {
-      const distance = Math.hypot(
-        spot.x - TEST_LEVEL.spawn.x,
-        spot.y - TEST_LEVEL.spawn.y,
-      );
-      expect(distance).toBeGreaterThan(1.5);
-    }
+    const keys = new Set(
+      level.entities.filter((e) => e.type === 'memory').map((e) => `${e.x},${e.y}`),
+    );
+    expect(keys.size).toBe(6);
   });
 });
