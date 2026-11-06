@@ -9,6 +9,8 @@ const game = new Engine({
   height: VIEW.height,
   displayMode: DisplayMode.FitScreen,
   backgroundColor: Color.fromHex(COLORS.background),
+  // No external resources yet, so skip the "click to play" overlay.
+  suppressPlayButton: true,
   // Deterministic fixed step so the platformer feels identical on every machine.
   fixedUpdateFps: PHYSICS.fixedFps,
   physics: {
@@ -19,9 +21,27 @@ const game = new Engine({
   antialiasing: true,
 });
 
-game.add('play', new PlayScene());
+game.addScene('play', new PlayScene());
 
-void game.start().then(() => {
-  // Runtime handle for debugging in the console.
-  (window as unknown as { graveyard: Engine }).graveyard = game;
-});
+// Stop the page from scrolling while playing.
+const prevent = new Set(['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+window.addEventListener(
+  'keydown',
+  (event) => {
+    if (prevent.has(event.code) || prevent.has(event.key)) {
+      event.preventDefault();
+    }
+  },
+  { passive: false },
+);
+
+void game
+  .start()
+  .then(() => game.goToScene('play'))
+  .then(() => {
+    // Runtime handle for debugging in the console.
+    (window as unknown as { graveyard: Engine }).graveyard = game;
+  })
+  .catch((error: unknown) => {
+    console.error('Failed to start Memory Graveyard', error);
+  });
