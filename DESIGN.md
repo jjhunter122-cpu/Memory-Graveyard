@@ -7,9 +7,9 @@
 
 ## 1. Game concept
 
-**Memory Graveyard** is a 2D side-scrolling horror chase-platformer set inside the Backrooms' memory.
+**Memory Graveyard** is a 2D side-scrolling horror chase-platformer set inside the Backrooms' buried memory — a place that has decayed into a graveyard.
 
-The Backrooms is the graveyard. You are an intruder inside a place made of forgotten rooms, and the thing following you is one of its discarded memories. It does not patrol randomly: it follows the route you have already run, including your jumps, drops and vertical climbs. Your own path becomes the threat.
+The Backrooms is the source, but the setting is no longer an endless yellow office. It is an overgrown cemetery of forgotten rooms: cracked stone, wet moss, iron gates, mausoleums, collapsed chapels, catacomb shafts and cold night air. The thing following you is one of the place's discarded memories. It does not patrol randomly: it follows the route you have already run, including your jumps, drops and vertical climbs. Your own path becomes the threat.
 
 The player's goal is simple: **reach the exit before the memory catches you.**
 
@@ -17,14 +17,14 @@ There is no combat. The game is about movement, route reading, momentum and the 
 
 ### High concept
 
-> A Backrooms chase-platformer where the level remembers your route, and something follows it.
+> A chase-platformer through a graveyard made of the Backrooms' buried memory, where the level remembers your route and something follows it.
 
 ### Design pillars
 
 1. **The route is the threat.** The monster follows the trail the player leaves, so every jump and detour matters.
 2. **Readable horror.** The game should feel tense, not confusing. The player must always understand where to go next.
 3. **Fair pressure.** Deaths should feel earned; retries should be fast.
-4. **The graveyard is the Backrooms.** The title is literal: the halls are the graveyard, and its memories are the things left behind.
+4. **The graveyard is the memory.** The Backrooms has rotted into a cemetery of forgotten rooms; the title is literal, and its memories are the things left behind.
 5. **Optional memory fragments.** Fragments add flavour and discovery, but never block the exit.
 
 ### Anti-goals
@@ -33,6 +33,20 @@ There is no combat. The game is about movement, route reading, momentum and the 
 - No combat system.
 - No slow, puzzle-first pacing during a chase.
 - No unreadable dark mazes where the player cannot identify the route.
+
+### Visual identity
+
+The visual target is a **run-down graveyard at night**, with the Backrooms surviving as an afterimage rather than the main scenery.
+
+- overgrown cemetery paths, dead grass, roots and rubble
+- cracked stone, wet moss, iron fences, gates, urns and mausoleums
+- collapsed chapel and catacomb interiors
+- candlelight, lanterns, fog and cold moonlight
+- occasional liminal interior — a gravekeeper's office, a forgotten waiting room — used as a contrast, not the whole game
+- muted, desaturated palette; strong silhouettes for the player and pursuer
+- 1-bit or high-contrast pixel art is a strong candidate, but the final palette is still open
+
+**Analog horror is a treatment, not the setting.** Grain, scanlines, flicker, cold colour grading and low-resolution texture can create the eerie recorded feeling. The core mood is loneliness and dread in a graveyard at night, not a literal VHS tape.
 
 ## 2. Core rules
 
@@ -102,10 +116,10 @@ This is a first-session estimate. Deaths and retries add time; a confident playe
 |---|---|---|---|
 | 0:00–0:30 | Title | Reads the premise, chooses **Play campaign** | Menus, campaign |
 | 0:30–2:00 | Tutorial level | Learns `A`/`D`, `Space`/`W`, `S` + `Space`; no monster; reaches exit | Movement, jumping, drop-through, exit |
-| 2:00–3:30 | First chase | Learns the 3-second grace, sees the pursuer wake, runs the first corridor; likely dies once and retries | Trail monster, threat HUD, death overlay, retry |
-| 3:30–5:30 | Vertical chase | Climbs a shaft, drops between floors, takes a higher route to avoid the trail; collects an optional fragment | Vertical level reading, one-way platforms, fragments |
-| 5:30–7:30 | Longer chase | Chooses between a safe lower route and a faster upper route; the pursuer rubber-bands when the gap grows | Route choice, momentum, catch-up tuning |
-| 7:30–9:30 | Finale | Long final dash with narrow platforms and a visible exit; one or two deaths are expected | Chase pacing, death/retry, exit |
+| 2:00–3:30 | First chase | Learns the 3-second grace, sees the pursuer wake, runs the first cemetery path; likely dies once and retries | Trail monster, threat HUD, death overlay, retry |
+| 3:30–5:30 | Vertical chase | Climbs a crypt shaft, drops between burial floors, takes a higher route to avoid the trail; collects an optional fragment | Vertical level reading, one-way platforms, fragments |
+| 5:30–7:30 | Longer chase | Chooses between a safe lower path and a faster upper route through the ruins; the pursuer rubber-bands when the gap grows | Route choice, momentum, catch-up tuning |
+| 7:30–9:30 | Finale | Long final dash through the cemetery gate with narrow platforms and a visible exit; one or two deaths are expected | Chase pacing, death/retry, exit |
 | 9:30–10:00 | Return / authoring | Replays a level from Level Select or opens the editor to inspect or change a room | Level Select, editor, test play |
 
 ### 10-minute experience goal
@@ -120,13 +134,13 @@ By the end of ten minutes the player should have:
 
 ## 5. Content plan
 
-| Level type | Purpose |
-|---|---|
-| Tutorial | Teach movement and exit with no pursuer |
-| First chase | Introduce grace, trail pursuit and death/retry |
-| Vertical chase | Teach climbing and dropping with pressure |
-| Longer chase | Test route choice and sustained movement |
-| Finale | Combine everything into one last escape |
+| Level type | Purpose | Visual beat |
+|---|---|---|
+| Tutorial | Teach movement and exit with no pursuer | Overgrown cemetery path |
+| First chase | Introduce grace, trail pursuit and death/retry | Collapsed chapel entrance |
+| Vertical chase | Teach climbing and dropping with pressure | Catacomb shaft |
+| Longer chase | Test route choice and sustained movement | Mausoleum and ruins |
+| Finale | Combine everything into one last escape | The iron cemetery gate |
 
 The editor supports shipped levels, drafts and dev-only custom sizes. Campaign levels are ordered by `sequences.json`; single levels played from Level Select return to Level Select when completed.
 
@@ -176,10 +190,12 @@ Gameplay is WASD-only. Arrow keys are intentionally unbound.
 
 ## 9. Pins / future work
 
-### Slopes
+### Slopes — short list
 - 45° stone slopes: left and right, one tile each.
 - 2-tile gentle stone slope, later.
-- Needs custom surface collision; Arcade has no native slopes.
+- Needs a custom surface resolver; Arcade has no native slopes.
+- Preferred tilesets should include slope pieces; graveyard/crypt ramps are part of the visual identity.
+- Test walking up/down, jumping onto, walking off, and monster trail traversal.
 
 ### Movement
 - Sprint and stamina.
@@ -202,7 +218,12 @@ Gameplay is WASD-only. Arrow keys are intentionally unbound.
 ### Assets
 - Replace all unlicensed TEMP files.
 - CC0 preferred; CC-BY acceptable with attribution.
-- Pixel-art side-view tiles, character, monster, props and slopes.
+- Search **graveyard / crypt / catacombs / ruins / gothic platformer** tilesets, not literal Backrooms.
+- Require **side-view 2D**, not top-down, isometric or 3D.
+- 16×16 or 32×32 native; slopes included where possible.
+- Props: gravestones, iron fences, gates, urns, candles, lanterns, doors, stairs, rubble, vines.
+- Pixel-art character, monster, tiles and props.
+- Kenney 1-Bit Pack is a style/character/UI candidate; it is not enough on its own for environment props.
 - Pixel filtering support is not implemented yet.
 
 ### Known issue
@@ -228,5 +249,6 @@ Gameplay is WASD-only. Arrow keys are intentionally unbound.
 - Should the monster ever become a full hunter AI instead of a trail follower?
 - How should multiple monsters share a level?
 - Should sprint be a core mechanic or a later difficulty modifier?
-- How much of the Backrooms should be literal versus implied?
+- How much of the Backrooms should remain literal versus implied?
+- Is the final look stark 1-bit monochrome, muted desaturated colour, or a mix?
 - What is the final name of the “memory” collectible if it returns as lore?
