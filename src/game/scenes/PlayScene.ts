@@ -22,6 +22,7 @@ export interface PlaySceneOptions {
   onLevelSelect?: () => void;
   onTitle?: () => void;
   onLevelComplete?: (level: LevelData) => void;
+  onSaveDraft?: (level: LevelData) => void;
 }
 
 export class PlayScene extends Scene {
@@ -29,8 +30,8 @@ export class PlayScene extends Scene {
   private readonly trail = new TrailRecorder(MONSTER.trailSpacing);
 
   private player!: Player;
-  private monster!: Monster;
-  private follower!: TrailFollower;
+  private monster?: Monster;
+  private follower?: TrailFollower;
   private cameraFollow!: CameraFollow;
   private built!: BuiltLevel;
 
@@ -69,7 +70,10 @@ export class PlayScene extends Scene {
     setMode('playing');
     this.hud.setLevelName(this.level.name);
     this.hud.setVisible(this.options.showHud ?? true);
-    this.hud.setThreat('DORMANT', 'dormant');
+    this.hud.setThreat(
+      this.built?.monsterSpawn ? 'DORMANT' : 'SAFE',
+      this.built?.monsterSpawn ? 'dormant' : 'calm',
+    );
     this.wireEditorButton();
     this.renderPauseMenu();
     this.clearDeath();
@@ -112,11 +116,13 @@ export class PlayScene extends Scene {
     });
     this.add(this.player);
 
-    this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
-    this.follower = new TrailFollower(this.built.monsterSpawn);
-    this.trail.reset(this.built.spawn);
-    this.graceRemaining = MONSTER.graceSeconds;
-    this.add(this.monster);
+    if (this.built.monsterSpawn) {
+      this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
+      this.follower = new TrailFollower(this.built.monsterSpawn);
+      this.trail.reset(this.built.spawn);
+      this.graceRemaining = MONSTER.graceSeconds;
+      this.add(this.monster);
+    }
 
     this.cameraFollow = new CameraFollow(this, this.built.widthPx, this.built.heightPx);
     this.cameraFollow.update(this.player.pos, 1);
@@ -129,29 +135,36 @@ export class PlayScene extends Scene {
     }
 
     const dt = elapsed / 1000;
-    this.trail.record(this.player.pos.x, this.player.pos.y);
+    const monster = this.monster;
+    const follower = this.follower;
+    let threatDistance: number | null = null;
 
-    let threatDistance = this.distanceBetweenMonsterAndPlayer();
+    if (monster && follower) {
+      this.trail.record(this.player.pos.x, this.player.pos.y);
+      threatDistance = this.distanceBetweenMonsterAndPlayer();
 
-    if (this.graceRemaining > 0) {
-      this.graceRemaining = Math.max(0, this.graceRemaining - dt);
-      this.hud.setThreat('DORMANT', 'dormant');
-      if (this.graceRemaining === 0) {
-        this.hud.toast('run.', 1200);
+      if (this.graceRemaining > 0) {
+        this.graceRemaining = Math.max(0, this.graceRemaining - dt);
+        this.hud.setThreat('DORMANT', 'dormant');
+        if (this.graceRemaining === 0) {
+          this.hud.toast('run.', 1200);
+        }
+      } else {
+        const speed =
+          threatDistance > MONSTER.catchUpDistance
+            ? MONSTER.catchUpSpeed
+            : MONSTER.speed;
+        follower.update(this.trail.all, speed, dt);
+        monster.pos.setTo(follower.pos.x, follower.pos.y);
+        threatDistance = this.distanceBetweenMonsterAndPlayer();
+        this.updateThreat(threatDistance);
+        if (threatDistance <= MONSTER.catchRadius) {
+          this.die();
+          return;
+        }
       }
     } else {
-      const speed =
-        threatDistance > MONSTER.catchUpDistance
-          ? MONSTER.catchUpSpeed
-          : MONSTER.speed;
-      this.follower.update(this.trail.all, speed, dt);
-      this.monster.pos.setTo(this.follower.pos.x, this.follower.pos.y);
-      threatDistance = this.distanceBetweenMonsterAndPlayer();
-      this.updateThreat(threatDistance);
-      if (threatDistance <= MONSTER.catchRadius) {
-        this.die();
-        return;
-      }
+      this.hud.setThreat('SAFE', 'calm');
     }
 
     this.cameraFollow.update(this.player.pos, dt);
@@ -169,8 +182,8 @@ export class PlayScene extends Scene {
       grounded: String(this.player.controller.isGrounded),
       level: this.level.name,
       memories: `${this.collected}/${this.totalMemories}`,
-      monster: `${threatDistance.toFixed(0)} px`,
-      grace: this.graceRemaining.toFixed(1),
+      monster: threatDistance === null ? '—' : `${threatDistance.toFixed(0)} px`,
+      grace: this.monster ? this.graceRemaining.toFixed(1) : '—',
     });
   }
 
@@ -245,12 +258,12 @@ export class PlayScene extends Scene {
 
   // ---- death ----------------------------------------------------------------
 
-  private die(): void {
+  private die(cause: 'caught' | 'fell' = 'caught'): void {
     if (this.dead || this.completed) {
       return;
     }
     this.dead = true;
-    this.hud.setThreat('CAUGHT', 'close');
+    this.hud.setThreat(cause === 'caught' ? 'CAUGHT' : 'LOST', 'close');
     this.engine.timescale = 0;
     document.body.classList.add('dead');
 
@@ -258,6 +271,31 @@ export class PlayScene extends Scene {
     if (!root) {
       return;
     }
+
+    if (this.options.fromEditor) {
+      root.innerHTML = `
+        <div class="menu-panel death-panel">
+          <h2 class="death-title">YOU DED :(</h2>
+          <p class="death-subtitle">A NEW MEMORY FOR THE GRAVEYARD</p>
+          <div class="menu-buttons">
+            <button id="death-retry" class="menu-button primary">Retry tested level</button>
+            <button id="death-save-title" class="menu-button">Save and Exit to Title</button>
+            <button id="death-editor" class="menu-button">Back to Editor</button>
+          </div>
+        </div>`;
+      root.querySelector('#death-retry')?.addEventListener('click', () => this.retry());
+      root.querySelector('#death-save-title')?.addEventListener('click', () => {
+        this.options.onSaveDraft?.(this.level);
+        this.leaveDeath();
+        this.options.onTitle?.();
+      });
+      root.querySelector('#death-editor')?.addEventListener('click', () => {
+        this.leaveDeath();
+        this.options.onOpenEditor?.(this.level);
+      });
+      return;
+    }
+
     root.innerHTML = `
       <div class="menu-panel death-panel">
         <h2 class="death-title">YOU DIED</h2>
@@ -310,6 +348,9 @@ export class PlayScene extends Scene {
   }
 
   private distanceBetweenMonsterAndPlayer(): number {
+    if (!this.monster) {
+      return Number.POSITIVE_INFINITY;
+    }
     return Math.hypot(
       this.player.pos.x - this.monster.pos.x,
       this.player.pos.y - this.monster.pos.y,
@@ -357,11 +398,15 @@ export class PlayScene extends Scene {
 
   private checkFall(): void {
     if (this.player.pos.y > this.levelHeightPx + LEVEL.killMargin) {
-      this.die();
+      this.die('fell');
     }
   }
 
   private restart(): void {
+    if (this.completeTimer !== null) {
+      clearTimeout(this.completeTimer);
+      this.completeTimer = null;
+    }
     for (const memory of this.built.memories) {
       if (memory.isKilled()) {
         memory.unkill();
@@ -370,13 +415,21 @@ export class PlayScene extends Scene {
     this.collected = 0;
     this.completed = false;
     this.graceRemaining = MONSTER.graceSeconds;
-    this.trail.reset(this.built.spawn);
-    this.follower.reset(this.built.monsterSpawn);
-    this.monster.pos.setTo(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
     this.cameraFollow.update(this.player.pos, 1);
     this.hud.setProgress(0, this.totalMemories);
-    this.hud.setThreat('DORMANT', 'dormant');
+
+    if (this.built.monsterSpawn) {
+      this.trail.reset(this.built.spawn);
+      this.follower?.reset(this.built.monsterSpawn);
+      this.monster?.pos.setTo(
+        this.built.monsterSpawn.x,
+        this.built.monsterSpawn.y,
+      );
+      this.hud.setThreat('DORMANT', 'dormant');
+    } else {
+      this.hud.setThreat('SAFE', 'calm');
+    }
     this.hud.toast('the rooms remember you', 1400);
   }
 }

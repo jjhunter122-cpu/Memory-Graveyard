@@ -3,8 +3,11 @@ import {
   addEntity,
   clearLevel,
   entitiesAt,
+  hasContentOutside,
   removeEntitiesAt,
   renameLevel,
+  resizeLevel,
+  setSkybox,
   setTile,
   tileAt,
 } from '../src/editor/ops';
@@ -76,5 +79,31 @@ describe('level operations', () => {
     const cleared = clearLevel(level);
     expect(cleared.entities).toHaveLength(0);
     expect(tileAt(cleared, 0, 0, 0)).toBe(EMPTY_TILE);
+  });
+
+  it('resizes from the top-left and keeps overlapping tiles', () => {
+    let level = setTile(makeLevel(), 0, 1, 1, 3);
+    level = addEntity(level, 'exit', 1, 1);
+    const bigger = resizeLevel(level, 6, 5);
+    expect(bigger.width).toBe(6);
+    expect(bigger.height).toBe(5);
+    expect(tileAt(bigger, 0, 1, 1)).toBe(3);
+    expect(bigger.entities).toEqual([{ type: 'exit', x: 1, y: 1 }]);
+  });
+
+  it('drops content outside a shrunken level', () => {
+    let level = setTile(makeLevel(), 0, 3, 2, 3);
+    level = addEntity(level, 'exit', 3, 2);
+    expect(hasContentOutside(level, 2, 2)).toBe(true);
+    const smaller = resizeLevel(level, 2, 2);
+    expect(smaller.entities).toHaveLength(0);
+    expect(tileAt(smaller, 0, 1, 1)).toBe(EMPTY_TILE);
+  });
+
+  it('sets and clears the skybox colour', () => {
+    const level = makeLevel();
+    const withSky = setSkybox(level, '#112233');
+    expect(withSky.skybox).toBe('#112233');
+    expect(setSkybox(withSky, undefined).skybox).toBeUndefined();
   });
 });

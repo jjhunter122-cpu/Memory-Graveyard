@@ -1,10 +1,11 @@
-import { Actor, CollisionType, Color, Keys, Side, Vector, type Engine } from 'excalibur';
+import { Actor, CollisionType, Color, Side, Vector, type Engine } from 'excalibur';
 import { PLAYER } from '../config';
+import { readPlayerInput } from '../input/actions';
 import {
   PLAYER_GROUP,
   PLAYER_IGNORE_ONEWAY_GROUP,
 } from '../physics/collisionGroups';
-import { PlayerController, type PlayerInput } from './PlayerController';
+import { PlayerController } from './PlayerController';
 import type { GroundProbe } from '../level/loader';
 
 /**
@@ -61,24 +62,7 @@ export class Player extends Actor {
         : false;
     this.controller.setGrounded(probeGrounded || this.groundTimer > 0);
 
-    const keyboard = engine.input.keyboard;
-    const right = keyboard.isHeld(Keys.Right) || keyboard.isHeld(Keys.D);
-    const left = keyboard.isHeld(Keys.Left) || keyboard.isHeld(Keys.A);
-    const jumpPressed =
-      keyboard.wasPressed(Keys.Space) ||
-      keyboard.wasPressed(Keys.W) ||
-      keyboard.wasPressed(Keys.Up);
-
-    const input: PlayerInput = {
-      axisX: (right ? 1 : 0) - (left ? 1 : 0),
-      jumpPressed,
-      jumpHeld:
-        keyboard.isHeld(Keys.Space) ||
-        keyboard.isHeld(Keys.W) ||
-        keyboard.isHeld(Keys.Up),
-      downHeld: keyboard.isHeld(Keys.Down) || keyboard.isHeld(Keys.S),
-    };
-
+    const input = readPlayerInput(engine.input.keyboard);
     const step = this.controller.update({ vx: this.vel.x, vy: this.vel.y }, input, dt);
     this.vel.setTo(step.vx, step.vy);
 

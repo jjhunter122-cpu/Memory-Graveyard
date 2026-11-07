@@ -21,7 +21,22 @@ describe('level schema', () => {
     const level = createLevel('Loop', 2, 2, 16);
     level.entities.push({ type: 'spawn', x: 0, y: 0 });
     level.layers[0]!.data[0] = 1;
+    level.skybox = '#102030';
     expect(parseLevel(serializeLevel(level))).toEqual(level);
+  });
+
+  it('rejects a malformed skybox colour', () => {
+    const bad = {
+      version: 1,
+      name: 'x',
+      tileSize: 32,
+      width: 1,
+      height: 1,
+      layers: [{ name: 't', collide: true, data: [1] }],
+      entities: [],
+      skybox: 'yellow',
+    };
+    expect(() => validateLevel(bad)).toThrow(/skybox/);
   });
 
   it('rejects an unknown version', () => {

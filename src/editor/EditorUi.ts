@@ -1,13 +1,17 @@
 import type { AssetManifest } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
+import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
 import type { DraftSummary } from '../game/storage/levels';
-import type { EditorEntityType, EditorTool } from './types';
+import type { EditorEntityType, EditorMode, EditorTool } from './types';
 
 export interface EditorUiCallbacks {
   onTool(tool: EditorTool): void;
+  onMode(mode: EditorMode): void;
   onTile(id: number): void;
   onEntity(type: EditorEntityType): void;
   onLayer(index: number): void;
+  onResize(width: number, height: number): void;
+  onSkybox(color: string | undefined): void;
   onToggleGrid(): void;
   onUndo(): void;
   onRedo(): void;
@@ -45,10 +49,17 @@ export class EditorUi {
   private readonly fileInput: HTMLInputElement;
   private readonly projectButton: HTMLButtonElement;
   private readonly tierInput: HTMLInputElement;
+  private readonly modeButton: HTMLButtonElement;
+  private readonly sizeSelect: HTMLSelectElement;
+  private readonly customSizeEl: HTMLElement;
+  private readonly widthInput: HTMLInputElement;
+  private readonly heightInput: HTMLInputElement;
+  private readonly skyboxInput: HTMLInputElement;
   private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
   private readonly countEl: HTMLElement;
   private readonly toastEl: HTMLElement;
+  private mode: EditorMode = 'tiles';
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
@@ -66,7 +77,7 @@ export class EditorUi {
         <div class="ed-group" role="group" aria-label="Tool">
           <button data-tool="paint">Paint</button>
           <button data-tool="erase">Erase</button>
-          <button data-tool="entity">Entity</button>
+          <button id="ed-mode" class="ed-toggle">Tiles</button>
         </div>
         <div class="ed-group" role="group" aria-label="History">
           <button id="ed-undo">Undo</button>
@@ -93,6 +104,18 @@ export class EditorUi {
           <div id="ed-tiles" class="ed-swatches"></div>
           <h3>Entities</h3>
           <div id="ed-entities" class="ed-swatches"></div>
+          <h3>Level settings</h3>
+          <select id="ed-size" class="ed-layer"></select>
+          <div id="ed-custom-size" class="ed-custom-size">
+            <input id="ed-width" class="ed-number" type="number" min="40" max="120" step="1" aria-label="Level width" />
+            <span>×</span>
+            <input id="ed-height" class="ed-number" type="number" min="18" max="60" step="1" aria-label="Level height" />
+            <button id="ed-size-apply">Apply</button>
+          </div>
+          <div class="ed-skybox">
+            <label>Skybox <input id="ed-skybox" type="color" value="#0a0b10" /></label>
+            <button id="ed-skybox-default">Default</button>
+          </div>
           <h3>Layer</h3>
           <select id="ed-layer" class="ed-layer"></select>
           <h3>My drafts</h3>
@@ -101,7 +124,7 @@ export class EditorUi {
         <div class="ed-statusbar">
           <span id="ed-cursor">tile —</span>
           <span id="ed-count">0 entities</span>
-          <span class="ed-hint">WASD / arrows pan · wheel zoom · left drag paints · Ctrl+Z undo · Ctrl+Y redo</span>
+          <span class="ed-hint">Q tiles/entities · WASD / arrows pan · wheel zoom · Ctrl+Z undo · Ctrl+Y redo</span>
         </div>
       </div>
       <div id="ed-toast" class="ed-toast" role="status"></div>
@@ -119,6 +142,12 @@ export class EditorUi {
     this.cursorEl = this.get<HTMLElement>('ed-cursor');
     this.countEl = this.get<HTMLElement>('ed-count');
     this.toastEl = this.get<HTMLElement>('ed-toast');
+    this.modeButton = this.get<HTMLButtonElement>('ed-mode');
+    this.sizeSelect = this.get<HTMLSelectElement>('ed-size');
+    this.customSizeEl = this.get<HTMLElement>('ed-custom-size');
+    this.widthInput = this.get<HTMLInputElement>('ed-width');
+    this.heightInput = this.get<HTMLInputElement>('ed-height');
+    this.skyboxInput = this.get<HTMLInputElement>('ed-skybox');
 
     const tilesHost = this.get<HTMLElement>('ed-tiles');
     for (const tile of tiles) {
@@ -147,6 +176,17 @@ export class EditorUi {
       option.textContent = layer.name;
       this.layerSelect.append(option);
     });
+
+    for (const preset of LEVEL_SIZE_PRESETS) {
+      const option = document.createElement('option');
+      option.value = keyForSize(preset.width, preset.height);
+      option.textContent = preset.label;
+      this.sizeSelect.append(option);
+    }
+    const customOption = document.createElement('option');
+    customOption.value = 'custom';
+    customOption.textContent = 'Custom (dev)';
+    this.sizeSelect.append(customOption);
 
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-tool]')) {
       const tool = button.dataset.tool as EditorTool;
@@ -177,6 +217,31 @@ export class EditorUi {
       this.callbacks.onLayer(Number(this.layerSelect.value)),
     );
     this.nameInput.addEventListener('change', () => this.callbacks.onRename(this.nameInput.value));
+
+    this.modeButton.addEventListener('click', () => {
+      this.callbacks.onMode(this.mode === 'tiles' ? 'entities' : 'tiles');
+    });
+    this.sizeSelect.addEventListener('change', () => {
+      const preset = presetForKey(this.sizeSelect.value);
+      if (preset) {
+        this.callbacks.onResize(preset.width, preset.height);
+      }
+    });
+    this.get('ed-size-apply').addEventListener('click', () => {
+      this.callbacks.onResize(
+        Number(this.widthInput.value),
+        Number(this.heightInput.value),
+      );
+    });
+    this.skyboxInput.addEventListener('change', () =>
+      this.callbacks.onSkybox(this.skyboxInput.value),
+    );
+    this.get('ed-skybox-default').addEventListener('click', () =>
+      this.callbacks.onSkybox(undefined),
+    );
+
+    this.setSize(level.width, level.height);
+    this.setSkybox(level.skybox);
   }
 
   private get<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -189,6 +254,13 @@ export class EditorUi {
 
   setDevMode(dev: boolean): void {
     this.projectButton.hidden = !dev;
+    this.customSizeEl.hidden = !dev;
+    const customOption = this.sizeSelect.querySelector<HTMLOptionElement>(
+      'option[value="custom"]',
+    );
+    if (customOption) {
+      customOption.hidden = !dev;
+    }
   }
 
   setDevMade(value: boolean): void {
@@ -205,6 +277,23 @@ export class EditorUi {
     for (const [key, button] of this.toolButtons) {
       button.classList.toggle('active', key === tool);
     }
+  }
+
+  setMode(mode: EditorMode): void {
+    this.mode = mode;
+    this.modeButton.textContent = mode === 'tiles' ? 'Tiles' : 'Entities';
+    this.modeButton.classList.toggle('active', mode === 'entities');
+  }
+
+  setSize(width: number, height: number): void {
+    const key = keyForSize(width, height);
+    this.sizeSelect.value = presetForKey(key) ? key : 'custom';
+    this.widthInput.value = String(width);
+    this.heightInput.value = String(height);
+  }
+
+  setSkybox(color: string | undefined): void {
+    this.skyboxInput.value = color ?? '#0a0b10';
   }
 
   setTile(id: number): void {

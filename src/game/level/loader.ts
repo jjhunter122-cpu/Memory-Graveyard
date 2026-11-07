@@ -78,7 +78,8 @@ export interface BuiltLevel {
   widthPx: number;
   heightPx: number;
   spawn: { x: number; y: number };
-  monsterSpawn: { x: number; y: number };
+  /** Undefined means the level has no pursuer. */
+  monsterSpawn?: { x: number; y: number };
   memories: Memory[];
   exits: Exit[];
   groundProbe: GroundProbe;
@@ -160,7 +161,23 @@ function addBackground(
   widthPx: number,
   heightPx: number,
   textures?: GameTextures,
+  skybox?: string,
 ): void {
+  if (skybox) {
+    scene.add(
+      new Actor({
+        x: widthPx / 2,
+        y: heightPx / 2,
+        width: widthPx,
+        height: heightPx,
+        color: Color.fromHex(skybox),
+        collisionType: CollisionType.PreventCollision,
+        z: -1,
+      }),
+    );
+    return;
+  }
+
   const background = textures?.background;
   if (!background) {
     scene.add(
@@ -200,6 +217,35 @@ function addBackground(
     );
     scene.add(actor);
   }
+}
+
+/**
+ * Invisible solid side walls. The top and bottom stay open; PlayScene's fall
+ * check is the kill plane below the level.
+ */
+function addWorldBounds(scene: Scene, widthPx: number, heightPx: number): void {
+  const thickness = 32;
+  const wall = (x: number, y: number, width: number, height: number): void => {
+    const actor = new Actor({
+      x,
+      y,
+      width,
+      height,
+      color: Color.fromHex('#000000'),
+      collisionType: CollisionType.Fixed,
+      collisionGroup: SOLID_GROUP,
+    });
+    actor.graphics.visible = false;
+    scene.add(actor);
+  };
+
+  wall(-thickness / 2, heightPx / 2, thickness, heightPx + thickness * 2);
+  wall(
+    widthPx + thickness / 2,
+    heightPx / 2,
+    thickness,
+    heightPx + thickness * 2,
+  );
 }
 
 /**
@@ -263,7 +309,8 @@ export function buildLevel(
     return false;
   };
 
-  addBackground(scene, widthPx, heightPx, textures);
+  addBackground(scene, widthPx, heightPx, textures, level.skybox);
+  addWorldBounds(scene, widthPx, heightPx);
 
   for (const layer of level.layers) {
     const grid = toGrid(layer.data, level.width, level.height);
@@ -335,7 +382,7 @@ export function buildLevel(
     widthPx,
     heightPx,
     spawn,
-    monsterSpawn: monsterSpawn ?? { x: spawn.x - 64, y: spawn.y },
+    monsterSpawn,
     memories,
     exits,
     groundProbe,

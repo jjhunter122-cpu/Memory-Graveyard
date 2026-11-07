@@ -83,6 +83,68 @@ export function renameLevel(level: LevelData, name: string): LevelData {
   return { ...level, name };
 }
 
+export function setSkybox(level: LevelData, skybox: string | undefined): LevelData {
+  if (level.skybox === skybox) {
+    return level;
+  }
+  const next = { ...level };
+  if (skybox === undefined) {
+    delete next.skybox;
+  } else {
+    next.skybox = skybox;
+  }
+  return next;
+}
+
+/** True when resizing to width x height would discard tiles or entities. */
+export function hasContentOutside(
+  level: LevelData,
+  width: number,
+  height: number,
+): boolean {
+  if (level.entities.some((entity) => entity.x >= width || entity.y >= height)) {
+    return true;
+  }
+  for (const layer of level.layers) {
+    for (let y = 0; y < level.height; y += 1) {
+      for (let x = 0; x < level.width; x += 1) {
+        if (x < width && y < height) {
+          continue;
+        }
+        if ((layer.data[y * level.width + x] ?? EMPTY_TILE) !== EMPTY_TILE) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/** Resizes in place from the top-left, preserving the overlapping content. */
+export function resizeLevel(level: LevelData, width: number, height: number): LevelData {
+  if (level.width === width && level.height === height) {
+    return level;
+  }
+  const layers = level.layers.map((layer) => {
+    const data = new Array<number>(width * height).fill(EMPTY_TILE);
+    const copyWidth = Math.min(width, level.width);
+    const copyHeight = Math.min(height, level.height);
+    for (let y = 0; y < copyHeight; y += 1) {
+      for (let x = 0; x < copyWidth; x += 1) {
+        data[y * width + x] = layer.data[y * level.width + x] ?? EMPTY_TILE;
+      }
+    }
+    return { ...layer, data };
+  });
+  return {
+    ...level,
+    width,
+    height,
+    layers,
+    entities: level.entities.filter((entity) => entity.x < width && entity.y < height),
+  };
+}
+
 /** Blanks every layer and removes all entities. */
 export function clearLevel(level: LevelData): LevelData {
   const empty = new Array(level.width * level.height).fill(EMPTY_TILE) as number[];

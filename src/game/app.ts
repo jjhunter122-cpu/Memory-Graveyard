@@ -19,7 +19,7 @@ export interface StartOptions {
 interface PlayOptions {
   fromEditor?: boolean;
   sequence?: { index: number; total: number };
-  onLevelComplete?: () => void;
+  onLevelComplete?: (level: LevelData) => void;
 }
 
 /**
@@ -100,7 +100,13 @@ export class GameApp {
   }
 
   play(level: LevelData, options: PlayOptions): Promise<void> {
-    return this.show('play', this.playScene(level, options));
+    const playOptions = options.fromEditor
+      ? {
+          ...options,
+          onLevelComplete: (tested: LevelData) => void this.edit(tested),
+        }
+      : options;
+    return this.show('play', this.playScene(level, playOptions));
   }
 
   edit(level: LevelData): Promise<void> {
@@ -173,6 +179,7 @@ export class GameApp {
       showHud: this.settings.load().showHud,
       sequence: options.sequence,
       onLevelComplete: options.onLevelComplete,
+      onSaveDraft: (level) => this.drafts.save(level),
       onOpenEditor: (edited) => void this.edit(edited),
       onLevelSelect: () => void this.showLevelSelect(),
       onTitle: () => void this.showTitle(),

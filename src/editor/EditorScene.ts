@@ -9,6 +9,7 @@ import {
 } from 'excalibur';
 import { VIEW } from '../game/config';
 import { tileIndex, type AssetManifest, type TileDef } from '../game/level/manifest';
+import { clampSize } from '../game/level/sizes';
 import {
   EMPTY_TILE,
   parseLevel,
@@ -19,13 +20,16 @@ import { History } from './history';
 import {
   addEntity,
   clearLevel,
+  hasContentOutside,
   removeEntitiesAt,
   renameLevel,
+  resizeLevel,
+  setSkybox,
   setTile,
   tileAt,
 } from './ops';
 import { EditorUi, type EditorUiCallbacks } from './EditorUi';
-import type { EditorEntityType, EditorTool } from './types';
+import type { EditorEntityType, EditorMode, EditorTool } from './types';
 import { DraftStore } from '../game/storage/levels';
 import { setMode } from '../game/ui/mode';
 import { slug } from '../game/util/slug';
@@ -56,6 +60,7 @@ export class EditorScene extends Scene {
   private readonly history: History<LevelData>;
 
   private tool: EditorTool = 'paint';
+  private mode: EditorMode = 'tiles';
   private selectedTile: number;
   private selectedEntity: EditorEntityType = 'memory';
   private activeLayer = 0;
@@ -67,13 +72,26 @@ export class EditorScene extends Scene {
   private readonly tileActors = new Map<string, Actor>();
   private entityActors: Actor[] = [];
   private cursor: Actor | null = null;
+  private skyboxActor: Actor | null = null;
 
   private painting = false;
   private lastPaintedIndex = -1;
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private subscriptions: Subscription[] = [];
   private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLSelectElement
+    ) {
+      return;
+    }
     const ctrl = event.ctrlKey || event.metaKey;
+    if (!ctrl && event.key.toLowerCase() === 'q') {
+      event.preventDefault();
+      this.setEditMode(this.mode === 'tiles' ? 'entities' : 'tiles');
+      return;
+    }
     if (!ctrl) {
       return;
     }
@@ -114,9 +132,12 @@ export class EditorScene extends Scene {
     if (root) {
       this.ui = new EditorUi(root, this.manifest, this.level, this.callbacks());
       this.ui.setTool(this.tool);
+      this.ui.setMode(this.mode);
       this.ui.setTile(this.selectedTile);
       this.ui.setEntity(this.selectedEntity);
       this.ui.setLayer(this.activeLayer);
+      this.ui.setSize(this.level.width, this.level.height);
+      this.ui.setSkybox(this.level.skybox);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
@@ -201,11 +222,20 @@ export class EditorScene extends Scene {
     if (native instanceof MouseEvent && native.button === 2) {
       return;
     }
-    if (this.tool === 'entity') {
-      const tile = this.tileUnderPointer();
-      if (tile) {
-        this.placeEntity(tile.x, tile.y);
+    const tile = this.tileUnderPointer();
+    if (!tile) {
+      return;
+    }
+    if (this.tool === 'erase') {
+      if (this.mode === 'entities') {
+        this.eraseEntityAt(tile.x, tile.y);
+      } else {
+        this.eraseTileAt(tile.x, tile.y);
       }
+      return;
+    }
+    if (this.mode === 'entities') {
+      this.placeEntity(tile.x, tile.y);
       return;
     }
     this.painting = true;
@@ -219,6 +249,9 @@ export class EditorScene extends Scene {
   }
 
   private paintAtPointerCurrent(): void {
+    if (this.mode !== 'tiles') {
+      return;
+    }
     const tile = this.tileUnderPointer();
     if (!tile) {
       return;
@@ -230,7 +263,7 @@ export class EditorScene extends Scene {
     this.lastPaintedIndex = index;
 
     if (this.tool === 'erase') {
-      this.eraseAt(tile.x, tile.y);
+      this.eraseTileAt(tile.x, tile.y);
     } else {
       const next = setTile(this.level, this.activeLayer, tile.x, tile.y, this.selectedTile);
       if (next !== this.level) {
@@ -256,6 +289,14 @@ export class EditorScene extends Scene {
       tile.x * this.tileSize + this.tileSize / 2,
       tile.y * this.tileSize + this.tileSize / 2,
     );
+    const previewColor =
+      this.mode === 'entities'
+        ? ENTITY_STYLE[this.selectedEntity].color
+        : (this.tiles.get(this.selectedTile)?.color ?? '#ffffff');
+    this.cursor.color = Color.fromHex(previewColor);
+    if (this.cursor.graphics.current) {
+      this.cursor.graphics.current.opacity = 0.35;
+    }
     this.ui?.setCursor(tile.x, tile.y);
   }
 
@@ -274,12 +315,18 @@ export class EditorScene extends Scene {
 
   // ---- editing --------------------------------------------------------------
 
-  private eraseAt(x: number, y: number): void {
-    let next = setTile(this.level, this.activeLayer, x, y, EMPTY_TILE);
-    next = removeEntitiesAt(next, x, y);
+  private eraseTileAt(x: number, y: number): void {
+    const next = setTile(this.level, this.activeLayer, x, y, EMPTY_TILE);
     if (next !== this.level) {
       this.commit(next);
       this.refreshTile(this.activeLayer, x, y);
+    }
+  }
+
+  private eraseEntityAt(x: number, y: number): void {
+    const next = removeEntitiesAt(this.level, x, y);
+    if (next !== this.level) {
+      this.commit(next);
       this.rebuildEntities();
     }
   }
@@ -444,9 +491,66 @@ export class EditorScene extends Scene {
       }
     });
     this.rebuildEntities();
+    this.refreshSkybox();
 
     this.ui?.setName(this.level.name);
     this.ui?.setEntityCount(this.level.entities.length);
+    this.ui?.setSize(this.level.width, this.level.height);
+    this.ui?.setSkybox(this.level.skybox);
+  }
+
+  private refreshSkybox(): void {
+    this.skyboxActor?.kill();
+    this.skyboxActor = null;
+    if (!this.level.skybox) {
+      return;
+    }
+    const widthPx = this.level.width * this.tileSize;
+    const heightPx = this.level.height * this.tileSize;
+    this.skyboxActor = new Actor({
+      x: widthPx / 2,
+      y: heightPx / 2,
+      width: widthPx,
+      height: heightPx,
+      color: Color.fromHex(this.level.skybox),
+      collisionType: CollisionType.PreventCollision,
+      z: -20,
+    });
+    this.add(this.skyboxActor);
+  }
+
+  private rebuildGrid(): void {
+    for (const actor of this.gridActors) {
+      actor.kill();
+    }
+    this.gridActors.length = 0;
+    this.buildGrid();
+  }
+
+  private setEditMode(mode: EditorMode): void {
+    this.mode = mode;
+    this.ui?.setMode(mode);
+  }
+
+  private resizeTo(width: number, height: number): void {
+    const size = clampSize(width, height, import.meta.env.DEV);
+    if (size.width === this.level.width && size.height === this.level.height) {
+      this.ui?.setSize(this.level.width, this.level.height);
+      return;
+    }
+    if (
+      hasContentOutside(this.level, size.width, size.height) &&
+      !window.confirm('Shrinking will cut off tiles or entities. Continue?')
+    ) {
+      this.ui?.setSize(this.level.width, this.level.height);
+      return;
+    }
+    this.commit(resizeLevel(this.level, size.width, size.height));
+    this.rebuildGrid();
+    this.refreshAll();
+    this.centerCamera();
+    this.ui?.setSize(this.level.width, this.level.height);
+    this.ui?.toast(`resized to ${this.level.width} × ${this.level.height}`);
   }
 
   private refreshTile(layerIndex: number, x: number, y: number): void {
@@ -512,17 +616,33 @@ export class EditorScene extends Scene {
         this.tool = tool;
         this.ui?.setTool(tool);
       },
+      onMode: (mode) => this.setEditMode(mode),
       onTile: (id) => {
         this.selectedTile = id;
+        this.tool = 'paint';
+        this.setEditMode('tiles');
+        this.ui?.setTool('paint');
         this.ui?.setTile(id);
       },
       onEntity: (type) => {
         this.selectedEntity = type;
+        this.tool = 'paint';
+        this.setEditMode('entities');
+        this.ui?.setTool('paint');
         this.ui?.setEntity(type);
       },
       onLayer: (index) => {
         this.activeLayer = index;
         this.refreshAll();
+      },
+      onResize: (width, height) => this.resizeTo(width, height),
+      onSkybox: (color) => {
+        const next = setSkybox(this.level, color);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshSkybox();
+          this.ui?.setSkybox(this.level.skybox);
+        }
       },
       onToggleGrid: () => {
         this.showGrid = !this.showGrid;

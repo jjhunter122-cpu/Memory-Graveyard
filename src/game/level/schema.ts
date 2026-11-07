@@ -34,6 +34,8 @@ export interface LevelData {
   height: number;
   layers: TileLayer[];
   entities: LevelEntity[];
+  /** Optional solid skybox colour behind the level. */
+  skybox?: string;
 }
 
 export class LevelValidationError extends Error {
@@ -126,7 +128,22 @@ export function validateLevel(raw: unknown): LevelData {
     return { type, x: entity.x, y: entity.y };
   });
 
-  return { version: LEVEL_VERSION, name, tileSize, width, height, layers, entities };
+  const result: LevelData = {
+    version: LEVEL_VERSION,
+    name,
+    tileSize,
+    width,
+    height,
+    layers,
+    entities,
+  };
+  if (obj.skybox !== undefined) {
+    if (typeof obj.skybox !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(obj.skybox)) {
+      throw new LevelValidationError('skybox must be a six-digit hex colour');
+    }
+    result.skybox = obj.skybox;
+  }
+  return result;
 }
 
 export function parseLevel(text: string): LevelData {

@@ -39,10 +39,15 @@ pnpm smoke      # headless Firefox end-to-end check (see below)
 
 | Action | Keyboard |
 | --- | --- |
-| Move | `A` `D` or `←` `→` |
-| Jump | `Space`, `W` or `↑` |
+| Move | `A` `D` |
+| Jump | `Space` or `W` |
 | Drop through a plank | `S` + `Space` |
 | Reset | `R` |
+| Pause | `Esc` |
+
+Gameplay is WASD-only; arrow keys are intentionally unbound. Reserved for later
+(not active yet): `Shift` sprint, `Ctrl` slide, `E` interact/hide, `F` hold
+breath.
 
 Every level is a chase. The pursuer wakes after a three-second grace period
 and follows the trail you leave behind — including your jumps and drops.
@@ -61,13 +66,15 @@ src/
     player/
       PlayerController.ts     pure run/jump/coyote/buffer decisions (testable)
       Player.ts               Excalibur actor: input, body, tile ground probe
+    input/actions.ts          WASD action map + reserved future keys
     chase/trail.ts            pure trail recorder + follower (testable)
     actors/{Monster,Memory,Exit}.ts  pursuer, optional fragment, level exit
     level/
       schema.ts               level JSON format (v1) + validator + round-trip
+      sizes.ts                editor size presets + dev caps
       manifest.ts             asset manifest: tile id -> art + collision
       tiles.ts                grid reshaping + horizontal run merging
-      loader.ts               level + manifest -> live actors
+      loader.ts               level + manifest -> live actors + world bounds
     camera/CameraFollow.ts    deadzone follow, clamped to level bounds
     scenes/PlayScene.ts       chase loop, grace, death/retry, completion
     systems/graveyard.ts      pure clamp helper
@@ -86,9 +93,13 @@ public/
   levels/sequences.json       the main campaign order
   levels/*.json               authored levels
   assets/manifest.json        placeholder tile manifest
+  assets/TEMP/                unlicensed stand-ins (gated, never ship)
 plugins/devLevels.ts          dev-only write-back (levels + sequences)
 scripts/smoke.mjs             headless Firefox end-to-end smoke test
 tests/                        headless vitest suite
+CREDITS.md                    asset, voice and tool attribution
+docs/ASSETS.md                art/audio targets, licence rules, review flow
+licenses/                     full licence texts (CC0, CC-BY)
 ```
 
 ### Key decisions
@@ -101,6 +112,12 @@ tests/                        headless vitest suite
   coyote time and jump buffering live in `PlayerController`, which has no
   Excalibur imports and is replayed deterministically in tests. The engine only
   resolves collisions.
+- **Optional pursuer.** A level with no `monster` entity has no chase at all;
+  the HUD shows `SAFE`. This lets tutorial and exploration levels exist without
+  faking a monster.
+- **Automatic side bounds.** Invisible solid walls close the left and right
+  edges of every level. The top stays open for vertical routes; falling below the
+  level is the kill plane.
 - **Trail-following pursuer.** The player's position is sampled into a
   distance-spaced polyline; the monster walks that line. It therefore follows
   every jump, drop and vertical shaft the player used without pathfinding. The
@@ -131,10 +148,10 @@ tests/                        headless vitest suite
 
 A level is a small JSON document (`public/levels/*.json`): a grid of tile ids
 per layer plus a list of entities (`spawn`, `monster`, `exit`, optional
-`memory` fragments, ...). Collision
-comes from each tile's definition in the manifest, not from the level, so
-painting a tile automatically gives it the right physics. Full details are in
-[`docs/LEVELS.md`](docs/LEVELS.md).
+`memory` fragments, ...). An optional `skybox` colour overrides the shared
+backdrop. Collision comes from each tile's definition in the manifest, not from
+the level, so painting a tile automatically gives it the right physics. Full
+details are in [`docs/LEVELS.md`](docs/LEVELS.md).
 
 ## Menus & flow
 
@@ -173,15 +190,25 @@ http://localhost:5173/?editor
 | --- | --- |
 | Pan | `W` `A` `S` `D` / arrow keys |
 | Zoom | mouse wheel |
-| Paint / erase | left-click-drag with the Paint / Erase tool |
-| Place entity | Entity tool, then click |
+| Paint / erase tile | Paint / Erase tool in **Tiles** mode |
+| Place / remove entity | Paint / Erase tool in **Entities** mode |
+| Swap tiles / entities | `Q` or the Tiles/Entities button |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or the buttons) |
 | Grid | Grid button |
 
-The toolbar has the tools, **New**, **Export**, **Import**, the **Dev Made**
-tier toggle, **Save draft**, **Save to project**, **Test play** and **Menu**.
-The left panel lists your **My drafts**. Editing operates on immutable
-snapshots, so undo/redo is exact.
+The toolbar has Paint, Erase, the Tiles/Entities mode toggle, **New**,
+**Export**, **Import**, the **Dev Made** tier toggle, **Save draft**, **Save to
+project**, **Test play** and **Menu**.
+
+The left panel has **Tiles**, **Entities**, **Level settings**, **Layer** and
+**My drafts**. Level settings includes the size presets (40×18 up to 80×36),
+dev-only custom sizes up to 120×60, and a skybox colour. Selecting a tile or
+entity switches mode automatically. Editing operates on immutable snapshots, so
+undo/redo is exact.
+
+Completing a **Test play** returns to the editor. Dying in test play shows the
+editor-specific **You Ded :(** overlay with Retry, Save and Exit to Title, and
+Back to Editor.
 
 ## Levels: tiers, drafts & shipping
 
@@ -201,6 +228,16 @@ The **campaign** is a `sequences.json` entry:
 ```jsonc
 { "version": 1, "sequences": [ { "id": "main", "name": "Main Campaign", "levels": ["test-course", "first-test"] } ] }
 ```
+
+## Assets & credits
+
+- [`CREDITS.md`](CREDITS.md) records every shipped asset and the voice
+  performer.
+- [`docs/ASSETS.md`](docs/ASSETS.md) defines the side-view, 32px pixel-art
+  targets, accepted licences, sprite sizes and candidate review process.
+- [`licenses/`](licenses/) holds the full licence texts (CC0 and CC-BY).
+- Unlicensed stand-ins live only in `public/assets/TEMP/` behind `TEMP_ASSETS`;
+  they must be replaced before release.
 
 ## Testing
 

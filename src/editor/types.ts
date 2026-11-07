@@ -1,6 +1,7 @@
 /** Editor-specific types. */
 
-export type EditorTool = 'paint' | 'erase' | 'entity';
+export type EditorTool = 'paint' | 'erase';
+export type EditorMode = 'tiles' | 'entities';
 
 export type EditorEntityType = 'spawn' | 'monster' | 'memory' | 'exit' | 'checkpoint';
 

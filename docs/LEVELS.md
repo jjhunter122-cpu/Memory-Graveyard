@@ -40,9 +40,11 @@ and swapping placeholder colours for real tilesets is a manifest-only change.
   `memory`, `exit`. Unknown types are ignored, so newer levels still load in
   older builds.
 - `spawn` is where the run begins. `monster` is where the pursuer waits during
-  the three-second grace period; if omitted it starts just behind `spawn`.
+  the three-second grace period. **If omitted, the level has no pursuer.**
 - `exit` is always open. `memory` is an optional fragment and never blocks the
   exit.
+- Levels also accept an optional `skybox` six-digit hex colour:
+  `"skybox": "#102030"`. When absent, the shared wallpaper/fog backdrop is used.
 - Coordinates are in **tiles**, not pixels. Rendering multiplies by `tileSize`.
 
 Levels are validated on load (`src/game/level/schema.ts`). A bad level throws a
