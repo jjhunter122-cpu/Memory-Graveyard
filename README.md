@@ -1,7 +1,8 @@
 # Memory Graveyard
 
-A 2D platformer where you play the caretaker of a graveyard, gathering the
-glowing memories of the dead before finding your way out. Built on the same
+A 2D chase-platformer set inside the Backrooms' memory. The halls are the
+graveyard now, and something made of its forgotten scraps is following the
+route you already ran. Reach the exit before it catches you. Built on the same
 stack as [drunk-panda](https://github.com/NatTuck/drunk-panda):
 
 - **Excalibur.js** 0.32 (Arcade physics solver)
@@ -43,8 +44,11 @@ pnpm smoke      # headless Firefox end-to-end check (see below)
 | Drop through a plank | `S` + `Space` |
 | Reset | `R` |
 
-Gather all six memories, then reach the green exit. Falling off the course
-respawns you at the start.
+Every level is a chase. The pursuer wakes after a three-second grace period
+and follows the trail you leave behind — including your jumps and drops.
+Memories are optional fragments; the green exit is always open. Falling off the
+course, or letting the trail catch up, ends the run with **A NEW MEMORY FOR THE
+GRAVEYARD** and a Retry option.
 
 ## Architecture
 
@@ -57,15 +61,16 @@ src/
     player/
       PlayerController.ts     pure run/jump/coyote/buffer decisions (testable)
       Player.ts               Excalibur actor: input, body, tile ground probe
-    actors/{Memory,Exit}.ts   passive trigger actors
+    chase/trail.ts            pure trail recorder + follower (testable)
+    actors/{Monster,Memory,Exit}.ts  pursuer, optional fragment, level exit
     level/
       schema.ts               level JSON format (v1) + validator + round-trip
       manifest.ts             asset manifest: tile id -> art + collision
       tiles.ts                grid reshaping + horizontal run merging
       loader.ts               level + manifest -> live actors
     camera/CameraFollow.ts    deadzone follow, clamped to level bounds
-    scenes/PlayScene.ts       level assembly, loop, pause, completion
-    systems/graveyard.ts      pure clamp + rank helpers
+    scenes/PlayScene.ts       chase loop, grace, death/retry, completion
+    systems/graveyard.ts      pure clamp helper
     app.ts                    menu graph + scene navigation + campaign
     menus/                    Title / LevelSelect / Options / Sequence (DOM)
     storage/                  index + tiers, drafts, sequences, settings
@@ -96,8 +101,15 @@ tests/                        headless vitest suite
   coyote time and jump buffering live in `PlayerController`, which has no
   Excalibur imports and is replayed deterministically in tests. The engine only
   resolves collisions.
+- **Trail-following pursuer.** The player's position is sampled into a
+  distance-spaced polyline; the monster walks that line. It therefore follows
+  every jump, drop and vertical shaft the player used without pathfinding. The
+  chase controller is deliberately separate from the monster's presentation so a
+  future hunter AI can replace the trail without touching levels or win/lose
+  flow.
 - **Collision owner pattern.** Actor collision events carry the geometry
-  `Collider`, not the actor — pickups test `event.other.owner instanceof Memory`.
+  `Collider`, not the actor — memory fragments test
+  `event.other.owner instanceof Memory`.
 - **Deterministic ground probe.** Arcade does not report a resting ground contact
   on every step, so the player also probes the level's collision grid directly.
   A short event latch bridges gaps; coyote time keeps jumps forgiving.
@@ -118,7 +130,8 @@ tests/                        headless vitest suite
 ## Level format
 
 A level is a small JSON document (`public/levels/*.json`): a grid of tile ids
-per layer plus a list of entities (`spawn`, `memory`, `exit`, ...). Collision
+per layer plus a list of entities (`spawn`, `monster`, `exit`, optional
+`memory` fragments, ...). Collision
 comes from each tile's definition in the manifest, not from the level, so
 painting a tile automatically gives it the right physics. Full details are in
 [`docs/LEVELS.md`](docs/LEVELS.md).
@@ -131,12 +144,14 @@ Boot ─► Title ─► Play campaign ─► Level 1 ─► Level 2 ─► …
              ├► Options
              └► Edit campaign (dev)   Level editor (dev)
 Play:  Esc ─► Pause  (Resume / Restart / Level select / Title)
+       Caught/fall ─► You Died  (Retry / Level select / Title)
 ```
 
 The title's **Play campaign** runs the shipped **main campaign** — the ordered
-list of **Dev Made** levels from `public/levels/sequences.json`. Completing a
-level (all memories + exit) shows *level complete* and advances; the last level
-returns to Level select.
+list of **Dev Made** levels from `public/levels/sequences.json`. Touching the
+exit completes the level and advances; memories are optional. The last level
+returns to Level select. Being caught, or falling off the level, ends the run
+with a Retry overlay.
 
 **Level select** is split into **Courses** (dev-made), **Community**, and
 **My levels** (browser drafts), with a **Play campaign** button when a campaign
@@ -191,8 +206,8 @@ The **campaign** is a `sequences.json` entry:
 
 - `pnpm test` — pure logic, level/manifest formats, tiers and sequences in Vitest.
 - `pnpm smoke` — boots the real app in headless Firefox via WebDriver and checks
-  that the scene builds, the character moves and jumps, and a memory is
-  collected. Requires a running server (`pnpm dev`) and `geckodriver --port 4444`.
+  that the scene builds and the character moves and jumps. Requires a running
+  server (`pnpm dev`) and `geckodriver --port 4444`.
 
 Press **`F3`** in-game for the debug overlay (FPS, frame time, velocity).
 
@@ -208,5 +223,9 @@ Press **`F3`** in-game for the debug overlay (FPS, frame time, velocity).
   Pause → Options, level registry, drafts library, dev write-back.
 - [x] **M4.5 — Polish & authoring:** collectable/exit collision fix, variable
   timestep + `F3` overlay, Dev Made / community tiers, main campaign sequences.
-- [ ] **M5 — Asset integration:** drop real tilesets into the manifest
-  *(pinned until assets are ready)*.
+- [~] **M5 — Asset integration:** temporary wallpaper/stone textures wired in
+  through `TEMP_ASSETS`; real licensed tilesets still pending.
+- [x] **M6 — Chase identity:** optional memories, always-open exit, trail-following
+  monster with grace period, threat HUD, death/retry overlay.
+- [ ] **M6.5 — Chase polish:** longer/vertical chase levels, sprint/stamina,
+  slide/vault, monster AI upgrade, atmosphere pass.

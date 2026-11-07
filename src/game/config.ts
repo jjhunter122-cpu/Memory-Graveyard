@@ -46,6 +46,31 @@ export const MEMORY = {
   color: '#7ce7ff',
 } as const;
 
+/**
+ * The thing that remembers you. It follows the trail the player already walked,
+ * so it can traverse every jump and drop the player used without pathfinding.
+ */
+export const MONSTER = {
+  width: 26,
+  height: 48,
+  color: '#2a0c14',
+  /** Normal trail-following speed. Slightly slower than the player's run. */
+  speed: 170,
+  /** Speed used when the player has opened too much distance. */
+  catchUpSpeed: 255,
+  /** Distance at which the monster starts closing the gap faster. */
+  catchUpDistance: 380,
+  /** Touching within this distance ends the run. */
+  catchRadius: 22,
+  /** Seconds of stillness before the trail becomes active. */
+  graceSeconds: 3,
+  /** Minimum spacing between recorded trail points, in pixels. */
+  trailSpacing: 10,
+  /** Threat readout thresholds, in pixels. */
+  nearDistance: 420,
+  closeDistance: 220,
+} as const;
+
 export const COLORS = {
   background: '#0a0b10',
   fog: '#12121c',

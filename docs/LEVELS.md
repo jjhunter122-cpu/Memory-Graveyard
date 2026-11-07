@@ -26,17 +26,23 @@ and swapping placeholder colours for real tilesets is a manifest-only change.
     }
   ],
   "entities": [
-    { "type": "spawn",  "x": 3,  "y": 14 },
-    { "type": "memory", "x": 10, "y": 11 },
-    { "type": "exit",   "x": 38, "y": 14 }
+    { "type": "spawn",   "x": 3,  "y": 14 },
+    { "type": "monster", "x": 1,  "y": 14 },
+    { "type": "memory",  "x": 10, "y": 11 },
+    { "type": "exit",    "x": 38, "y": 14 }
   ]
 }
 ```
 
 - `data` is row-major and must contain exactly `width * height` entries.
 - `-1` (`EMPTY_TILE`) means "nothing here".
-- Entity `x`/`y` are **tile coordinates**. Known types: `spawn`, `memory`,
-  `exit`. Unknown types are ignored, so newer levels still load in older builds.
+- Entity `x`/`y` are **tile coordinates**. Known types: `spawn`, `monster`,
+  `memory`, `exit`. Unknown types are ignored, so newer levels still load in
+  older builds.
+- `spawn` is where the run begins. `monster` is where the pursuer waits during
+  the three-second grace period; if omitted it starts just behind `spawn`.
+- `exit` is always open. `memory` is an optional fragment and never blocks the
+  exit.
 - Coordinates are in **tiles**, not pixels. Rendering multiplies by `tileSize`.
 
 Levels are validated on load (`src/game/level/schema.ts`). A bad level throws a

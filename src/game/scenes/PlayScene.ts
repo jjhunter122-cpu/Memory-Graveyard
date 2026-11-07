@@ -1,5 +1,5 @@
 import { Keys, Scene, type Engine } from 'excalibur';
-import { LEVEL } from '../config';
+import { LEVEL, MONSTER } from '../config';
 import type { LevelData } from '../level/schema';
 import type { AssetManifest } from '../level/manifest';
 import type { GameTextures } from '../assets';
@@ -7,6 +7,8 @@ import { buildLevel, type BuiltLevel } from '../level/loader';
 import { Player } from '../player/Player';
 import { Memory } from '../actors/Memory';
 import { Exit } from '../actors/Exit';
+import { Monster } from '../actors/Monster';
+import { TrailFollower, TrailRecorder } from '../chase/trail';
 import { CameraFollow } from '../camera/CameraFollow';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
@@ -24,18 +26,30 @@ export interface PlaySceneOptions {
 
 export class PlayScene extends Scene {
   private readonly hud = new Hud();
+  private readonly trail = new TrailRecorder(MONSTER.trailSpacing);
 
   private player!: Player;
+  private monster!: Monster;
+  private follower!: TrailFollower;
   private cameraFollow!: CameraFollow;
   private built!: BuiltLevel;
 
   private collected = 0;
   private completed = false;
+  private dead = false;
+  private graceRemaining: number = MONSTER.graceSeconds;
   private levelHeightPx = 0;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (this.dead) {
+      if (event.key === 'r' || event.key === 'R' || event.key === 'Enter') {
+        event.preventDefault();
+        this.retry();
+      }
+      return;
+    }
     if (event.key === 'Escape') {
       event.preventDefault();
       this.togglePause();
@@ -55,8 +69,10 @@ export class PlayScene extends Scene {
     setMode('playing');
     this.hud.setLevelName(this.level.name);
     this.hud.setVisible(this.options.showHud ?? true);
+    this.hud.setThreat('DORMANT', 'dormant');
     this.wireEditorButton();
     this.renderPauseMenu();
+    this.clearDeath();
     document.addEventListener('keydown', this.onKeyDown);
   }
 
@@ -67,6 +83,8 @@ export class PlayScene extends Scene {
       this.completeTimer = null;
     }
     this.setPaused(false);
+    this.clearDeath();
+    this.engine.timescale = 1;
     const button = document.getElementById('open-editor');
     if (button instanceof HTMLButtonElement) {
       button.onclick = null;
@@ -94,17 +112,53 @@ export class PlayScene extends Scene {
     });
     this.add(this.player);
 
+    this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
+    this.follower = new TrailFollower(this.built.monsterSpawn);
+    this.trail.reset(this.built.spawn);
+    this.graceRemaining = MONSTER.graceSeconds;
+    this.add(this.monster);
+
     this.cameraFollow = new CameraFollow(this, this.built.widthPx, this.built.heightPx);
     this.cameraFollow.update(this.player.pos, 1);
     this.hud.setProgress(0, this.built.memories.length);
   }
 
   override onPreUpdate(_engine: Engine, elapsed: number): void {
-    if (this.paused) {
+    if (this.paused || this.dead) {
       return;
     }
-    this.cameraFollow.update(this.player.pos, elapsed / 1000);
+
+    const dt = elapsed / 1000;
+    this.trail.record(this.player.pos.x, this.player.pos.y);
+
+    let threatDistance = this.distanceBetweenMonsterAndPlayer();
+
+    if (this.graceRemaining > 0) {
+      this.graceRemaining = Math.max(0, this.graceRemaining - dt);
+      this.hud.setThreat('DORMANT', 'dormant');
+      if (this.graceRemaining === 0) {
+        this.hud.toast('run.', 1200);
+      }
+    } else {
+      const speed =
+        threatDistance > MONSTER.catchUpDistance
+          ? MONSTER.catchUpSpeed
+          : MONSTER.speed;
+      this.follower.update(this.trail.all, speed, dt);
+      this.monster.pos.setTo(this.follower.pos.x, this.follower.pos.y);
+      threatDistance = this.distanceBetweenMonsterAndPlayer();
+      this.updateThreat(threatDistance);
+      if (threatDistance <= MONSTER.catchRadius) {
+        this.die();
+        return;
+      }
+    }
+
+    this.cameraFollow.update(this.player.pos, dt);
     this.checkFall();
+    if (this.dead) {
+      return;
+    }
 
     const overlay = debugOverlay();
     const fps = overlay.frame();
@@ -115,11 +169,13 @@ export class PlayScene extends Scene {
       grounded: String(this.player.controller.isGrounded),
       level: this.level.name,
       memories: `${this.collected}/${this.totalMemories}`,
+      monster: `${threatDistance.toFixed(0)} px`,
+      grace: this.graceRemaining.toFixed(1),
     });
   }
 
   override onPostUpdate(engine: Engine): void {
-    if (this.paused) {
+    if (this.paused || this.dead) {
       return;
     }
     if (engine.input.keyboard.wasPressed(Keys.R)) {
@@ -174,6 +230,9 @@ export class PlayScene extends Scene {
   }
 
   private togglePause(): void {
+    if (this.dead) {
+      return;
+    }
     this.setPaused(!this.paused);
   }
 
@@ -184,10 +243,87 @@ export class PlayScene extends Scene {
     document.getElementById('pause-ui')?.classList.toggle('show', paused);
   }
 
+  // ---- death ----------------------------------------------------------------
+
+  private die(): void {
+    if (this.dead || this.completed) {
+      return;
+    }
+    this.dead = true;
+    this.hud.setThreat('CAUGHT', 'close');
+    this.engine.timescale = 0;
+    document.body.classList.add('dead');
+
+    const root = document.getElementById('death-ui');
+    if (!root) {
+      return;
+    }
+    root.innerHTML = `
+      <div class="menu-panel death-panel">
+        <h2 class="death-title">YOU DIED</h2>
+        <p class="death-subtitle">A NEW MEMORY FOR THE GRAVEYARD</p>
+        <div class="menu-buttons">
+          <button id="death-retry" class="menu-button primary">Retry</button>
+          <button id="death-levels" class="menu-button">Level select</button>
+          <button id="death-title" class="menu-button">Title</button>
+        </div>
+      </div>`;
+    root.querySelector('#death-retry')?.addEventListener('click', () => this.retry());
+    root.querySelector('#death-levels')?.addEventListener('click', () => {
+      this.leaveDeath();
+      this.options.onLevelSelect?.();
+    });
+    root.querySelector('#death-title')?.addEventListener('click', () => {
+      this.leaveDeath();
+      this.options.onTitle?.();
+    });
+  }
+
+  private retry(): void {
+    this.leaveDeath();
+    this.restart();
+  }
+
+  private leaveDeath(): void {
+    this.dead = false;
+    this.engine.timescale = 1;
+    document.body.classList.remove('dead');
+    const root = document.getElementById('death-ui');
+    if (root) {
+      root.innerHTML = '';
+    }
+  }
+
+  private clearDeath(): void {
+    this.dead = false;
+    document.body.classList.remove('dead');
+    const root = document.getElementById('death-ui');
+    if (root) {
+      root.innerHTML = '';
+    }
+  }
+
   // ---- gameplay -------------------------------------------------------------
 
   private get totalMemories(): number {
     return this.built.memories.length;
+  }
+
+  private distanceBetweenMonsterAndPlayer(): number {
+    return Math.hypot(
+      this.player.pos.x - this.monster.pos.x,
+      this.player.pos.y - this.monster.pos.y,
+    );
+  }
+
+  private updateThreat(distance: number): void {
+    if (distance <= MONSTER.closeDistance) {
+      this.hud.setThreat('CLOSE', 'close');
+    } else if (distance <= MONSTER.nearDistance) {
+      this.hud.setThreat('NEAR', 'near');
+    } else {
+      this.hud.setThreat('CALM', 'calm');
+    }
   }
 
   private collectMemory(memory: Memory): void {
@@ -198,24 +334,19 @@ export class PlayScene extends Scene {
     this.collected += 1;
     this.hud.setProgress(this.collected, this.totalMemories);
     if (this.collected >= this.totalMemories) {
-      this.hud.toast('all memories gathered — find the way out', 2400);
+      this.hud.toast('all fragments found — keep moving', 1800);
     } else {
       this.hud.toast('a memory surfaces', 900);
     }
   }
 
   private reachExit(): void {
-    if (this.completed) {
-      return;
-    }
-    if (this.collected < this.totalMemories) {
-      const remaining = this.totalMemories - this.collected;
-      this.hud.toast(`the way out is sealed — ${remaining} memories remain`, 1600);
+    if (this.completed || this.dead) {
       return;
     }
     this.completed = true;
     const inSequence = this.options.sequence !== undefined;
-    this.hud.toast(inSequence ? 'level complete' : 'the graveyard releases you', 1600);
+    this.hud.toast(inSequence ? 'you escaped the memory' : 'the memory lets you go', 1600);
     if (this.options.onLevelComplete) {
       this.completeTimer = setTimeout(() => {
         this.completeTimer = null;
@@ -226,14 +357,8 @@ export class PlayScene extends Scene {
 
   private checkFall(): void {
     if (this.player.pos.y > this.levelHeightPx + LEVEL.killMargin) {
-      this.respawnPlayer();
-      this.hud.toast('you slipped into the dark', 1400);
+      this.die();
     }
-  }
-
-  private respawnPlayer(): void {
-    this.player.respawn(this.built.spawn.x, this.built.spawn.y);
-    this.cameraFollow.update(this.player.pos, 1);
   }
 
   private restart(): void {
@@ -244,8 +369,14 @@ export class PlayScene extends Scene {
     }
     this.collected = 0;
     this.completed = false;
+    this.graceRemaining = MONSTER.graceSeconds;
+    this.trail.reset(this.built.spawn);
+    this.follower.reset(this.built.monsterSpawn);
+    this.monster.pos.setTo(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
+    this.player.respawn(this.built.spawn.x, this.built.spawn.y);
+    this.cameraFollow.update(this.player.pos, 1);
     this.hud.setProgress(0, this.totalMemories);
-    this.respawnPlayer();
-    this.hud.toast('the dead settle back in', 1200);
+    this.hud.setThreat('DORMANT', 'dormant');
+    this.hud.toast('the rooms remember you', 1400);
   }
 }

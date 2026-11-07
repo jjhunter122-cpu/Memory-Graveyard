@@ -78,6 +78,7 @@ export interface BuiltLevel {
   widthPx: number;
   heightPx: number;
   spawn: { x: number; y: number };
+  monsterSpawn: { x: number; y: number };
   memories: Memory[];
   exits: Exit[];
   groundProbe: GroundProbe;
@@ -296,6 +297,7 @@ export function buildLevel(
 
   const memories: Memory[] = [];
   const exits: Exit[] = [];
+  let monsterSpawn: { x: number; y: number } | undefined;
   let spawn = {
     x: tileCenter(Math.floor(level.width / 2), tileSize),
     y: tileCenter(Math.floor(level.height / 2), tileSize),
@@ -320,13 +322,24 @@ export function buildLevel(
         scene.add(exit);
         break;
       }
+      case 'monster':
+        monsterSpawn = { x, y };
+        break;
       default:
         // Unknown entity types are ignored for forward compatibility.
         break;
     }
   }
 
-  return { widthPx, heightPx, spawn, memories, exits, groundProbe };
+  return {
+    widthPx,
+    heightPx,
+    spawn,
+    monsterSpawn: monsterSpawn ?? { x: spawn.x - 64, y: spawn.y },
+    memories,
+    exits,
+    groundProbe,
+  };
 }
 
 function makeGrid(width: number, height: number): boolean[][] {

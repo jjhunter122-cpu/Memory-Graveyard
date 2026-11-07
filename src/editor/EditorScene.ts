@@ -43,6 +43,7 @@ const MAX_ZOOM = 3;
 
 const ENTITY_STYLE: Record<EditorEntityType, { color: string; radius: number }> = {
   spawn: { color: '#7cff9e', radius: 9 },
+  monster: { color: '#ff6b7a', radius: 10 },
   memory: { color: '#7ce7ff', radius: 9 },
   exit: { color: '#b6ff7c', radius: 11 },
   checkpoint: { color: '#c79bff', radius: 8 },

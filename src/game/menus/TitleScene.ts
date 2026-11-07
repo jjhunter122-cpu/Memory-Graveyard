@@ -18,7 +18,7 @@ export class TitleScene extends MenuScene {
     return `
       <div class="menu-panel title-panel">
         <h1 class="menu-title">MEMORY GRAVEYARD</h1>
-        <p class="menu-subtitle">collect what the dead left behind</p>
+        <p class="menu-subtitle">the rooms remember you</p>
         <div class="menu-buttons">
           <button id="menu-play" class="menu-button primary">Play campaign</button>
           <button id="menu-levels" class="menu-button">Level select</button>

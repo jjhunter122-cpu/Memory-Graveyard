@@ -1,9 +1,9 @@
-import { rankFor } from '../systems/graveyard';
+export type ThreatTone = 'dormant' | 'calm' | 'near' | 'close';
 
 /** Thin wrapper over the DOM overlay so the scene never touches elements directly. */
 export class Hud {
   private readonly collectedEl: HTMLElement | null;
-  private readonly rankEl: HTMLElement | null;
+  private readonly threatEl: HTMLElement | null;
   private readonly levelEl: HTMLElement | null;
   private readonly panelEl: HTMLElement | null;
   private readonly toastEl: HTMLElement | null;
@@ -11,7 +11,7 @@ export class Hud {
 
   constructor() {
     this.collectedEl = document.getElementById('collected');
-    this.rankEl = document.getElementById('rank');
+    this.threatEl = document.getElementById('threat');
     this.levelEl = document.getElementById('level-name');
     this.panelEl = document.getElementById('hud-panel');
     this.toastEl = document.getElementById('toast');
@@ -29,12 +29,17 @@ export class Hud {
     }
   }
 
+  /** Memory fragments are optional, so this is just a counter. */
   setProgress(collected: number, total: number): void {
     if (this.collectedEl) {
       this.collectedEl.textContent = `${collected} / ${total}`;
     }
-    if (this.rankEl) {
-      this.rankEl.textContent = rankFor(collected, total).toUpperCase();
+  }
+
+  setThreat(label: string, tone: ThreatTone = 'calm'): void {
+    if (this.threatEl) {
+      this.threatEl.textContent = label.toUpperCase();
+      this.threatEl.className = `value threat ${tone}`;
     }
   }
 

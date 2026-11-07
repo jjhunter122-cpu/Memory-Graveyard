@@ -26,6 +26,7 @@ export interface EditorUiCallbacks {
 
 const ENTITY_LABELS: Record<EditorEntityType, string> = {
   spawn: 'spawn',
+  monster: 'monster',
   memory: 'memory',
   exit: 'exit',
   checkpoint: 'checkpoint',

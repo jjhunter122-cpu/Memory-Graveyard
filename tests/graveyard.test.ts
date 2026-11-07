@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clamp, rankFor } from '../src/game/systems/graveyard';
+import { clamp } from '../src/game/systems/graveyard';
 
 describe('clamp', () => {
   it('leaves values inside the range alone', () => {
@@ -13,21 +13,5 @@ describe('clamp', () => {
 
   it('centres values when the range is inverted', () => {
     expect(clamp(5, 10, 0)).toBe(5);
-  });
-});
-
-describe('rankFor', () => {
-  it('starts as a wanderer and ends as the gravekeeper', () => {
-    expect(rankFor(0, 8)).toBe('Wanderer');
-    expect(rankFor(8, 8)).toBe('Gravekeeper');
-  });
-
-  it('climbs through listener and medium', () => {
-    expect(rankFor(3, 8)).toBe('Listener');
-    expect(rankFor(5, 8)).toBe('Medium');
-  });
-
-  it('never divides by zero', () => {
-    expect(rankFor(0, 0)).toBe('Wanderer');
   });
 });

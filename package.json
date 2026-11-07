@@ -7,7 +7,7 @@
   "engines": {
     "node": ">=20.19"
   },
-  "description": "A haunted top-down graveyard where you collect the memories of the dead.",
+  "description": "A 2D Backrooms chase through the memories of the graveyard.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
