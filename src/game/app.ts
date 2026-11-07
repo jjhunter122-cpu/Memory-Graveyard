@@ -2,7 +2,7 @@ import type { Engine, Scene } from 'excalibur';
 import type { GameTextures } from './assets';
 import type { AssetManifest } from './level/manifest';
 import type { LevelData } from './level/schema';
-import { PlayScene } from './scenes/PlayScene';
+import { PlayScene, type PlayOrigin } from './scenes/PlayScene';
 import { EditorScene } from '../editor/EditorScene';
 import { TitleScene } from './menus/TitleScene';
 import { LevelSelectScene } from './menus/LevelSelectScene';
@@ -17,6 +17,7 @@ export interface StartOptions {
 }
 
 interface PlayOptions {
+  origin?: PlayOrigin;
   fromEditor?: boolean;
   sequence?: { index: number; total: number };
   onLevelComplete?: (level: LevelData) => void;
@@ -83,7 +84,10 @@ export class GameApp {
     try {
       const level = await this.library.loadShipped(id);
       this.settings.update({ lastLevelId: id });
-      await this.play(level, {});
+      await this.play(level, {
+        origin: 'levelSelect',
+        onLevelComplete: () => void this.showLevelSelect(),
+      });
     } catch (error) {
       console.error('failed to load level', error);
       await this.showLevelSelect();
@@ -92,7 +96,10 @@ export class GameApp {
 
   playDraft(id: string): Promise<void> {
     try {
-      return this.play(this.library.loadDraft(id), {});
+      return this.play(this.library.loadDraft(id), {
+        origin: 'levelSelect',
+        onLevelComplete: () => void this.showLevelSelect(),
+      });
     } catch (error) {
       console.error('failed to load draft', error);
       return this.showLevelSelect();
@@ -175,6 +182,7 @@ export class GameApp {
 
   private playScene(level: LevelData, options: PlayOptions): PlayScene {
     return new PlayScene(level, this.manifest, this.textures, {
+      origin: options.origin,
       fromEditor: options.fromEditor,
       showHud: this.settings.load().showHud,
       sequence: options.sequence,
@@ -188,10 +196,12 @@ export class GameApp {
 
   private editorScene(level: LevelData): EditorScene {
     return new EditorScene(level, this.manifest, {
-      onTestPlay: (tested) => void this.play(tested, { fromEditor: true }),
+      onTestPlay: (tested) =>
+        void this.play(tested, { fromEditor: true, origin: 'editor' }),
       onMenu: () => void this.showTitle(),
       drafts: this.drafts,
-      onProjectSaved: () => void this.library.reload(),
+      library: this.library,
+      onProjectSaved: () => this.library.reload(),
     });
   }
 
@@ -214,6 +224,7 @@ export class GameApp {
       const level = await this.library.loadShipped(entry.id);
       this.settings.update({ lastLevelId: entry.id });
       await this.play(level, {
+        origin: 'campaign',
         sequence: { index, total: entries.length },
         onLevelComplete: () => void this.playCampaignAt(entries, index + 1),
       });

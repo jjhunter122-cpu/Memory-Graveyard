@@ -11,6 +11,7 @@ import { VIEW } from '../game/config';
 import { tileIndex, type AssetManifest, type TileDef } from '../game/level/manifest';
 import { clampSize } from '../game/level/sizes';
 import {
+  createLevel,
   EMPTY_TILE,
   parseLevel,
   serializeLevel,
@@ -30,7 +31,7 @@ import {
 } from './ops';
 import { EditorUi, type EditorUiCallbacks } from './EditorUi';
 import type { EditorEntityType, EditorMode, EditorTool } from './types';
-import { DraftStore } from '../game/storage/levels';
+import { DraftStore, type LevelLibrary } from '../game/storage/levels';
 import { setMode } from '../game/ui/mode';
 import { slug } from '../game/util/slug';
 
@@ -38,7 +39,8 @@ export interface EditorSceneOptions {
   onTestPlay: (level: LevelData) => void;
   onMenu: () => void;
   drafts: DraftStore;
-  onProjectSaved?: () => void;
+  library: LevelLibrary;
+  onProjectSaved?: () => Promise<void> | void;
 }
 
 const PAN_SPEED = 420;
@@ -141,7 +143,7 @@ export class EditorScene extends Scene {
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
-      this.ui.setDrafts(this.options.drafts.list());
+      this.refreshLevelLists();
     }
 
     this.refreshAll();
@@ -177,8 +179,12 @@ export class EditorScene extends Scene {
   override onPreUpdate(engine: Engine, elapsed: number): void {
     this.panCamera(engine, elapsed / 1000);
     this.updateCursor(engine);
-    if (this.painting && (this.tool === 'paint' || this.tool === 'erase')) {
-      this.paintAtPointer(engine);
+    if (this.painting) {
+      if (this.mode === 'tiles') {
+        this.paintAtPointer(engine);
+      } else if (this.tool === 'erase') {
+        this.eraseEntityAtPointerCurrent();
+      }
     }
   }
 
@@ -226,20 +232,17 @@ export class EditorScene extends Scene {
     if (!tile) {
       return;
     }
-    if (this.tool === 'erase') {
-      if (this.mode === 'entities') {
-        this.eraseEntityAt(tile.x, tile.y);
+    this.painting = true;
+    this.lastPaintedIndex = -1;
+    if (this.mode === 'entities') {
+      if (this.tool === 'erase') {
+        this.eraseEntityAtPointerCurrent();
       } else {
-        this.eraseTileAt(tile.x, tile.y);
+        this.placeEntity(tile.x, tile.y);
+        this.painting = false;
       }
       return;
     }
-    if (this.mode === 'entities') {
-      this.placeEntity(tile.x, tile.y);
-      return;
-    }
-    this.painting = true;
-    this.lastPaintedIndex = -1;
     this.paintAtPointerCurrent();
   }
 
@@ -331,6 +334,19 @@ export class EditorScene extends Scene {
     }
   }
 
+  private eraseEntityAtPointerCurrent(): void {
+    const tile = this.tileUnderPointer();
+    if (!tile) {
+      return;
+    }
+    const index = tile.y * this.level.width + tile.x;
+    if (index === this.lastPaintedIndex) {
+      return;
+    }
+    this.lastPaintedIndex = index;
+    this.eraseEntityAt(tile.x, tile.y);
+  }
+
   private placeEntity(x: number, y: number): void {
     const next = addEntity(this.level, this.selectedEntity, x, y);
     if (next !== this.level) {
@@ -349,6 +365,30 @@ export class EditorScene extends Scene {
 
   // ---- drafts & project save ------------------------------------------------
 
+  private refreshLevelLists(): void {
+    this.ui?.setLevels(
+      this.options.library.shipped(),
+      this.options.drafts.list(),
+      this.level.name,
+    );
+  }
+
+  private loadLevel(level: LevelData, saveDraft = false): void {
+    this.level = level;
+    this.history.reset(level);
+    this.activeLayer = 0;
+    this.ui?.setName(level.name);
+    this.ui?.setLayer(0);
+    this.ui?.setHistory(false, false);
+    this.rebuildGrid();
+    this.refreshAll();
+    this.centerCamera();
+    if (saveDraft) {
+      this.options.drafts.save(level);
+    }
+    this.refreshLevelLists();
+  }
+
   private scheduleAutosave(): void {
     if (this.autosaveTimer !== null) {
       clearTimeout(this.autosaveTimer);
@@ -356,7 +396,7 @@ export class EditorScene extends Scene {
     this.autosaveTimer = setTimeout(() => {
       this.autosaveTimer = null;
       this.options.drafts.save(this.level);
-      this.ui?.setDrafts(this.options.drafts.list());
+      this.refreshLevelLists();
     }, 500);
   }
 
@@ -370,13 +410,13 @@ export class EditorScene extends Scene {
 
   private saveDraft(): void {
     this.options.drafts.save(this.level);
-    this.ui?.setDrafts(this.options.drafts.list());
+    this.refreshLevelLists();
     this.ui?.toast('saved draft');
   }
 
   private deleteDraft(id: string): void {
     this.options.drafts.remove(id);
-    this.ui?.setDrafts(this.options.drafts.list());
+    this.refreshLevelLists();
     this.ui?.toast('draft deleted');
   }
 
@@ -386,15 +426,38 @@ export class EditorScene extends Scene {
       this.ui?.toast('draft not found');
       return;
     }
-    this.level = level;
-    this.history.reset(level);
-    this.activeLayer = 0;
-    this.ui?.setName(level.name);
-    this.ui?.setLayer(0);
-    this.ui?.setHistory(false, false);
-    this.refreshAll();
-    this.centerCamera();
+    this.flushAutosave();
+    this.loadLevel(level);
     this.ui?.toast(`loaded draft ${level.name}`);
+  }
+
+  private async loadShipped(id: string): Promise<void> {
+    this.flushAutosave();
+    try {
+      const level = await this.options.library.loadShipped(id);
+      this.loadLevel(level);
+      this.ui?.toast(`loaded ${level.name}`);
+    } catch (error) {
+      this.ui?.toast(`load failed: ${(error as Error).message}`, 3000);
+    }
+  }
+
+  private newLevel(): void {
+    this.flushAutosave();
+    let name = 'Untitled level';
+    let counter = 2;
+    while (this.options.drafts.has(slug(name))) {
+      name = `Untitled level ${counter}`;
+      counter += 1;
+    }
+    const level = createLevel(
+      name,
+      this.level.width,
+      this.level.height,
+      this.tileSize,
+    );
+    this.loadLevel(level, true);
+    this.ui?.toast('created new level');
   }
 
   private async saveToProject(): Promise<void> {
@@ -415,7 +478,8 @@ export class EditorScene extends Scene {
       }
       const result = (await response.json()) as { file?: string };
       this.ui?.toast(`saved to ${result.file ?? `public/levels/${id}.json`}`, 2600);
-      this.options.onProjectSaved?.();
+      await this.options.onProjectSaved?.();
+      this.refreshLevelLists();
     } catch (error) {
       this.ui?.toast(`project save failed: ${(error as Error).message}`, 4000);
     }
@@ -664,6 +728,8 @@ export class EditorScene extends Scene {
       onSave: () => this.save(),
       onSaveDraft: () => this.saveDraft(),
       onSaveToProject: () => void this.saveToProject(),
+      onNewLevel: () => this.newLevel(),
+      onLoadShipped: (id) => void this.loadShipped(id),
       onLoadDraft: (id) => this.loadDraft(id),
       onDeleteDraft: (id) => this.deleteDraft(id),
       onLoadFile: (file) => void this.load(file),
@@ -675,6 +741,7 @@ export class EditorScene extends Scene {
       onRename: (name) => {
         this.commit(renameLevel(this.level, name));
         this.ui?.setName(this.level.name);
+        this.refreshLevelLists();
       },
     };
   }

@@ -167,8 +167,11 @@ Play:  Esc ─► Pause  (Resume / Restart / Level select / Title)
 The title's **Play campaign** runs the shipped **main campaign** — the ordered
 list of **Dev Made** levels from `public/levels/sequences.json`. Touching the
 exit completes the level and advances; memories are optional. The last level
-returns to Level select. Being caught, or falling off the level, ends the run
-with a Retry overlay.
+returns to Level select.
+
+Playing a single level from **Level select** does not advance: a win returns to
+Level select, and a death offers Retry or Level select. Being caught, or falling
+off the level, ends the run.
 
 **Level select** is split into **Courses** (dev-made), **Community**, and
 **My levels** (browser drafts), with a **Play campaign** button when a campaign
@@ -200,11 +203,13 @@ The toolbar has Paint, Erase, the Tiles/Entities mode toggle, **New**,
 **Export**, **Import**, the **Dev Made** tier toggle, **Save draft**, **Save to
 project**, **Test play** and **Menu**.
 
-The left panel has **Tiles**, **Entities**, **Level settings**, **Layer** and
-**My drafts**. Level settings includes the size presets (40×18 up to 80×36),
-dev-only custom sizes up to 120×60, and a skybox colour. Selecting a tile or
-entity switches mode automatically. Editing operates on immutable snapshots, so
-undo/redo is exact.
+The left panel has **Tiles**, **Entities**, **Levels**, **My drafts**,
+**Level settings** and **Layer**. **Levels** lists shipped levels and provides a
+**New level** button; loading a shipped level creates an editable working copy.
+Level settings includes the size presets (40×18 up to 80×36), dev-only custom
+sizes up to 120×60, and a skybox colour. Selecting a tile or entity switches
+mode automatically. Editing operates on immutable snapshots, so undo/redo is
+exact.
 
 Completing a **Test play** returns to the editor. Dying in test play shows the
 editor-specific **You Ded :(** overlay with Retry, Save and Exit to Title, and

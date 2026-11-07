@@ -1,7 +1,7 @@
 import type { AssetManifest } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
 import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
-import type { DraftSummary } from '../game/storage/levels';
+import type { DraftSummary, LevelEntry } from '../game/storage/levels';
 import type { EditorEntityType, EditorMode, EditorTool } from './types';
 
 export interface EditorUiCallbacks {
@@ -19,6 +19,8 @@ export interface EditorUiCallbacks {
   onSave(): void;
   onSaveDraft(): void;
   onSaveToProject(): void;
+  onNewLevel(): void;
+  onLoadShipped(id: string): void;
   onLoadDraft(id: string): void;
   onDeleteDraft(id: string): void;
   onLoadFile(file: File): void;
@@ -55,6 +57,7 @@ export class EditorUi {
   private readonly widthInput: HTMLInputElement;
   private readonly heightInput: HTMLInputElement;
   private readonly skyboxInput: HTMLInputElement;
+  private readonly shippedHost: HTMLElement;
   private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
   private readonly countEl: HTMLElement;
@@ -104,6 +107,11 @@ export class EditorUi {
           <div id="ed-tiles" class="ed-swatches"></div>
           <h3>Entities</h3>
           <div id="ed-entities" class="ed-swatches"></div>
+          <h3>Levels</h3>
+          <button id="ed-new-level" class="ed-new-level">New level</button>
+          <div id="ed-shipped" class="ed-level-list"></div>
+          <h3>My drafts</h3>
+          <div id="ed-drafts" class="ed-drafts"></div>
           <h3>Level settings</h3>
           <select id="ed-size" class="ed-layer"></select>
           <div id="ed-custom-size" class="ed-custom-size">
@@ -118,8 +126,6 @@ export class EditorUi {
           </div>
           <h3>Layer</h3>
           <select id="ed-layer" class="ed-layer"></select>
-          <h3>My drafts</h3>
-          <div id="ed-drafts" class="ed-drafts"></div>
         </aside>
         <div class="ed-statusbar">
           <span id="ed-cursor">tile —</span>
@@ -138,6 +144,7 @@ export class EditorUi {
     this.layerSelect = this.get<HTMLSelectElement>('ed-layer');
     this.projectButton = this.get<HTMLButtonElement>('ed-save-project');
     this.tierInput = this.get<HTMLInputElement>('ed-tier');
+    this.shippedHost = this.get<HTMLElement>('ed-shipped');
     this.draftsHost = this.get<HTMLElement>('ed-drafts');
     this.cursorEl = this.get<HTMLElement>('ed-cursor');
     this.countEl = this.get<HTMLElement>('ed-count');
@@ -199,6 +206,7 @@ export class EditorUi {
     this.redoButton.addEventListener('click', () => this.callbacks.onRedo());
     this.get('ed-menu').addEventListener('click', () => this.callbacks.onMenu());
     this.get('ed-new').addEventListener('click', () => this.callbacks.onNew());
+    this.get('ed-new-level').addEventListener('click', () => this.callbacks.onNewLevel());
     this.get('ed-save').addEventListener('click', () => this.callbacks.onSave());
     this.get('ed-save-draft').addEventListener('click', () => this.callbacks.onSaveDraft());
     this.projectButton.addEventListener('click', () => this.callbacks.onSaveToProject());
@@ -329,20 +337,45 @@ export class EditorUi {
     this.countEl.textContent = `${count} ${count === 1 ? 'entity' : 'entities'}`;
   }
 
-  setDrafts(drafts: DraftSummary[]): void {
-    if (drafts.length === 0) {
-      this.draftsHost.innerHTML = '<p class="ed-empty">no drafts</p>';
-      return;
-    }
-    this.draftsHost.innerHTML = drafts
-      .map(
-        (draft) => `
-        <div class="ed-draft">
+  setLevels(
+    shipped: LevelEntry[],
+    drafts: DraftSummary[],
+    currentName: string,
+  ): void {
+    this.shippedHost.innerHTML =
+      shipped.length === 0
+        ? '<p class="ed-empty">no shipped levels</p>'
+        : shipped
+            .map(
+              (entry) => `
+              <button class="ed-level-item${entry.name === currentName ? ' active' : ''}" data-shipped="${escapeAttr(entry.id)}">
+                <span>${escapeAttr(entry.name)}</span><em>${entry.tier}</em>
+              </button>`,
+            )
+            .join('');
+    this.shippedHost
+      .querySelectorAll<HTMLElement>('[data-shipped]')
+      .forEach((element) => {
+        element.addEventListener('click', () => {
+          const id = element.dataset.shipped;
+          if (id) {
+            this.callbacks.onLoadShipped(id);
+          }
+        });
+      });
+
+    this.draftsHost.innerHTML =
+      drafts.length === 0
+        ? '<p class="ed-empty">no drafts</p>'
+        : drafts
+            .map(
+              (draft) => `
+        <div class="ed-draft${draft.name === currentName ? ' active' : ''}">
           <button class="ed-draft-open" data-open="${escapeAttr(draft.id)}">${escapeAttr(draft.name)}</button>
           <button class="ed-draft-del" data-del="${escapeAttr(draft.id)}" title="delete">×</button>
         </div>`,
-      )
-      .join('');
+            )
+            .join('');
     this.draftsHost.querySelectorAll<HTMLElement>('[data-open]').forEach((element) => {
       element.addEventListener('click', () => {
         const id = element.dataset.open;

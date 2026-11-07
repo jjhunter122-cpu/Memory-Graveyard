@@ -14,7 +14,10 @@ import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
 
+export type PlayOrigin = 'campaign' | 'levelSelect' | 'editor';
+
 export interface PlaySceneOptions {
+  origin?: PlayOrigin;
   fromEditor?: boolean;
   showHud?: boolean;
   sequence?: { index: number; total: number };
@@ -296,6 +299,7 @@ export class PlayScene extends Scene {
       return;
     }
 
+    const fromLevelSelect = this.options.origin === 'levelSelect';
     root.innerHTML = `
       <div class="menu-panel death-panel">
         <h2 class="death-title">YOU DIED</h2>
@@ -303,7 +307,7 @@ export class PlayScene extends Scene {
         <div class="menu-buttons">
           <button id="death-retry" class="menu-button primary">Retry</button>
           <button id="death-levels" class="menu-button">Level select</button>
-          <button id="death-title" class="menu-button">Title</button>
+          ${fromLevelSelect ? '' : '<button id="death-title" class="menu-button">Title</button>'}
         </div>
       </div>`;
     root.querySelector('#death-retry')?.addEventListener('click', () => this.retry());

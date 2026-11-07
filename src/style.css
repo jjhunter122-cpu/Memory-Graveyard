@@ -772,6 +772,59 @@ body.dead .death-ui {
   accent-color: #7ce7ff;
 }
 
+.ed-new-level {
+  width: 100%;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #05060a;
+  background: #7ce7ff;
+  border: 1px solid #7ce7ff;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ed-level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ed-level-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+  color: #d9d6ff;
+  background: rgba(20, 22, 34, 0.8);
+  border: 1px solid rgba(143, 123, 255, 0.22);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.ed-level-item em {
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #7ce7ff;
+}
+
+.ed-level-item:hover,
+.ed-level-item.active {
+  background: rgba(143, 123, 255, 0.2);
+  border-color: rgba(124, 231, 255, 0.5);
+}
+
 .ed-drafts {
   display: flex;
   flex-direction: column;
@@ -781,6 +834,11 @@ body.dead .death-ui {
 .ed-draft {
   display: flex;
   gap: 4px;
+}
+
+.ed-draft.active .ed-draft-open {
+  border-color: rgba(124, 231, 255, 0.6);
+  background: rgba(143, 123, 255, 0.2);
 }
 
 .ed-draft-open {
