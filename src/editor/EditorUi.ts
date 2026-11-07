@@ -52,6 +52,7 @@ export class EditorUi {
   private readonly projectButton: HTMLButtonElement;
   private readonly tierInput: HTMLInputElement;
   private readonly modeButton: HTMLButtonElement;
+  private readonly toolIndicator: HTMLElement;
   private readonly sizeSelect: HTMLSelectElement;
   private readonly customSizeEl: HTMLElement;
   private readonly widthInput: HTMLInputElement;
@@ -81,6 +82,7 @@ export class EditorUi {
           <button data-tool="paint">Paint</button>
           <button data-tool="erase">Erase</button>
           <button id="ed-mode" class="ed-toggle">Tiles</button>
+          <span id="ed-tool-indicator" class="ed-tool-indicator">B · PAINT</span>
         </div>
         <div class="ed-group" role="group" aria-label="History">
           <button id="ed-undo">Undo</button>
@@ -130,7 +132,7 @@ export class EditorUi {
         <div class="ed-statusbar">
           <span id="ed-cursor">tile —</span>
           <span id="ed-count">0 entities</span>
-          <span class="ed-hint">Q tiles/entities · WASD / arrows pan · wheel zoom · Ctrl+Z undo · Ctrl+Y redo</span>
+          <span class="ed-hint">Q tiles/entities · B paint/erase · G grid · V save draft · WASD / arrows pan · wheel zoom · Ctrl+Z undo · Ctrl+Y redo</span>
         </div>
       </div>
       <div id="ed-toast" class="ed-toast" role="status"></div>
@@ -150,6 +152,7 @@ export class EditorUi {
     this.countEl = this.get<HTMLElement>('ed-count');
     this.toastEl = this.get<HTMLElement>('ed-toast');
     this.modeButton = this.get<HTMLButtonElement>('ed-mode');
+    this.toolIndicator = this.get<HTMLElement>('ed-tool-indicator');
     this.sizeSelect = this.get<HTMLSelectElement>('ed-size');
     this.customSizeEl = this.get<HTMLElement>('ed-custom-size');
     this.widthInput = this.get<HTMLInputElement>('ed-width');
@@ -285,6 +288,7 @@ export class EditorUi {
     for (const [key, button] of this.toolButtons) {
       button.classList.toggle('active', key === tool);
     }
+    this.toolIndicator.textContent = `B · ${tool.toUpperCase()}`;
   }
 
   setMode(mode: EditorMode): void {

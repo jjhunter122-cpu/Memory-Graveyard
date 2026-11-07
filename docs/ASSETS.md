@@ -36,6 +36,8 @@ and monster are side-view and may be flipped horizontally.
 ## Required first kit
 
 - **Tiles:** floor, wall, ceiling, carpet, platform edges, trim.
+- **Slopes:** 45° one-tile triangle and a 2-tile-wide gentle ramp, both
+  directions. These need custom collision support before import.
 - **Props:** door, exit sign, locker, desk, chair, vent, light fixture, boxes.
 - **Characters:** player idle / walk / run / jump / fall; sprint and slide are
   optional.

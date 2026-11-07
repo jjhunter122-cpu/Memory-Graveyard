@@ -99,6 +99,7 @@ scripts/smoke.mjs             headless Firefox end-to-end smoke test
 tests/                        headless vitest suite
 CREDITS.md                    asset, voice and tool attribution
 docs/ASSETS.md                art/audio targets, licence rules, review flow
+docs/KNOWN_ISSUES.md          deliberately deferred quirks
 licenses/                     full licence texts (CC0, CC-BY)
 ```
 
@@ -195,9 +196,11 @@ http://localhost:5173/?editor
 | Zoom | mouse wheel |
 | Paint / erase tile | Paint / Erase tool in **Tiles** mode |
 | Place / remove entity | Paint / Erase tool in **Entities** mode |
+| Swap paint / erase | `B` |
 | Swap tiles / entities | `Q` or the Tiles/Entities button |
 | Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or the buttons) |
-| Grid | Grid button |
+| Toggle grid | `G` or the Grid button |
+| Save draft | `V` |
 
 The toolbar has Paint, Erase, the Tiles/Entities mode toggle, **New**,
 **Export**, **Import**, the **Dev Made** tier toggle, **Save draft**, **Save to
@@ -243,6 +246,11 @@ The **campaign** is a `sequences.json` entry:
 - [`licenses/`](licenses/) holds the full licence texts (CC0 and CC-BY).
 - Unlicensed stand-ins live only in `public/assets/TEMP/` behind `TEMP_ASSETS`;
   they must be replaced before release.
+
+## Known issues
+
+See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md). The current note covers the
+occasional wall-top corner clip.
 
 ## Testing
 

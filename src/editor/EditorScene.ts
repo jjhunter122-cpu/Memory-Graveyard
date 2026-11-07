@@ -89,12 +89,21 @@ export class EditorScene extends Scene {
       return;
     }
     const ctrl = event.ctrlKey || event.metaKey;
-    if (!ctrl && event.key.toLowerCase() === 'q') {
-      event.preventDefault();
-      this.setEditMode(this.mode === 'tiles' ? 'entities' : 'tiles');
-      return;
-    }
     if (!ctrl) {
+      const key = event.key.toLowerCase();
+      if (key === 'q') {
+        event.preventDefault();
+        this.setEditMode(this.mode === 'tiles' ? 'entities' : 'tiles');
+      } else if (key === 'b') {
+        event.preventDefault();
+        this.toggleTool();
+      } else if (key === 'g') {
+        event.preventDefault();
+        this.toggleGrid();
+      } else if (key === 'v') {
+        event.preventDefault();
+        this.saveDraft();
+      }
       return;
     }
     if (event.key === 'z' && !event.shiftKey) {
@@ -596,6 +605,22 @@ export class EditorScene extends Scene {
     this.ui?.setMode(mode);
   }
 
+  private toggleTool(): void {
+    this.tool = this.tool === 'paint' ? 'erase' : 'paint';
+    this.ui?.setTool(this.tool);
+  }
+
+  private toggleGrid(): void {
+    this.showGrid = !this.showGrid;
+    for (const actor of this.gridActors) {
+      actor.graphics.visible = this.showGrid;
+    }
+    if (this.cursor) {
+      this.cursor.graphics.visible = this.showGrid;
+    }
+    this.ui?.setGrid(this.showGrid);
+  }
+
   private resizeTo(width: number, height: number): void {
     const size = clampSize(width, height, import.meta.env.DEV);
     if (size.width === this.level.width && size.height === this.level.height) {
@@ -708,16 +733,7 @@ export class EditorScene extends Scene {
           this.ui?.setSkybox(this.level.skybox);
         }
       },
-      onToggleGrid: () => {
-        this.showGrid = !this.showGrid;
-        for (const actor of this.gridActors) {
-          actor.graphics.visible = this.showGrid;
-        }
-        if (this.cursor) {
-          this.cursor.graphics.visible = this.showGrid;
-        }
-        this.ui?.setGrid(this.showGrid);
-      },
+      onToggleGrid: () => this.toggleGrid(),
       onUndo: () => this.undo(),
       onRedo: () => this.redo(),
       onNew: () => {
