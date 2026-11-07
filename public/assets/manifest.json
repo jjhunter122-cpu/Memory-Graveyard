@@ -10,7 +10,8 @@
           "name": "stone",
           "collision": "solid",
           "color": "#2a2f45",
-          "cap": "#3b4162"
+          "cap": "#3b4162",
+          "image": "TEMP/softblurwhite.png"
         },
         {
           "id": 2,

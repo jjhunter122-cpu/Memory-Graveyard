@@ -2,6 +2,7 @@ import { Keys, Scene, type Engine } from 'excalibur';
 import { LEVEL } from '../config';
 import type { LevelData } from '../level/schema';
 import type { AssetManifest } from '../level/manifest';
+import type { GameTextures } from '../assets';
 import { buildLevel, type BuiltLevel } from '../level/loader';
 import { Player } from '../player/Player';
 import { Memory } from '../actors/Memory';
@@ -44,6 +45,7 @@ export class PlayScene extends Scene {
   constructor(
     private readonly level: LevelData,
     private readonly manifest: AssetManifest,
+    private readonly textures: GameTextures,
     private readonly options: PlaySceneOptions = {},
   ) {
     super();
@@ -72,7 +74,7 @@ export class PlayScene extends Scene {
   }
 
   override onInitialize(_engine: Engine): void {
-    this.built = buildLevel(this, this.level, this.manifest);
+    this.built = buildLevel(this, this.level, this.manifest, this.textures);
     this.levelHeightPx = this.built.heightPx;
 
     this.player = new Player(

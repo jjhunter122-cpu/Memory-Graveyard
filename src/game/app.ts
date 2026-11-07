@@ -1,4 +1,5 @@
 import type { Engine, Scene } from 'excalibur';
+import type { GameTextures } from './assets';
 import type { AssetManifest } from './level/manifest';
 import type { LevelData } from './level/schema';
 import { PlayScene } from './scenes/PlayScene';
@@ -36,6 +37,7 @@ export class GameApp {
     private readonly library: LevelLibrary,
     private readonly drafts: DraftStore,
     private readonly settings: SettingsStore,
+    private readonly textures: GameTextures,
   ) {}
 
   async start(options: StartOptions): Promise<void> {
@@ -166,7 +168,7 @@ export class GameApp {
   }
 
   private playScene(level: LevelData, options: PlayOptions): PlayScene {
-    return new PlayScene(level, this.manifest, {
+    return new PlayScene(level, this.manifest, this.textures, {
       fromEditor: options.fromEditor,
       showHud: this.settings.load().showHud,
       sequence: options.sequence,
