@@ -315,7 +315,7 @@ body.mode-editing .editor-ui {
   top: 0;
   bottom: 0;
   left: 0;
-  width: 190px;
+  width: 240px;
   padding: 12px;
   overflow: auto;
   background: rgba(9, 10, 16, 0.88);
@@ -410,6 +410,17 @@ body.mode-editing .editor-ui {
   font-size: 10px;
   line-height: 1.4;
   color: #a7a9c0;
+}
+
+.ed-scale-compare {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 6px;
+  background: rgba(8, 10, 18, 0.85);
+  border: 1px solid rgba(143, 123, 255, 0.28);
+  border-radius: 5px;
+  image-rendering: pixelated;
 }
 
 .ed-entity-grid {

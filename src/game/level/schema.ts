@@ -42,6 +42,11 @@ export interface LevelData {
   foreground?: string;
   /** Optional analog-horror screen FX preset id. */
   analogFx?: string;
+  /**
+   * Character height multiplier for this level. 1 is the existing baseline;
+   * 1.5, 1.75 and 2 make both the player and the monster that tall in tiles.
+   */
+  characterScale?: number;
 }
 
 export class LevelValidationError extends Error {
@@ -157,6 +162,13 @@ export function validateLevel(raw: unknown): LevelData {
       }
       result[key] = value;
     }
+  }
+  if (obj.characterScale !== undefined) {
+    const scale = obj.characterScale;
+    if (scale !== 1 && scale !== 1.5 && scale !== 1.75 && scale !== 2) {
+      throw new LevelValidationError('characterScale must be 1, 1.5, 1.75 or 2');
+    }
+    result.characterScale = scale;
   }
   return result;
 }

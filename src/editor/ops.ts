@@ -108,6 +108,24 @@ export function setAnalogFx(level: LevelData, id: string | undefined): LevelData
   return setOptionalField(level, 'analogFx', id);
 }
 
+/**
+ * Sets the level-wide character height multiplier. The base scale (1) is the
+ * default and is omitted from the document so existing levels stay unchanged.
+ */
+export function setCharacterScale(level: LevelData, scale: number): LevelData {
+  const next = scale === 1 ? undefined : scale;
+  if (level.characterScale === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result.characterScale;
+  } else {
+    result.characterScale = next;
+  }
+  return result;
+}
+
 function setOptionalField(
   level: LevelData,
   key: 'background' | 'foreground' | 'analogFx',

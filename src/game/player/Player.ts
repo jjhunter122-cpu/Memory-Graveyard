@@ -27,12 +27,13 @@ export class Player extends Actor {
     y: number,
     private readonly groundProbe?: GroundProbe,
     private readonly slopeProbe?: SlopeProbe,
+    size: { width: number; height: number } = { width: PLAYER.width, height: PLAYER.height },
   ) {
     super({
       x,
       y,
-      width: PLAYER.width,
-      height: PLAYER.height,
+      width: size.width,
+      height: size.height,
       color: Color.fromHex(PLAYER.color),
       collisionType: CollisionType.Active,
       collisionGroup: PLAYER_GROUP,
@@ -52,6 +53,8 @@ export class Player extends Actor {
 
   override onPreUpdate(engine: Engine, elapsed: number): void {
     const dt = elapsed / 1000;
+    const height = this.height;
+    const halfWidth = this.width / 2;
 
     // Grounded if the tile probe says so, or a bottom contact fired recently.
     const risen = this.vel.y < -1;
@@ -59,12 +62,12 @@ export class Player extends Actor {
 
     let onSlope = false;
     if (!risen && this.slopeProbe) {
-      const feetY = this.pos.y + PLAYER.height / 2;
-      const surfaceY = this.slopeProbe(this.pos.x, feetY, PLAYER.width / 2);
+      const feetY = this.pos.y + height / 2;
+      const surfaceY = this.slopeProbe(this.pos.x, feetY, halfWidth);
       if (surfaceY !== null) {
         const delta = surfaceY - feetY;
         if (delta >= -14 && delta <= 22) {
-          this.pos.y = surfaceY - PLAYER.height / 2;
+          this.pos.y = surfaceY - height / 2;
           if (this.vel.y > 0) {
             this.vel.y = 0;
           }
@@ -73,10 +76,10 @@ export class Player extends Actor {
       }
     }
 
-    const feetY = this.pos.y + PLAYER.height / 2;
+    const feetY = this.pos.y + height / 2;
     const probeGrounded =
       !risen && this.groundProbe
-        ? this.groundProbe(this.pos.x, feetY, PLAYER.width / 2, ignoreOneWay)
+        ? this.groundProbe(this.pos.x, feetY, halfWidth, ignoreOneWay)
         : false;
     this.controller.setGrounded(probeGrounded || onSlope || this.groundTimer > 0);
 

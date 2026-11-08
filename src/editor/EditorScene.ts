@@ -30,6 +30,7 @@ import {
   resizeLevel,
   setAnalogFx,
   setBackground,
+  setCharacterScale,
   setForeground,
   setSkybox,
   setTile,
@@ -162,6 +163,7 @@ export class EditorScene extends Scene {
       this.ui.setBackground(this.level.background);
       this.ui.setForeground(this.level.foreground);
       this.ui.setAnalogFx(this.level.analogFx);
+      this.ui.setCharacterScale(this.level.characterScale, this.level.tileSize);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
@@ -596,6 +598,7 @@ export class EditorScene extends Scene {
     this.ui?.setBackground(this.level.background);
     this.ui?.setForeground(this.level.foreground);
     this.ui?.setAnalogFx(this.level.analogFx);
+    this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
   }
 
   private refreshSkybox(): void {
@@ -892,6 +895,13 @@ export class EditorScene extends Scene {
         if (next !== this.level) {
           this.commit(next);
           this.ui?.setAnalogFx(this.level.analogFx);
+        }
+      },
+      onCharacterScale: (scale) => {
+        const next = setCharacterScale(this.level, scale);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
         }
       },
       onToggleGrid: () => this.toggleGrid(),

@@ -70,4 +70,48 @@ describe('Pixel walkable palette', () => {
     }
     expect(tiles.get(78)?.decor).toBe(true);
   });
+
+  it('extracts walkable grass and stone tiles for every room palette', () => {
+    const palettes = [
+      'moss',
+      'rose',
+      'olive',
+      'crimson',
+      'teal',
+      'blood',
+      'lime',
+      'slate',
+      'ocean',
+    ];
+    for (const palette of palettes) {
+      const matches = [...tiles.values()].filter(
+        (tile) =>
+          tile.name.startsWith(`${palette} `) &&
+          (tile.name.endsWith('grass top') ||
+            tile.name.endsWith('grass fill') ||
+            tile.name.endsWith('stone top') ||
+            tile.name.endsWith('stone fill')),
+      );
+      expect(matches, `missing walkable tiles for ${palette}`).toHaveLength(4);
+      for (const tile of matches) {
+        expect(tile.collision).toBe('solid');
+        expect(tile.image).toMatch(/^DRYFIT\/pixel-platformer-world\/tiles\/palette-/);
+      }
+    }
+  });
+
+  it('keeps slopes visual-only and decor pieces sized', () => {
+    const slopes = [...tiles.values()].filter(
+      (tile) => tile.name.endsWith('slope (visual)') || tile.name.endsWith('(visual)'),
+    );
+    expect(slopes.length).toBeGreaterThanOrEqual(11);
+    for (const tile of slopes) {
+      expect(tile.collision).toBe('none');
+    }
+
+    const arch = [...tiles.values()].find((tile) => tile.name === 'brown arch room');
+    expect(arch?.decor).toBe(true);
+    expect(arch?.width).toBe(224);
+    expect(arch?.height).toBe(208);
+  });
 });

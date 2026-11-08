@@ -16,6 +16,17 @@ describe('Pixel Platformer World scenery presets', () => {
     expect(room?.layers.some((layer) => layer.image.endsWith('room-test.png'))).toBe(true);
   });
 
+  it('adds every pre-built room palette as a background option', () => {
+    for (let index = 1; index <= 9; index += 1) {
+      const preset = findBackgroundPreset(`pixel-platformer-world-room-${index}`);
+      expect(preset, `missing room ${index}`).toBeDefined();
+      expect(preset?.layers).toHaveLength(7);
+      expect(
+        preset?.layers.some((layer) => layer.image.endsWith(`rooms/room-${index}.png`)),
+      ).toBe(true);
+    }
+  });
+
   it('keeps blank/none as the solid-sky option', () => {
     expect(findBackgroundPreset(undefined)).toBeUndefined();
     expect(findBackgroundPreset('none')).toBeUndefined();

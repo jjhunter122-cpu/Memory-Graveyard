@@ -2,6 +2,11 @@ import type { AssetManifest, TileDef } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
 import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
 import { ANALOG_FX_OPTIONS, normalizeAnalogFxPreset } from '../game/analogFx';
+import {
+  CHARACTER_SCALE_OPTIONS,
+  characterMetrics,
+  normalizeCharacterScale,
+} from '../game/characterScale';
 import type { GameTextures } from '../game/assets';
 import {
   BACKGROUND_PRESETS,
@@ -22,6 +27,7 @@ export interface EditorUiCallbacks {
   onBackground(id: string | undefined): void;
   onForeground(id: string | undefined): void;
   onAnalogFx(id: string | undefined): void;
+  onCharacterScale(scale: number): void;
   onToggleGrid(): void;
   onUndo(): void;
   onRedo(): void;
@@ -121,6 +127,9 @@ export class EditorUi {
   private readonly backgroundSelect: HTMLSelectElement;
   private readonly foregroundSelect: HTMLSelectElement;
   private readonly analogSelect: HTMLSelectElement;
+  private readonly characterScaleSelect: HTMLSelectElement;
+  private readonly scaleCompareCanvas: HTMLCanvasElement;
+  private readonly scaleNote: HTMLElement;
   private readonly tilesetSelect: HTMLSelectElement;
   private readonly tilesHost: HTMLElement;
   private readonly selectedTileLabel: HTMLElement;
@@ -133,6 +142,7 @@ export class EditorUi {
   private readonly previewEntries: EntityPreview[] = [];
   private currentGroupId = '';
   private selectedTileId: number | null = null;
+  private levelTileSize = 32;
   private previewFrame = 0;
   private previewTimer: ReturnType<typeof setInterval> | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -215,6 +225,12 @@ export class EditorUi {
             <div class="ed-scenery">
               <label>Preset <select id="ed-analog" class="ed-layer"></select></label>
             </div>
+            <h3>Character scale</h3>
+            <div class="ed-scenery">
+              <label>Height <select id="ed-character-scale" class="ed-layer"></select></label>
+            </div>
+            <canvas id="ed-scale-compare" class="ed-scale-compare" width="220" height="336"></canvas>
+            <p id="ed-scale-note" class="ed-selected-tile"></p>
           </div>
           <div class="ed-tab-panel" data-panel="entities" hidden>
             <div id="ed-entities" class="ed-entity-grid"></div>
@@ -256,6 +272,9 @@ export class EditorUi {
     this.backgroundSelect = this.get<HTMLSelectElement>('ed-background');
     this.foregroundSelect = this.get<HTMLSelectElement>('ed-foreground');
     this.analogSelect = this.get<HTMLSelectElement>('ed-analog');
+    this.characterScaleSelect = this.get<HTMLSelectElement>('ed-character-scale');
+    this.scaleCompareCanvas = this.get<HTMLCanvasElement>('ed-scale-compare');
+    this.scaleNote = this.get<HTMLElement>('ed-scale-note');
     this.tilesetSelect = this.get<HTMLSelectElement>('ed-tileset');
     this.tilesHost = this.get<HTMLElement>('ed-tiles');
     this.selectedTileLabel = this.get<HTMLElement>('ed-selected-tile');
@@ -267,6 +286,12 @@ export class EditorUi {
       element.value = option.id;
       element.textContent = option.label;
       this.analogSelect.append(element);
+    }
+    for (const option of CHARACTER_SCALE_OPTIONS) {
+      const element = document.createElement('option');
+      element.value = String(option.value);
+      element.textContent = option.label;
+      this.characterScaleSelect.append(element);
     }
 
     for (const group of this.tileGroups) {
@@ -378,12 +403,16 @@ export class EditorUi {
     this.analogSelect.addEventListener('change', () =>
       this.callbacks.onAnalogFx(this.analogSelect.value || undefined),
     );
+    this.characterScaleSelect.addEventListener('change', () =>
+      this.callbacks.onCharacterScale(Number(this.characterScaleSelect.value)),
+    );
 
     this.setSize(level.width, level.height);
     this.setSkybox(level.skybox);
     this.setBackground(level.background);
     this.setForeground(level.foreground);
     this.setAnalogFx(level.analogFx);
+    this.setCharacterScale(level.characterScale, level.tileSize);
     this.setTab('tiles');
   }
 
@@ -636,6 +665,86 @@ export class EditorUi {
 
   setAnalogFx(id: string | undefined): void {
     this.analogSelect.value = normalizeAnalogFxPreset(id) ?? '';
+  }
+
+  setCharacterScale(scale: number | undefined, tileSize: number): void {
+    this.levelTileSize = tileSize;
+    this.characterScaleSelect.value = String(normalizeCharacterScale(scale));
+    this.scaleNote.textContent = `Compared against a ${tileSize}px tile. Applies to both the player and the monster.`;
+    this.drawScaleComparison();
+  }
+
+  /** Renders all four character heights side by side for quick comparison. */
+  private drawScaleComparison(): void {
+    const canvas = this.scaleCompareCanvas;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.imageSmoothingEnabled = false;
+
+    const hero = this.textures.heroSheet?.data;
+    const ghost = this.textures.ghostSheet?.data;
+    const rowHeight = 84;
+    const rowTop = 8;
+
+    for (let index = 0; index < CHARACTER_SCALE_OPTIONS.length; index += 1) {
+      const option = CHARACTER_SCALE_OPTIONS[index];
+      if (!option) {
+        continue;
+      }
+      const metrics = characterMetrics(option.value, this.levelTileSize);
+      const baseline = rowTop + index * rowHeight + 58;
+      const heroWidth = Math.max(metrics.heroDisplayWidth, 54);
+      const ghostWidth = Math.max(metrics.ghostDisplaySize, 40);
+
+      context.fillStyle = 'rgba(124, 231, 255, 0.85)';
+      context.font = '11px Consolas, monospace';
+      context.fillText(option.label, 6, baseline - 46);
+
+      context.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(6, baseline + 0.5);
+      context.lineTo(canvas.width - 6, baseline + 0.5);
+      context.stroke();
+
+      if (hero) {
+        context.drawImage(
+          hero,
+          0,
+          0,
+          90,
+          50,
+          28,
+          baseline - metrics.heroDisplayHeight,
+          metrics.heroDisplayWidth,
+          metrics.heroDisplayHeight,
+        );
+      } else {
+        context.fillStyle = '#e9e4d4';
+        context.fillRect(28, baseline - metrics.heroDisplayHeight, 12, metrics.heroDisplayHeight);
+      }
+
+      const ghostX = 28 + heroWidth + 6;
+      if (ghost) {
+        context.drawImage(
+          ghost,
+          0,
+          0,
+          32,
+          32,
+          ghostX,
+          baseline - metrics.ghostDisplaySize,
+          ghostWidth,
+          ghostWidth,
+        );
+      } else {
+        context.fillStyle = '#ff6b7a';
+        context.fillRect(ghostX, baseline - metrics.ghostDisplaySize, 16, metrics.ghostDisplaySize);
+      }
+    }
   }
 
   setTile(id: number): void {

@@ -28,6 +28,10 @@ const HERO_RANGES: Record<HeroAnimationName, HeroRange> = {
 
 export function createHeroAnimations(
   image: ImageSource,
+  display: { width: number; height: number } = {
+    width: HERO_DISPLAY_WIDTH,
+    height: HERO_DISPLAY_HEIGHT,
+  },
 ): Record<HeroAnimationName, Animation> {
   const sheet = SpriteSheet.fromImageSource({
     image,
@@ -48,8 +52,8 @@ export function createHeroAnimations(
       if (!sprite) {
         continue;
       }
-      sprite.width = HERO_DISPLAY_WIDTH;
-      sprite.height = HERO_DISPLAY_HEIGHT;
+      sprite.width = display.width;
+      sprite.height = display.height;
       frames.push({ graphic: sprite, duration: range.frameDuration });
     }
     animations[name] = new Animation({
@@ -65,7 +69,10 @@ const GHOST_COLUMNS = 6;
 const GHOST_DISPLAY_SIZE = 40;
 
 /** `anim-nme-ghost.png` is a six-frame 32x32 walk cycle. */
-export function createGhostAnimation(image: ImageSource): Animation {
+export function createGhostAnimation(
+  image: ImageSource,
+  displaySize: number = GHOST_DISPLAY_SIZE,
+): Animation {
   const sheet = SpriteSheet.fromImageSource({
     image,
     grid: {
@@ -77,8 +84,8 @@ export function createGhostAnimation(image: ImageSource): Animation {
   });
   const frames = [];
   for (const sprite of sheet.sprites) {
-    sprite.width = GHOST_DISPLAY_SIZE;
-    sprite.height = GHOST_DISPLAY_SIZE;
+    sprite.width = displaySize;
+    sprite.height = displaySize;
     frames.push({ graphic: sprite, duration: 120 });
   }
   return new Animation({ frames, strategy: AnimationStrategy.Loop });
@@ -99,7 +106,13 @@ export interface SkeletonAnimations {
  * The skeleton sheet has 8 walk frames followed by 6 rise frames, all 44x52.
  * Rise freezes on its last frame; PlayScene switches to the walk loop.
  */
-export function createSkeletonAnimations(image: ImageSource): SkeletonAnimations {
+export function createSkeletonAnimations(
+  image: ImageSource,
+  display: { width: number; height: number } = {
+    width: SKELETON_DISPLAY_WIDTH,
+    height: SKELETON_DISPLAY_HEIGHT,
+  },
+): SkeletonAnimations {
   const sheet = SpriteSheet.fromImageSource({
     image,
     grid: {
@@ -116,8 +129,8 @@ export function createSkeletonAnimations(image: ImageSource): SkeletonAnimations
     if (!sprite) {
       continue;
     }
-    sprite.width = SKELETON_DISPLAY_WIDTH;
-    sprite.height = SKELETON_DISPLAY_HEIGHT;
+    sprite.width = display.width;
+    sprite.height = display.height;
     walkFrames.push({ graphic: sprite, duration: 110 });
   }
 
@@ -127,8 +140,8 @@ export function createSkeletonAnimations(image: ImageSource): SkeletonAnimations
     if (!sprite) {
       continue;
     }
-    sprite.width = SKELETON_DISPLAY_WIDTH;
-    sprite.height = SKELETON_DISPLAY_HEIGHT;
+    sprite.width = display.width;
+    sprite.height = display.height;
     riseFrames.push({ graphic: sprite, duration: 120 });
   }
 

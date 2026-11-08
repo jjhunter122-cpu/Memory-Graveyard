@@ -10,6 +10,7 @@ import { Exit } from '../actors/Exit';
 import { Monster } from '../actors/Monster';
 import { TrailFollower, TrailRecorder } from '../chase/trail';
 import { CameraFollow } from '../camera/CameraFollow';
+import { characterMetrics, normalizeCharacterScale } from '../characterScale';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
@@ -57,6 +58,7 @@ export class PlayScene extends Scene {
   private dead = false;
   private graceRemaining: number = MONSTER.graceSeconds;
   private levelHeightPx = 0;
+  private catchRadius: number = MONSTER.catchRadius;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -117,12 +119,16 @@ export class PlayScene extends Scene {
   override onInitialize(_engine: Engine): void {
     this.built = buildLevel(this, this.level, this.manifest, this.textures);
     this.levelHeightPx = this.built.heightPx;
+    const scale = normalizeCharacterScale(this.level.characterScale);
+    const metrics = characterMetrics(scale, this.level.tileSize);
+    this.catchRadius = metrics.catchRadius;
 
     this.player = new Player(
       this.built.spawn.x,
       this.built.spawn.y,
       this.built.groundProbe,
       this.built.slopeProbe,
+      { width: metrics.playerWidth, height: metrics.playerHeight },
     );
     this.player.on('collisionstart', (event) => {
       // Actor-level collision events carry the geometry Collider; the actor is
@@ -136,21 +142,33 @@ export class PlayScene extends Scene {
     });
     this.add(this.player);
     if (this.textures.heroSheet) {
-      this.heroAnimations = createHeroAnimations(this.textures.heroSheet);
+      this.heroAnimations = createHeroAnimations(this.textures.heroSheet, {
+        width: metrics.heroDisplayWidth,
+        height: metrics.heroDisplayHeight,
+      });
       this.setHeroAnimation('idle');
     }
 
     if (this.built.monsterSpawn) {
-      this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
+      this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y, {
+        width: metrics.monsterWidth,
+        height: metrics.monsterHeight,
+      });
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
       if (this.built.monsterVariant === 'skeleton' && this.textures.skeletonSheet) {
-        this.skeletonAnimations = createSkeletonAnimations(this.textures.skeletonSheet);
+        this.skeletonAnimations = createSkeletonAnimations(this.textures.skeletonSheet, {
+          width: metrics.skeletonDisplayWidth,
+          height: metrics.skeletonDisplayHeight,
+        });
         this.skeletonRiseRemaining = 0.72;
         this.monster.graphics.use(this.skeletonAnimations.rise);
       } else if (this.textures.ghostSheet) {
-        this.ghostAnimation = createGhostAnimation(this.textures.ghostSheet);
+        this.ghostAnimation = createGhostAnimation(
+          this.textures.ghostSheet,
+          metrics.ghostDisplaySize,
+        );
         this.monster.graphics.use(this.ghostAnimation);
       }
       this.add(this.monster);
@@ -191,7 +209,7 @@ export class PlayScene extends Scene {
         monster.pos.setTo(follower.pos.x, follower.pos.y);
         threatDistance = this.distanceBetweenMonsterAndPlayer();
         this.updateThreat(threatDistance);
-        if (threatDistance <= MONSTER.catchRadius) {
+        if (threatDistance <= this.catchRadius) {
           this.die();
           return;
         }

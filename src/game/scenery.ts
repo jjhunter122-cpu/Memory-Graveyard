@@ -28,6 +28,19 @@ export interface SceneryPreset {
   layers: SceneryLayer[];
 }
 
+/** The nine pre-built room palettes in `main_lev_buildA.png`. */
+const PIXEL_ROOM_PALETTES = [
+  'moss',
+  'rose',
+  'olive',
+  'crimson',
+  'teal',
+  'blood',
+  'lime',
+  'slate',
+  'ocean',
+] as const;
+
 export const BACKGROUND_PRESETS: readonly SceneryPreset[] = [
   {
     id: 'gothicvania',
@@ -90,6 +103,24 @@ export const BACKGROUND_PRESETS: readonly SceneryPreset[] = [
       },
     ],
   },
+  ...PIXEL_ROOM_PALETTES.map((palette, index) => ({
+    id: `pixel-platformer-world-room-${index + 1}`,
+    name: `Pixel Platformer World — Room ${index + 1} (${palette})`,
+    layers: [
+      { image: 'DRYFIT/pixel-platformer-world/Background/background1.png', height: 1, anchor: 'center' as const },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background2.png', height: 1, anchor: 'center' as const },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background3.png', height: 1, anchor: 'center' as const },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background4.png', height: 1, anchor: 'center' as const },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background5.png', height: 1, anchor: 'center' as const },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background6.png', height: 1, anchor: 'center' as const },
+      {
+        image: `DRYFIT/pixel-platformer-world/rooms/room-${index + 1}.png`,
+        height: 1,
+        anchor: 'center' as const,
+        repeat: false,
+      },
+    ],
+  })),
   {
     id: 'woods',
     name: 'Pixel Woods',
