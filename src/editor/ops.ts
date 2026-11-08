@@ -3,6 +3,7 @@ import {
   type LevelData,
   type LevelEntity,
 } from '../game/level/schema';
+import { CAMERA } from '../game/config';
 
 /** Immutable level-document operations used by the editor. */
 
@@ -94,6 +95,87 @@ export function setSkybox(level: LevelData, skybox: string | undefined): LevelDa
     next.skybox = skybox;
   }
   return next;
+}
+
+export function setBackground(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'background', id);
+}
+
+export function setForeground(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'foreground', id);
+}
+
+export function setAnalogFx(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'analogFx', id);
+}
+
+/**
+ * Sets the level-wide character height multiplier. The base scale (1) is the
+ * default and is omitted from the document so existing levels stay unchanged.
+ */
+export function setCharacterScale(level: LevelData, scale: number): LevelData {
+  const next = scale === 1 ? undefined : scale;
+  if (level.characterScale === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result.characterScale;
+  } else {
+    result.characterScale = next;
+  }
+  return result;
+}
+
+/**
+ * Sets the level's camera zoom. The default gameplay zoom is omitted so
+ * existing levels keep their current framing.
+ */
+export function setCameraZoom(level: LevelData, zoom: number): LevelData {
+  const next = zoom === CAMERA.zoom ? undefined : zoom;
+  if (level.cameraZoom === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result.cameraZoom;
+  } else {
+    result.cameraZoom = next;
+  }
+  return result;
+}
+
+/** Sets the level's camera-follow preset. Current is the default and omitted. */
+export function setCameraFollow(level: LevelData, id: string | undefined): LevelData {
+  const next = id === 'current' || id === '' ? undefined : id;
+  if (level.cameraFollow === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result.cameraFollow;
+  } else {
+    result.cameraFollow = next;
+  }
+  return result;
+}
+
+function setOptionalField(
+  level: LevelData,
+  key: 'background' | 'foreground' | 'analogFx',
+  value: string | undefined,
+): LevelData {
+  const next = value === '' || value === 'none' ? undefined : value;
+  if (level[key] === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result[key];
+  } else {
+    result[key] = next;
+  }
+  return result;
 }
 
 /** True when resizing to width x height would discard tiles or entities. */

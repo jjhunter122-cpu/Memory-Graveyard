@@ -1,8 +1,9 @@
 import { ImageSource } from 'excalibur';
 import type { AssetManifest } from './level/manifest';
+import { sceneryImagePaths } from './scenery';
 
 /**
- * TEMP: unlicensed teammate art lives in `public/assets/TEMP`.
+ * TEMP: unlicensed teammate stand-ins live in `public/assets/TEMP`.
  *
  * Flip this to `false` (and delete that folder) before publishing. Tile art is
  * then ignored and the backdrop falls back to the original fog colour, so the
@@ -10,16 +11,16 @@ import type { AssetManifest } from './level/manifest';
  */
 export const TEMP_ASSETS = true;
 
-/**
- * Painted wallpaper shown behind every playable level. Kept out of the tile
- * manifest because it is scenery, not a tile: it spans the whole level rather
- * than sitting on the 32px grid.
- */
-export const LEVEL_BACKGROUND = 'assets/TEMP/wallpaper_color.png';
-
 export interface GameTextures {
-  /** Backdrop texture, if one was configured. */
-  background?: ImageSource;
+  /**
+   * Reserved for character sheets. The current main game uses placeholder
+   * player/monster rectangles, so these stay undefined until real art arrives.
+   */
+  heroSheet?: ImageSource;
+  ghostSheet?: ImageSource;
+  skeletonSheet?: ImageSource;
+  /** Scene-dressing art, keyed by path relative to `public/assets`. */
+  scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
   tiles: Map<string, ImageSource>;
 }
@@ -31,9 +32,9 @@ export interface GameAssets {
 }
 
 /**
- * Creates the image resources described by the manifest (plus the level
- * backdrop). Missing images simply do not appear in the map, so every tile
- * keeps its placeholder colour as a fallback.
+ * Creates the image resources described by the manifest and the scenery
+ * presets. Missing images simply do not appear in the map, so every tile keeps
+ * its placeholder colour as a fallback.
  */
 export function createGameTextures(base: string, manifest: AssetManifest): GameAssets {
   const tilePaths = new Set<string>();
@@ -52,13 +53,13 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     tiles.set(path, new ImageSource(`${base}assets/${path}`));
   }
 
-  const background = TEMP_ASSETS
-    ? new ImageSource(`${base}${LEVEL_BACKGROUND}`)
-    : undefined;
-  const resources = [...tiles.values()];
-  if (background) {
-    resources.push(background);
+  const scenery = new Map<string, ImageSource>();
+  for (const path of sceneryImagePaths()) {
+    scenery.set(path, new ImageSource(`${base}assets/${path}`));
   }
 
-  return { textures: { background, tiles }, resources };
+  return {
+    textures: { scenery, tiles },
+    resources: [...tiles.values(), ...scenery.values()],
+  };
 }

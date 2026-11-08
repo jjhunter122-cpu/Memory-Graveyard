@@ -10,9 +10,13 @@ import { Exit } from '../actors/Exit';
 import { Monster } from '../actors/Monster';
 import { TrailFollower, TrailRecorder } from '../chase/trail';
 import { CameraFollow } from '../camera/CameraFollow';
+import { findCameraFollowPreset } from '../camera/cameraFollowSettings';
+import { normalizeCameraZoom } from '../camera/cameraZoom';
+import { characterMetrics, normalizeCharacterScale } from '../characterScale';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
+import { analogOverlay } from '../ui/analogFx';
 
 export type PlayOrigin = 'campaign' | 'levelSelect' | 'editor';
 
@@ -43,6 +47,7 @@ export class PlayScene extends Scene {
   private dead = false;
   private graceRemaining: number = MONSTER.graceSeconds;
   private levelHeightPx = 0;
+  private catchRadius: number = MONSTER.catchRadius;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -71,6 +76,7 @@ export class PlayScene extends Scene {
 
   override onActivate(_context: unknown): void {
     setMode('playing');
+    analogOverlay.setPreset(this.level.analogFx);
     this.hud.setLevelName(this.level.name);
     this.hud.setVisible(this.options.showHud ?? true);
     this.hud.setThreat(
@@ -84,6 +90,7 @@ export class PlayScene extends Scene {
   }
 
   override onDeactivate(): void {
+    analogOverlay.clear();
     document.removeEventListener('keydown', this.onKeyDown);
     if (this.completeTimer !== null) {
       clearTimeout(this.completeTimer);
@@ -101,11 +108,16 @@ export class PlayScene extends Scene {
   override onInitialize(_engine: Engine): void {
     this.built = buildLevel(this, this.level, this.manifest, this.textures);
     this.levelHeightPx = this.built.heightPx;
+    const scale = normalizeCharacterScale(this.level.characterScale);
+    const metrics = characterMetrics(scale, this.level.tileSize);
+    this.catchRadius = metrics.catchRadius;
 
     this.player = new Player(
       this.built.spawn.x,
       this.built.spawn.y,
       this.built.groundProbe,
+      this.built.slopeProbe,
+      { width: metrics.playerWidth, height: metrics.playerHeight },
     );
     this.player.on('collisionstart', (event) => {
       // Actor-level collision events carry the geometry Collider; the actor is
@@ -120,15 +132,19 @@ export class PlayScene extends Scene {
     this.add(this.player);
 
     if (this.built.monsterSpawn) {
-      this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
+      this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y, {
+        width: metrics.monsterWidth,
+        height: metrics.monsterHeight,
+      });
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
       this.add(this.monster);
     }
 
-    this.cameraFollow = new CameraFollow(this, this.built.widthPx, this.built.heightPx);
-    this.cameraFollow.update(this.player.pos, 1);
+    this.camera.zoom = normalizeCameraZoom(this.level.cameraZoom);
+    this.cameraFollow = new CameraFollow(this, findCameraFollowPreset(this.level.cameraFollow));
+    this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.built.memories.length);
   }
 
@@ -161,7 +177,7 @@ export class PlayScene extends Scene {
         monster.pos.setTo(follower.pos.x, follower.pos.y);
         threatDistance = this.distanceBetweenMonsterAndPlayer();
         this.updateThreat(threatDistance);
-        if (threatDistance <= MONSTER.catchRadius) {
+        if (threatDistance <= this.catchRadius) {
           this.die();
           return;
         }
@@ -170,7 +186,10 @@ export class PlayScene extends Scene {
       this.hud.setThreat('SAFE', 'calm');
     }
 
-    this.cameraFollow.update(this.player.pos, dt);
+    this.cameraFollow.update(this.player.pos, dt, {
+      vy: this.player.vel.y,
+      grounded: this.player.controller.isGrounded,
+    });
     this.checkFall();
     if (this.dead) {
       return;
@@ -420,7 +439,7 @@ export class PlayScene extends Scene {
     this.completed = false;
     this.graceRemaining = MONSTER.graceSeconds;
     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
-    this.cameraFollow.update(this.player.pos, 1);
+    this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.totalMemories);
 
     if (this.built.monsterSpawn) {

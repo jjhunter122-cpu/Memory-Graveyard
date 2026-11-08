@@ -20,6 +20,26 @@ export interface TileDef {
   image?: string;
   /** Optional source rect within `image`, defaulting to a full tile. */
   source?: { x: number; y: number; width: number; height: number };
+  /** Draw this tile as a free-standing prop anchored to the tile's bottom edge. */
+  decor?: boolean;
+  /** Optional display width for decor art, in pixels. */
+  width?: number;
+  /** Optional display height for decor art, in pixels. */
+  height?: number;
+  /** Optional multiplier used when `width` / `height` are not supplied. */
+  scale?: number;
+  /** Which tile edge decor art is pinned to. Defaults to bottom. */
+  anchor?: 'bottom' | 'top';
+  /** Restrict collision and art to one 16px half of the tile. */
+  half?: 'top' | 'bottom';
+  /** Collision-only tile: the body exists, but no visual is drawn. */
+  hidden?: boolean;
+  /** Marks this tile as a walkable ramp surface. */
+  slope?: 'up' | 'down';
+  /** Distance from the tile top to the high end of a slope surface. */
+  slopeOffset?: number;
+  /** Vertical rise across the width of a slope tile. */
+  slopeRise?: number;
 }
 
 export interface Tileset {
@@ -103,7 +123,69 @@ function validateTile(raw: unknown, index: number): TileDef {
     }
     def.source = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
   }
+  if (tile.decor === true) {
+    def.decor = true;
+  }
+  if (tile.width !== undefined) {
+    if (!isPositiveNumber(tile.width)) {
+      throw new ManifestValidationError(`tile ${tile.id} width must be a positive number`);
+    }
+    def.width = tile.width;
+  }
+  if (tile.height !== undefined) {
+    if (!isPositiveNumber(tile.height)) {
+      throw new ManifestValidationError(`tile ${tile.id} height must be a positive number`);
+    }
+    def.height = tile.height;
+  }
+  if (tile.scale !== undefined) {
+    if (!isPositiveNumber(tile.scale)) {
+      throw new ManifestValidationError(`tile ${tile.id} scale must be a positive number`);
+    }
+    def.scale = tile.scale;
+  }
+  if (tile.anchor !== undefined) {
+    if (tile.anchor !== 'bottom' && tile.anchor !== 'top') {
+      throw new ManifestValidationError(`tile ${tile.id} anchor must be bottom or top`);
+    }
+    def.anchor = tile.anchor;
+  }
+  if (tile.hidden === true) {
+    def.hidden = true;
+  }
+  if (tile.half !== undefined) {
+    if (tile.half !== 'top' && tile.half !== 'bottom') {
+      throw new ManifestValidationError(`tile ${tile.id} half must be top or bottom`);
+    }
+    def.half = tile.half;
+  }
+  if (tile.slope !== undefined) {
+    if (tile.slope !== 'up' && tile.slope !== 'down') {
+      throw new ManifestValidationError(`tile ${tile.id} slope must be up or down`);
+    }
+    def.slope = tile.slope;
+  }
+  if (tile.slopeOffset !== undefined) {
+    if (!isNonNegativeNumber(tile.slopeOffset)) {
+      throw new ManifestValidationError(`tile ${tile.id} slopeOffset must be non-negative`);
+    }
+    def.slopeOffset = tile.slopeOffset;
+  }
+  if (tile.slopeRise !== undefined) {
+    if (!isPositiveNumber(tile.slopeRise)) {
+      throw new ManifestValidationError(`tile ${tile.id} slopeRise must be a positive number`);
+    }
+    def.slopeRise = tile.slopeRise;
+  }
   return def;
+}
+
+function isPositiveNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
 export function validateManifest(raw: unknown): AssetManifest {

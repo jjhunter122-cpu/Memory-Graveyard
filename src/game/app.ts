@@ -10,6 +10,7 @@ import { OptionsScene } from './menus/OptionsScene';
 import { SequenceScene } from './menus/SequenceScene';
 import type { DraftStore, LevelLibrary } from './storage/levels';
 import type { SettingsStore } from './storage/settings';
+import { analogOverlay } from './ui/analogFx';
 
 export interface StartOptions {
   startInEditor: boolean;
@@ -201,6 +202,7 @@ export class GameApp {
       onMenu: () => void this.showTitle(),
       drafts: this.drafts,
       library: this.library,
+      textures: this.textures,
       onProjectSaved: () => this.library.reload(),
     });
   }
@@ -289,6 +291,7 @@ export class GameApp {
   }
 
   private async show(key: string, scene: Scene): Promise<void> {
+    analogOverlay.clear();
     const previous = this.lastKey;
     const unique = this.uniqueKey(key);
     this.engine.addScene(unique, scene);

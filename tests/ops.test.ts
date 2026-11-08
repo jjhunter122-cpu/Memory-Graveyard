@@ -7,6 +7,9 @@ import {
   removeEntitiesAt,
   renameLevel,
   resizeLevel,
+  setAnalogFx,
+  setBackground,
+  setForeground,
   setSkybox,
   setTile,
   tileAt,
@@ -105,5 +108,24 @@ describe('level operations', () => {
     const withSky = setSkybox(level, '#112233');
     expect(withSky.skybox).toBe('#112233');
     expect(setSkybox(withSky, undefined).skybox).toBeUndefined();
+  });
+
+  it('sets and clears scenery presets', () => {
+    const level = makeLevel();
+    const withBackground = setBackground(level, 'pixel-platformer-world-flat');
+    expect(withBackground.background).toBe('pixel-platformer-world-flat');
+    expect(setBackground(withBackground, undefined).background).toBeUndefined();
+
+    const withForeground = setForeground(level, 'pixel-platformer-world-room-1');
+    expect(withForeground.foreground).toBe('pixel-platformer-world-room-1');
+    expect(setForeground(withForeground, 'none').foreground).toBeUndefined();
+  });
+
+  it('sets and clears the analog FX preset', () => {
+    const level = makeLevel();
+    const withFx = setAnalogFx(level, 'vignette');
+    expect(withFx.analogFx).toBe('vignette');
+    expect(setAnalogFx(withFx, undefined).analogFx).toBeUndefined();
+    expect(setAnalogFx(withFx, 'none').analogFx).toBeUndefined();
   });
 });

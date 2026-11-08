@@ -25,6 +25,27 @@ describe('level schema', () => {
     expect(parseLevel(serializeLevel(level))).toEqual(level);
   });
 
+  it('round-trips background, foreground and analog FX ids', () => {
+    const level = createLevel('Scenery', 2, 2, 32);
+    level.background = 'pixel-platformer-world-flat';
+    level.foreground = 'pixel-platformer-world-room-1';
+    level.analogFx = 'vignette';
+    expect(parseLevel(serializeLevel(level))).toEqual(level);
+  });
+
+  it('rejects empty scenery or analog FX ids', () => {
+    const level = createLevel('Scenery', 2, 2, 32);
+    expect(() =>
+      validateLevel({ ...level, background: '' }),
+    ).toThrow(/background/);
+    expect(() =>
+      validateLevel({ ...level, foreground: '' }),
+    ).toThrow(/foreground/);
+    expect(() =>
+      validateLevel({ ...level, analogFx: '' }),
+    ).toThrow(/analogFx/);
+  });
+
   it('rejects a malformed skybox colour', () => {
     const bad = {
       version: 1,

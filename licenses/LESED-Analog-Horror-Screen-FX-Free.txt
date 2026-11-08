@@ -1,0 +1,9 @@
+Analog Horror Screen FX Free Sampler — License
+Copyright (c) 2026 LESED (lesed.itch.io)
+
+1. You may use these overlays in personal and commercial projects: games, videos, streams, trailers and apps.
+2. You may modify them (recolour, crop, retime, combine) for use in your projects.
+3. You may not sell or share the overlay files themselves, alone or modified, including in other asset packs or templates.
+4. You may not use them to train or fine-tune generative AI models, or claim them as your own original work.
+5. Credit is appreciated but not required.
+6. The overlays are provided "as is", without warranty of any kind.

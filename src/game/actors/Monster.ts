@@ -7,12 +7,16 @@ import { MONSTER } from '../config';
  * vertical routes without pathfinding.
  */
 export class Monster extends Actor {
-  constructor(x: number, y: number) {
+  constructor(
+    x: number,
+    y: number,
+    size: { width: number; height: number } = { width: MONSTER.width, height: MONSTER.height },
+  ) {
     super({
       x,
       y,
-      width: MONSTER.width,
-      height: MONSTER.height,
+      width: size.width,
+      height: size.height,
       color: Color.fromHex(MONSTER.color),
       collisionType: CollisionType.PreventCollision,
       anchor: new Vector(0.5, 0.5),

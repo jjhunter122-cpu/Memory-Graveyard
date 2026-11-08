@@ -5,11 +5,13 @@
 ## Folders
 
 ```text
-TEMP/        unlicensed stand-ins; gated by TEMP_ASSETS; must not ship
-tiles/       permanent tile art (planned)
-props/       permanent props and hide-spot art (planned)
-characters/  player and monster sheets (planned)
-ui/          permanent interface art (planned)
+TEMP/                 unlicensed stand-ins; gated by TEMP_ASSETS; must not ship
+pixel-platformer-world/  permanent Pixel tiles, rooms, backgrounds and source art
+analog-fx/            LESED Vignette overlay + licence
+tiles/                permanent tile art (planned)
+props/                permanent props and hide-spot art (planned)
+characters/           player and monster sheets (planned)
+ui/                   permanent interface art (planned)
 ```
 
 ## Rules

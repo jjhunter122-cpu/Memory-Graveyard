@@ -6,6 +6,8 @@
  * validated and round-tripped in tests and reused by the editor (M3).
  */
 
+import { isCameraFollowId } from '../camera/cameraFollowSettings';
+
 export const LEVEL_VERSION = 1;
 
 /** Tile id used for "nothing here". */
@@ -36,6 +38,21 @@ export interface LevelData {
   entities: LevelEntity[];
   /** Optional solid skybox colour behind the level. */
   skybox?: string;
+  /** Optional background scenery preset id. */
+  background?: string;
+  /** Optional foreground scenery preset id. */
+  foreground?: string;
+  /** Optional analog-horror screen FX preset id. */
+  analogFx?: string;
+  /**
+   * Character height multiplier for this level. 1 is the existing baseline;
+   * 1.5, 1.75 and 2 make both the player and the monster that tall in tiles.
+   */
+  characterScale?: number;
+  /** Optional world zoom. Lower pulls the camera back and shows more level. */
+  cameraZoom?: number;
+  /** Optional camera-follow preset id. */
+  cameraFollow?: string;
 }
 
 export class LevelValidationError extends Error {
@@ -142,6 +159,37 @@ export function validateLevel(raw: unknown): LevelData {
       throw new LevelValidationError('skybox must be a six-digit hex colour');
     }
     result.skybox = obj.skybox;
+  }
+  for (const key of ['background', 'foreground', 'analogFx'] as const) {
+    const value = obj[key];
+    if (value !== undefined) {
+      if (typeof value !== 'string' || value.length === 0) {
+        throw new LevelValidationError(`${key} must be a non-empty string`);
+      }
+      result[key] = value;
+    }
+  }
+  if (obj.characterScale !== undefined) {
+    const scale = obj.characterScale;
+    if (scale !== 1 && scale !== 1.5 && scale !== 1.75 && scale !== 2) {
+      throw new LevelValidationError('characterScale must be 1, 1.5, 1.75 or 2');
+    }
+    result.characterScale = scale;
+  }
+  if (obj.cameraZoom !== undefined) {
+    const zoom = obj.cameraZoom;
+    if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom < 0.5 || zoom > 2) {
+      throw new LevelValidationError('cameraZoom must be a number between 0.5 and 2');
+    }
+    result.cameraZoom = zoom;
+  }
+  if (obj.cameraFollow !== undefined) {
+    if (!isCameraFollowId(obj.cameraFollow)) {
+      throw new LevelValidationError(
+        'cameraFollow must be current, soft, momentum or impact',
+      );
+    }
+    result.cameraFollow = obj.cameraFollow;
   }
   return result;
 }
