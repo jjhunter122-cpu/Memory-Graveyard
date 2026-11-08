@@ -190,11 +190,11 @@ function addSolid(
       collisionType: CollisionType.Fixed,
       collisionGroup: ONEWAY_GROUP,
     });
-    if (texture) {
+    if (texture || def.hidden) {
       body.graphics.visible = false;
     }
     scene.add(body);
-    if (texture) {
+    if (texture && !def.hidden) {
       addTileGraphic(scene, def, texture, run, tileSize, TILE_IMAGE_TINT, 0);
     }
     return;
@@ -209,13 +209,13 @@ function addSolid(
     collisionType: CollisionType.Fixed,
     collisionGroup: SOLID_GROUP,
   });
-  if (texture) {
-    // Painted tiles own the visuals; keep the collision body invisible.
+  if (texture || def.hidden) {
+    // Painted or collision-only tiles own the visuals; keep the body invisible.
     body.graphics.visible = false;
   }
   scene.add(body);
 
-  if (texture) {
+  if (texture && !def.hidden) {
     addTileGraphic(scene, def, texture, run, tileSize, TILE_IMAGE_TINT, 0);
   }
 

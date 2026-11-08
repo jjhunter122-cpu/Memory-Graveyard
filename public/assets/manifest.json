@@ -312,6 +312,40 @@
           "anchor": "top"
         }
       ]
+    },
+    {
+      "name": "pixel-platformer-world-test",
+      "tiles": [
+        {
+          "id": 60,
+          "name": "collision",
+          "collision": "solid",
+          "color": "#2f6b4f",
+          "hidden": true
+        },
+        {
+          "id": 61,
+          "name": "torch",
+          "collision": "none",
+          "color": "#c77b3a",
+          "image": "DRYFIT/pixel-platformer-world/Anim/torchA1.png",
+          "decor": true,
+          "width": 16,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 62,
+          "name": "diamond",
+          "collision": "none",
+          "color": "#7ce7ff",
+          "image": "DRYFIT/pixel-platformer-world/Anim/diamond1.png",
+          "decor": true,
+          "width": 8,
+          "height": 9,
+          "anchor": "bottom"
+        }
+      ]
     }
   ]
 }

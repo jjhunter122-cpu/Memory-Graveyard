@@ -16,6 +16,7 @@ These are deliberately not part of the camera promotion patch.
 - Woods backgrounds
 - Grunge / liminal CC0 tileset — still a future candidate, not integrated
 - GothicVania props, gravestones, trees and statues
+- Pixel Platformer World (Szadi art) — dryfit test level only, not promoted
 
 ## Mechanics
 

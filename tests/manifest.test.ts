@@ -27,6 +27,22 @@ describe('asset manifest', () => {
     expect(() => validateManifest(bad)).toThrow(ManifestValidationError);
   });
 
+  it('accepts hidden collision-only tiles', () => {
+    const manifest = validateManifest({
+      version: 1,
+      tileSize: 32,
+      tilesets: [
+        {
+          name: 'test',
+          tiles: [
+            { id: 1, name: 'collision', collision: 'solid', color: '#000', hidden: true },
+          ],
+        },
+      ],
+    });
+    expect(tileIndex(manifest).get(1)?.hidden).toBe(true);
+  });
+
   it('accepts half blocks and slope surfaces', () => {
     const manifest = validateManifest({
       version: 1,

@@ -777,7 +777,9 @@ export class EditorScene extends Scene {
         );
       }
     }
-    if (layerIndex !== this.activeLayer) {
+    if (def.hidden) {
+      actor.graphics.opacity = layerIndex === this.activeLayer ? 0.25 : 0.12;
+    } else if (layerIndex !== this.activeLayer) {
       actor.graphics.opacity = 0.45;
     }
     this.add(actor);

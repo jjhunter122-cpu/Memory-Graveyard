@@ -11,6 +11,7 @@
 | Castlevania tiles | HOLD | Wrong vibe for the current main direction. |
 | Woods backgrounds | HOLD | Still available in the dryfit editor, not promoted. |
 | Grunge / liminal tileset | HOLD | CC0 candidate, not integrated yet. |
+| Pixel Platformer World | HOLD | Free/pay-what-you-want Szadi art pack. Dryfit test level only. |
 | Half blocks | HOLD | Dryfit mechanic test. |
 | Ramps / slope snap | HOLD | Dryfit mechanic test. |
 | Skeleton pursuer | HOLD | Dryfit test pursuer. |

@@ -42,6 +42,19 @@ No decision has been made. The Vignette is pinned in `STATUS.md`.
 
 Same LESED custom licence. Dryfit-only until the Vignette decision is made.
 
+## Pixel Platformer World (Szadi art)
+
+- Free / pay-what-you-want pack.
+- The pack's included `public-license.txt` says:
+  - "Public domain and free to use, personal or commercial."
+  - "Credit is not required but appreciated."
+  - "You can edit, but not sell the asset pack."
+- The creator's profile page also describes personal/commercial use, modification
+  and selling works made with the assets, but not reselling the asset pack or
+  using it in a logo/trademark.
+- Status: dryfit test level only, not promoted. Keep the raw pack local/ignored
+  until the main licence approach is decided.
+
 ## Castlevania / Woods / Grunge
 
 - GothicVania Cemetery: CC0

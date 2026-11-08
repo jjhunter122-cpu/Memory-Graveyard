@@ -54,6 +54,24 @@ export const BACKGROUND_PRESETS: readonly SceneryPreset[] = [
     ],
   },
   {
+    id: 'pixel-platformer-world',
+    name: 'Pixel Platformer World',
+    layers: [
+      { image: 'DRYFIT/pixel-platformer-world/Background/background1.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background2.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background3.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background4.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background5.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background6.png', height: 1, anchor: 'center' },
+      {
+        image: 'DRYFIT/pixel-platformer-world/room-test.png',
+        height: 1,
+        anchor: 'center',
+        repeat: false,
+      },
+    ],
+  },
+  {
     id: 'woods',
     name: 'Pixel Woods',
     layers: [

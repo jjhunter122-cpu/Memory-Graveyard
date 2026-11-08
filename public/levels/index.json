@@ -1,35 +1,41 @@
-﻿{
-    "version":  1,
-    "levels":  [
-                   {
-                       "id":  "test-course",
-                       "name":  "Test Course",
-                       "file":  "levels/test-course.json",
-                       "tier":  "dev"
-                   },
-                   {
-                       "id":  "tutorial-longer-level-test",
-                       "name":  "Tutorial/longer level test",
-                       "file":  "levels/tutorial-longer-level-test.json",
-                       "tier":  "dev"
-                   },
-                   {
-                       "id":  "first-test",
-                       "name":  "First test",
-                       "file":  "levels/first-test.json",
-                       "tier":  "dev"
-                   },
-                   {
-                       "id":  "length-test",
-                       "name":  "Length Test",
-                       "file":  "levels/length-test.json",
-                       "tier":  "dev"
-                   },
-                   {
-                       "id":  "dryfit-gothicvania",
-                       "name":  "Dry-fit GothicVania",
-                       "file":  "levels/dryfit-gothicvania.json",
-                       "tier":  "dev"
-                   }
-               ]
+{
+  "version": 1,
+  "levels": [
+    {
+      "id": "test-course",
+      "name": "Test Course",
+      "file": "levels/test-course.json",
+      "tier": "dev"
+    },
+    {
+      "id": "tutorial-longer-level-test",
+      "name": "Tutorial/longer level test",
+      "file": "levels/tutorial-longer-level-test.json",
+      "tier": "dev"
+    },
+    {
+      "id": "first-test",
+      "name": "First test",
+      "file": "levels/first-test.json",
+      "tier": "dev"
+    },
+    {
+      "id": "length-test",
+      "name": "Length Test",
+      "file": "levels/length-test.json",
+      "tier": "dev"
+    },
+    {
+      "id": "dryfit-gothicvania",
+      "name": "Dry-fit GothicVania",
+      "file": "levels/dryfit-gothicvania.json",
+      "tier": "dev"
+    },
+    {
+      "id": "new-tile-set-test",
+      "name": "New Tile Set test",
+      "file": "levels/new-tile-set-test.json",
+      "tier": "dev"
+    }
+  ]
 }

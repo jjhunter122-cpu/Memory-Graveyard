@@ -32,6 +32,8 @@ export interface TileDef {
   anchor?: 'bottom' | 'top';
   /** Restrict collision and art to one 16px half of the tile. */
   half?: 'top' | 'bottom';
+  /** Collision-only tile: the body exists, but no visual is drawn. */
+  hidden?: boolean;
   /** Marks this tile as a walkable ramp surface. */
   slope?: 'up' | 'down';
   /** Distance from the tile top to the high end of a slope surface. */
@@ -147,6 +149,9 @@ function validateTile(raw: unknown, index: number): TileDef {
       throw new ManifestValidationError(`tile ${tile.id} anchor must be bottom or top`);
     }
     def.anchor = tile.anchor;
+  }
+  if (tile.hidden === true) {
+    def.hidden = true;
   }
   if (tile.half !== undefined) {
     if (tile.half !== 'top' && tile.half !== 'bottom') {
