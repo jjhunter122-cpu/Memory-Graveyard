@@ -252,3 +252,60 @@ Gameplay is WASD-only. Arrow keys are intentionally unbound.
 - How much of the Backrooms should remain literal versus implied?
 - Is the final look stark 1-bit monochrome, muted desaturated colour, or a mix?
 - What is the final name of the “memory” collectible if it returns as lore?
+
+## Second Major Update — 2026-11-07 to 2026-11-08
+
+### Editor and authoring
+- Added Tiles / Visual / Entities tabs to the editor sidebar.
+- Grouped tiles by tileset with an OG and Pixel Platformer World selector.
+- Added a tile grid, selected-tile readout and animated entity placeholders.
+- Moved level size, skybox, background/foreground, character scale, camera and
+  Analog FX into the Visual tab.
+- Added a Default Test baseline and new-level template.
+- New levels start on a 32px grid with a Pixel moss floor.
+
+### Character scale
+- Added a per-level character height setting:
+  Current/base, 1.5, 1.75 and 2 tiles.
+- 1 tile is treated as roughly 1 metre; 1.75 tiles is the current target.
+- Player and monster share the same target height for now.
+- Character art is still placeholder; the dryfit hero/ghost/skeleton files were
+  archived rather than promoted.
+
+### Camera
+- Added per-level camera distance, defaulting new levels to Wide 1.0×.
+- Added Current, Soft, Momentum and Impact follow presets.
+- Soft + fall momentum is the current keeper: the camera follows small jumps,
+  leads downward during falls and settles back up after landing.
+- The landing dip was dropped as too subtle.
+- Camera remains unclamped at level edges and snaps on start/respawn.
+
+### Pixel Platformer World
+- Adopted the Pixel Platformer World pack as the current tile and background set.
+- Imported 92 tiles, nine room palettes, six backgrounds and source art into
+  tracked `public/assets/pixel-platformer-world/`.
+- Added walkable palettes for moss, rose, olive, crimson, teal, blood, lime,
+  slate and ocean.
+- Added platform trim, walls, panels, arches, columns, rails, steps and props.
+- Slopes/slants are visual-only until their collision surfaces are wired.
+- Fixed 16px Pixel art scaling into 32px level cells.
+
+### Vignette
+- Vignette is the default Analog FX for new levels.
+- Scanlines, Static and Combined are held back for now.
+- LESED Vignette asset and licence are tracked.
+- `CREDITS.md` credits LESED with both the asset page and creator page.
+
+### Repository and testing
+- Promoted the editor, camera, character-scale and Pixel work to local
+  `develop`; nothing was pushed.
+- Existing OG levels remain unchanged and keep their old camera/scale.
+- Archived the dryfit branch as `archive/dryfit-2026-11-08` and removed it from
+  active work.
+- 133 tests pass; typecheck and production build pass.
+
+### Still open
+- Real player/monster art and animation.
+- Slope collision and collision for large decor pieces.
+- Replacing the old OG levels with new Pixel levels.
+- In-game credits screen.
