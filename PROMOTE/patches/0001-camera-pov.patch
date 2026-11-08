@@ -1,0 +1,116 @@
+diff --git a/src/game/camera/CameraFollow.ts b/src/game/camera/CameraFollow.ts
+index 3ba192a..4a86262 100644
+--- a/src/game/camera/CameraFollow.ts
++++ b/src/game/camera/CameraFollow.ts
+@@ -1,21 +1,12 @@
+ import type { Scene, Vector } from 'excalibur';
+-import { VIEW } from '../config';
+-import { clamp } from '../systems/graveyard';
++import { CAMERA } from '../config';
+ 
+-const DEADZONE_X = 48;
+-const DEADZONE_Y = 36;
+-const FOLLOW_LERP = 6;
+-
+-/** Smoothly follows a target, with a deadzone, clamped to the level bounds. */
++/**
++ * Smoothly follows a target with a small deadzone. It deliberately does not
++ * clamp to the level bounds, so the target stays centered even at the edges.
++ */
+ export class CameraFollow {
+-  private readonly halfWidth = VIEW.width / 2;
+-  private readonly halfHeight = VIEW.height / 2;
+-
+-  constructor(
+-    private readonly scene: Scene,
+-    private readonly levelWidth: number,
+-    private readonly levelHeight: number,
+-  ) {}
++  constructor(private readonly scene: Scene) {}
+ 
+   update(target: Vector, dt: number): void {
+     const camera = this.scene.camera;
+@@ -24,17 +15,20 @@ export class CameraFollow {
+ 
+     const dx = target.x - x;
+     const dy = target.y - y;
+-    const lerp = Math.min(1, FOLLOW_LERP * dt);
++    const lerp = Math.min(1, CAMERA.followLerp * dt);
+ 
+-    if (Math.abs(dx) > DEADZONE_X) {
+-      x += (dx - Math.sign(dx) * DEADZONE_X) * lerp;
++    if (Math.abs(dx) > CAMERA.deadzoneX) {
++      x += (dx - Math.sign(dx) * CAMERA.deadzoneX) * lerp;
+     }
+-    if (Math.abs(dy) > DEADZONE_Y) {
+-      y += (dy - Math.sign(dy) * DEADZONE_Y) * lerp;
++    if (Math.abs(dy) > CAMERA.deadzoneY) {
++      y += (dy - Math.sign(dy) * CAMERA.deadzoneY) * lerp;
+     }
+ 
+-    const clampedX = clamp(x, this.halfWidth, this.levelWidth - this.halfWidth);
+-    const clampedY = clamp(y, this.halfHeight, this.levelHeight - this.halfHeight);
+-    camera.pos.setTo(clampedX, clampedY);
++    camera.pos.setTo(x, y);
++  }
++
++  /** Center immediately, e.g. on level start or respawn. */
++  snap(target: Vector): void {
++    this.scene.camera.pos.setTo(target.x, target.y);
+   }
+ }
+diff --git a/src/game/config.ts b/src/game/config.ts
+index afc9ced..6b36a10 100644
+--- a/src/game/config.ts
++++ b/src/game/config.ts
+@@ -8,6 +8,18 @@ export const VIEW = {
+ /** Logical tile size in pixels. Levels are authored on this grid. */
+ export const TILE = 32;
+ 
++/** Gameplay camera feel. The editor keeps its own camera settings. */
++export const CAMERA = {
++  /** World zoom. 1.35 shows roughly 22 x 12.5 tiles. */
++  zoom: 1.35,
++  /** Horizontal deadzone in world pixels before the camera starts following. */
++  deadzoneX: 24,
++  /** Vertical deadzone in world pixels before the camera starts following. */
++  deadzoneY: 18,
++  /** Follow smoothing per second. Lower is lazier. */
++  followLerp: 5,
++} as const;
++
+ export const PHYSICS = {
+   gravityY: 1500,
+   /**
+diff --git a/src/game/scenes/PlayScene.ts b/src/game/scenes/PlayScene.ts
+index a186d80..c868b22 100644
+--- a/src/game/scenes/PlayScene.ts
++++ b/src/game/scenes/PlayScene.ts
+@@ -1,5 +1,5 @@
+ import { Keys, Scene, type Engine } from 'excalibur';
+-import { LEVEL, MONSTER } from '../config';
++import { CAMERA, LEVEL, MONSTER } from '../config';
+ import type { LevelData } from '../level/schema';
+ import type { AssetManifest } from '../level/manifest';
+ import type { GameTextures } from '../assets';
+@@ -127,8 +127,9 @@ export class PlayScene extends Scene {
+       this.add(this.monster);
+     }
+ 
+-    this.cameraFollow = new CameraFollow(this, this.built.widthPx, this.built.heightPx);
+-    this.cameraFollow.update(this.player.pos, 1);
++    this.camera.zoom = CAMERA.zoom;
++    this.cameraFollow = new CameraFollow(this);
++    this.cameraFollow.snap(this.player.pos);
+     this.hud.setProgress(0, this.built.memories.length);
+   }
+ 
+@@ -420,7 +421,7 @@ export class PlayScene extends Scene {
+     this.completed = false;
+     this.graceRemaining = MONSTER.graceSeconds;
+     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
+-    this.cameraFollow.update(this.player.pos, 1);
++    this.cameraFollow.snap(this.player.pos);
+     this.hud.setProgress(0, this.totalMemories);
+ 
+     if (this.built.monsterSpawn) {
