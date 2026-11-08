@@ -13,9 +13,10 @@ describe('dry-fit GothicVania level', () => {
     expect(level.entities.some((entity) => entity.type === 'monster')).toBe(false);
   });
 
-  it('keeps the selected background and foreground presets', () => {
+  it('keeps the selected background, foreground and analog FX presets', () => {
     expect(level.background).toBe('gothicvania');
     expect(level.foreground).toBe('gothicvines');
+    expect(['scanlines', 'vignette', 'static', 'rec', 'full']).toContain(level.analogFx);
   });
 
   it('only references tile ids defined in the manifest', () => {

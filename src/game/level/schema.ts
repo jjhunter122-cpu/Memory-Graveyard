@@ -40,6 +40,8 @@ export interface LevelData {
   background?: string;
   /** Optional foreground scenery preset id. */
   foreground?: string;
+  /** Optional analog-horror screen FX preset id. */
+  analogFx?: string;
 }
 
 export class LevelValidationError extends Error {
@@ -147,7 +149,7 @@ export function validateLevel(raw: unknown): LevelData {
     }
     result.skybox = obj.skybox;
   }
-  for (const key of ['background', 'foreground'] as const) {
+  for (const key of ['background', 'foreground', 'analogFx'] as const) {
     const value = obj[key];
     if (value !== undefined) {
       if (typeof value !== 'string' || value.length === 0) {

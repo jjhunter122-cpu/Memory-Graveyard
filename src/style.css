@@ -28,6 +28,46 @@ body {
   height: 100%;
 }
 
+.analog-fx {
+  position: absolute;
+  inset: 0;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.analog-fx.active {
+  display: block;
+}
+
+.analog-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.analog-layer[data-layer='scanlines'] {
+  opacity: 0.38;
+  mix-blend-mode: multiply;
+}
+
+.analog-layer[data-layer='vignette'] {
+  opacity: 0.82;
+}
+
+.analog-layer[data-layer='static'] {
+  opacity: 0.36;
+  mix-blend-mode: screen;
+}
+
+.analog-layer[data-layer='rec'] {
+  opacity: 0.86;
+}
+
 #hud {
   position: absolute;
   inset: 0;

@@ -104,9 +104,13 @@ export function setForeground(level: LevelData, id: string | undefined): LevelDa
   return setOptionalField(level, 'foreground', id);
 }
 
+export function setAnalogFx(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'analogFx', id);
+}
+
 function setOptionalField(
   level: LevelData,
-  key: 'background' | 'foreground',
+  key: 'background' | 'foreground' | 'analogFx',
   value: string | undefined,
 ): LevelData {
   const next = value === '' || value === 'none' ? undefined : value;

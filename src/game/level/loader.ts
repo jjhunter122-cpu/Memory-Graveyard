@@ -6,6 +6,7 @@ import { Memory } from '../actors/Memory';
 import { Exit } from '../actors/Exit';
 import { EMPTY_TILE, type LevelData } from './schema';
 import { tileIndex, type AssetManifest, type TileDef } from './manifest';
+import { tileSurfaceTop } from './surfaces';
 import { mergeHorizontal, toGrid, type TileRun } from './tiles';
 import { addSceneryPreset } from './scenery';
 import { findBackgroundPreset, findForegroundPreset } from '../scenery';
@@ -38,7 +39,7 @@ function addTileGraphic(
   z: number,
 ): void {
   const displayHeight = def.half ? tileSize / 2 : tileSize;
-  const displayTop = run.y * tileSize + (def.half === 'bottom' ? tileSize / 2 : 0);
+  const displayTop = tileSurfaceTop(tileSize, run.y, def.half);
   const runWidth = run.width * tileSize;
 
   if (def.half) {
@@ -175,7 +176,7 @@ function addSolid(
   const width = run.width * tileSize;
   const height = def.half ? tileSize / 2 : run.height * tileSize;
   const left = run.x * tileSize;
-  const top = run.y * tileSize + (def.half === 'bottom' ? tileSize / 2 : 0);
+  const top = tileSurfaceTop(tileSize, run.y, def.half);
   const texture = tileTexture(def, textures);
 
   if (def.collision === 'oneway') {
@@ -339,11 +340,11 @@ export function buildLevel(
   const widthPx = level.width * tileSize;
   const heightPx = level.height * tileSize;
 
-  const solidAt = makeGrid(level.width, level.height);
-  const oneWayAt = makeGrid(level.width, level.height);
+  const solidTopAt = makeSurfaceGrid(level.width, level.height);
+  const oneWayTopAt = makeSurfaceGrid(level.width, level.height);
   const slopes: { x0: number; x1: number; y0: number; y1: number }[] = [];
 
-  // Record which tiles are landable, for the deterministic ground probe.
+  // Record the actual top surface of every landable tile.
   for (const layer of level.layers) {
     if (!layer.collide) {
       continue;
@@ -356,9 +357,9 @@ export function buildLevel(
         if (!def || def.collision === 'none') {
           continue;
         }
-        const target = def.collision === 'oneway' ? oneWayAt[y] : solidAt[y];
+        const target = def.collision === 'oneway' ? oneWayTopAt[y] : solidTopAt[y];
         if (target) {
-          target[x] = true;
+          target[x] = tileSurfaceTop(tileSize, y, def.half);
         }
       }
     }
@@ -375,10 +376,18 @@ export function buildLevel(
       if (x < 0 || x >= level.width) {
         continue;
       }
-      if (solidAt[tileY]?.[x]) {
+      const solidTop = solidTopAt[tileY]?.[x];
+      if (solidTop !== undefined && solidTop >= 0 && feetY >= solidTop - 1 && feetY <= solidTop + 4) {
         return true;
       }
-      if (!ignoreOneWay && oneWayAt[tileY]?.[x]) {
+      const oneWayTop = oneWayTopAt[tileY]?.[x];
+      if (
+        !ignoreOneWay &&
+        oneWayTop !== undefined &&
+        oneWayTop >= 0 &&
+        feetY >= oneWayTop - 1 &&
+        feetY <= oneWayTop + 4
+      ) {
         return true;
       }
     }
@@ -507,10 +516,10 @@ export function buildLevel(
   };
 }
 
-function makeGrid(width: number, height: number): boolean[][] {
-  const rows: boolean[][] = [];
+function makeSurfaceGrid(width: number, height: number): number[][] {
+  const rows: number[][] = [];
   for (let y = 0; y < height; y += 1) {
-    rows.push(new Array<boolean>(width).fill(false));
+    rows.push(new Array<number>(width).fill(-1));
   }
   return rows;
 }

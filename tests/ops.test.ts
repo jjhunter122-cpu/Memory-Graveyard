@@ -7,6 +7,7 @@ import {
   removeEntitiesAt,
   renameLevel,
   resizeLevel,
+  setAnalogFx,
   setBackground,
   setForeground,
   setSkybox,
@@ -118,5 +119,13 @@ describe('level operations', () => {
     const withForeground = setForeground(level, 'gothicvines');
     expect(withForeground.foreground).toBe('gothicvines');
     expect(setForeground(withForeground, 'none').foreground).toBeUndefined();
+  });
+
+  it('sets and clears the analog FX preset', () => {
+    const level = makeLevel();
+    const withFx = setAnalogFx(level, 'full');
+    expect(withFx.analogFx).toBe('full');
+    expect(setAnalogFx(withFx, undefined).analogFx).toBeUndefined();
+    expect(setAnalogFx(withFx, 'none').analogFx).toBeUndefined();
   });
 });

@@ -1,6 +1,7 @@
 import type { AssetManifest } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
 import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
+import { ANALOG_FX_OPTIONS } from '../game/analogFx';
 import {
   BACKGROUND_PRESETS,
   FOREGROUND_PRESETS,
@@ -19,6 +20,7 @@ export interface EditorUiCallbacks {
   onSkybox(color: string | undefined): void;
   onBackground(id: string | undefined): void;
   onForeground(id: string | undefined): void;
+  onAnalogFx(id: string | undefined): void;
   onToggleGrid(): void;
   onUndo(): void;
   onRedo(): void;
@@ -68,6 +70,7 @@ export class EditorUi {
   private readonly skyboxInput: HTMLInputElement;
   private readonly backgroundSelect: HTMLSelectElement;
   private readonly foregroundSelect: HTMLSelectElement;
+  private readonly analogSelect: HTMLSelectElement;
   private readonly shippedHost: HTMLElement;
   private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
@@ -130,6 +133,7 @@ export class EditorUi {
           <div class="ed-scenery">
             <label>Background <select id="ed-background" class="ed-layer"></select></label>
             <label>Foreground <select id="ed-foreground" class="ed-layer"></select></label>
+            <label>Analog FX <select id="ed-analog" class="ed-layer"></select></label>
           </div>
           <h3>Layer</h3>
           <select id="ed-layer" class="ed-layer"></select>
@@ -174,8 +178,15 @@ export class EditorUi {
     this.skyboxInput = this.get<HTMLInputElement>('ed-skybox');
     this.backgroundSelect = this.get<HTMLSelectElement>('ed-background');
     this.foregroundSelect = this.get<HTMLSelectElement>('ed-foreground');
+    this.analogSelect = this.get<HTMLSelectElement>('ed-analog');
     this.fillScenerySelect(this.backgroundSelect, BACKGROUND_PRESETS);
     this.fillScenerySelect(this.foregroundSelect, FOREGROUND_PRESETS);
+    for (const option of ANALOG_FX_OPTIONS) {
+      const element = document.createElement('option');
+      element.value = option.id;
+      element.textContent = option.label;
+      this.analogSelect.append(element);
+    }
 
     const tilesHost = this.get<HTMLElement>('ed-tiles');
     for (const tile of tiles) {
@@ -274,11 +285,15 @@ export class EditorUi {
     this.foregroundSelect.addEventListener('change', () =>
       this.callbacks.onForeground(this.foregroundSelect.value || undefined),
     );
+    this.analogSelect.addEventListener('change', () =>
+      this.callbacks.onAnalogFx(this.analogSelect.value || undefined),
+    );
 
     this.setSize(level.width, level.height);
     this.setSkybox(level.skybox);
     this.setBackground(level.background);
     this.setForeground(level.foreground);
+    this.setAnalogFx(level.analogFx);
   }
 
   private fillScenerySelect(select: HTMLSelectElement, presets: readonly SceneryPreset[]): void {
@@ -353,6 +368,10 @@ export class EditorUi {
 
   setForeground(id: string | undefined): void {
     this.foregroundSelect.value = id ?? '';
+  }
+
+  setAnalogFx(id: string | undefined): void {
+    this.analogSelect.value = id ?? '';
   }
 
   setTile(id: number): void {

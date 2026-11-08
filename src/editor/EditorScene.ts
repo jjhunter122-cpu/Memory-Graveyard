@@ -29,6 +29,7 @@ import {
   removeEntitiesAt,
   renameLevel,
   resizeLevel,
+  setAnalogFx,
   setBackground,
   setForeground,
   setSkybox,
@@ -160,6 +161,7 @@ export class EditorScene extends Scene {
       this.ui.setSkybox(this.level.skybox);
       this.ui.setBackground(this.level.background);
       this.ui.setForeground(this.level.foreground);
+      this.ui.setAnalogFx(this.level.analogFx);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
@@ -584,6 +586,7 @@ export class EditorScene extends Scene {
     this.ui?.setSkybox(this.level.skybox);
     this.ui?.setBackground(this.level.background);
     this.ui?.setForeground(this.level.foreground);
+    this.ui?.setAnalogFx(this.level.analogFx);
   }
 
   private refreshSkybox(): void {
@@ -855,6 +858,13 @@ export class EditorScene extends Scene {
           this.commit(next);
           this.refreshScenery();
           this.ui?.setForeground(this.level.foreground);
+        }
+      },
+      onAnalogFx: (id) => {
+        const next = setAnalogFx(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setAnalogFx(this.level.analogFx);
         }
       },
       onToggleGrid: () => this.toggleGrid(),

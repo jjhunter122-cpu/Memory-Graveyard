@@ -13,6 +13,7 @@ import { CameraFollow } from '../camera/CameraFollow';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
+import { analogOverlay } from '../ui/analogFx';
 import {
   createGhostAnimation,
   createHeroAnimations,
@@ -84,6 +85,7 @@ export class PlayScene extends Scene {
 
   override onActivate(_context: unknown): void {
     setMode('playing');
+    analogOverlay.setPreset(this.level.analogFx);
     this.hud.setLevelName(this.level.name);
     this.hud.setVisible(this.options.showHud ?? true);
     this.hud.setThreat(
@@ -97,6 +99,7 @@ export class PlayScene extends Scene {
   }
 
   override onDeactivate(): void {
+    analogOverlay.clear();
     document.removeEventListener('keydown', this.onKeyDown);
     if (this.completeTimer !== null) {
       clearTimeout(this.completeTimer);

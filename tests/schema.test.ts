@@ -25,14 +25,15 @@ describe('level schema', () => {
     expect(parseLevel(serializeLevel(level))).toEqual(level);
   });
 
-  it('round-trips background and foreground preset ids', () => {
+  it('round-trips background, foreground and analog FX ids', () => {
     const level = createLevel('Scenery', 2, 2, 32);
     level.background = 'gothicvania';
     level.foreground = 'gothicvines';
+    level.analogFx = 'full';
     expect(parseLevel(serializeLevel(level))).toEqual(level);
   });
 
-  it('rejects an empty scenery preset id', () => {
+  it('rejects empty scenery or analog FX ids', () => {
     const level = createLevel('Scenery', 2, 2, 32);
     expect(() =>
       validateLevel({ ...level, background: '' }),
@@ -40,6 +41,9 @@ describe('level schema', () => {
     expect(() =>
       validateLevel({ ...level, foreground: '' }),
     ).toThrow(/foreground/);
+    expect(() =>
+      validateLevel({ ...level, analogFx: '' }),
+    ).toThrow(/analogFx/);
   });
 
   it('rejects a malformed skybox colour', () => {
