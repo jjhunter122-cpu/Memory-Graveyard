@@ -3,11 +3,17 @@ import defaultTestJson from '../public/levels/default-test.json';
 import blankSlabJson from '../public/levels/blank-slab.json';
 import manifestJson from '../public/assets/manifest.json';
 import {
+  BLANK_SLAB_PRESETS,
+  blankSlabPresetFor,
+  defaultPlayArea,
+} from '../src/game/level/sizes';
+import {
   DEFAULT_FLOOR_FILL_TILE,
   DEFAULT_FLOOR_TOP_TILE,
   DEFAULT_LEVEL_HEIGHT,
   DEFAULT_LEVEL_TILE_SIZE,
   DEFAULT_LEVEL_WIDTH,
+  DEFAULT_PLAY_AREA,
   createDefaultLevel,
 } from '../src/editor/defaultLevel';
 import { validateLevel } from '../src/game/level/schema';
@@ -36,9 +42,10 @@ describe('default level template', () => {
     expect(data[0]).toBe(-1);
   });
 
-  it('starts with a spawn, dark sky, Vignette and the new defaults', () => {
+  it('starts with a playable inset, spawn, Vignette and the new defaults', () => {
     const level = createDefaultLevel('Untitled level');
-    expect(level.entities).toEqual([{ type: 'spawn', x: 2, y: 15 }]);
+    expect(level.entities).toEqual([{ type: 'spawn', x: 12, y: 24 }]);
+    expect(level.playArea).toEqual(DEFAULT_PLAY_AREA);
     expect(level.skybox).toBe('#0a0b10');
     expect(level.analogFx).toBe('vignette');
     expect(level.characterScale).toBe(1.75);
@@ -52,6 +59,19 @@ describe('default level template', () => {
     const level = validateLevel(blankSlabJson);
     const template = createDefaultLevel();
     expect(level).toEqual(template);
+  });
+
+  it('builds every Blank Slab preset with its playable inset', () => {
+    for (const preset of BLANK_SLAB_PRESETS) {
+      const level = createDefaultLevel('Preset', preset.width, preset.height);
+      expect(level.width).toBe(preset.width);
+      expect(level.height).toBe(preset.height);
+      expect(level.playArea).toEqual(preset.playArea);
+      expect(level.entities[0]?.x).toBe(preset.playArea.x + 2);
+      expect(level.entities[0]?.y).toBe(preset.height - 3);
+    }
+    expect(blankSlabPresetFor(60, 27)).toBeDefined();
+    expect(defaultPlayArea(100, 40)).toEqual({ x: 18, y: 8, width: 64, height: 32 });
   });
 
   it('ships the Default Test level with the same baseline', () => {

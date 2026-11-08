@@ -46,6 +46,22 @@ describe('level schema', () => {
     ).toThrow(/analogFx/);
   });
 
+  it('round-trips a playable area', () => {
+    const level = createLevel('Playable', 20, 12, 32);
+    level.playArea = { x: 2, y: 3, width: 16, height: 8 };
+    expect(parseLevel(serializeLevel(level))).toEqual(level);
+  });
+
+  it('rejects playable areas outside the canvas', () => {
+    const level = createLevel('Playable', 10, 10, 32);
+    expect(() =>
+      validateLevel({ ...level, playArea: { x: 0, y: 0, width: 11, height: 4 } }),
+    ).toThrow(/playArea/);
+    expect(() =>
+      validateLevel({ ...level, playArea: { x: 0, y: 0, width: 0, height: 4 } }),
+    ).toThrow(/playArea/);
+  });
+
   it('rejects a malformed skybox colour', () => {
     const bad = {
       version: 1,

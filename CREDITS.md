@@ -34,6 +34,14 @@ and any processing notes here when the voice pass is complete.
   - Date added: 2026-11-08
   - Licence text: `licenses/LESED-Analog-Horror-Screen-FX-Free.txt`
 
+- **Grunge tileset** — Luis Zuno (@ansimuz)
+  - Licence: CC0 1.0
+  - Source: `https://ansimuz.com`
+  - Intended use: Grunge tiles and corridor test background
+  - Modifications: cropped into individual tile and prop pieces
+  - Date added: 2026-11-08
+  - Licence text: `public/assets/grunge/license.txt`
+
 Temporary, unlicensed stand-ins live in `public/assets/TEMP/` and are **not for
 release**. See `public/assets/TEMP/README.md` for removal instructions.
 

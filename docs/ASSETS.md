@@ -6,6 +6,8 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 
 - **Pixel Platformer World** is imported in `public/assets/pixel-platformer-world/`
   and is the current tile and background set.
+- **Grunge** is imported in `public/assets/grunge/` as a test set and corridor
+  background.
 - New levels use a 32px grid with 16px Pixel art scaled into each cell.
 - `public/assets/TEMP/` still contains **unlicensed** stand-ins gated by
   `TEMP_ASSETS` in `src/game/assets.ts`. They must not ship.

@@ -1,6 +1,11 @@
 import type { AssetManifest, TileDef } from '../game/level/manifest';
-import type { LevelData } from '../game/level/schema';
-import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
+import type { LevelData, PlayArea } from '../game/level/schema';
+import {
+  BLANK_SLAB_PRESETS,
+  LEVEL_SIZE_PRESETS,
+  keyForSize,
+  presetForKey,
+} from '../game/level/sizes';
 import { ANALOG_FX_OPTIONS, normalizeAnalogFxPreset } from '../game/analogFx';
 import {
   CHARACTER_SCALE_OPTIONS,
@@ -46,7 +51,8 @@ export interface EditorUiCallbacks {
   onSave(): void;
   onSaveDraft(): void;
   onSaveToProject(): void;
-  onNewLevel(): void;
+  onNewLevel(width: number, height: number): void;
+  onPlayArea(margins: { left: number; right: number; top: number; bottom: number }): void;
   onLoadShipped(id: string): void;
   onLoadDraft(id: string): void;
   onDeleteDraft(id: string): void;
@@ -148,6 +154,14 @@ export class EditorUi {
   private readonly foregroundSelect: HTMLSelectElement;
   private readonly analogSelect: HTMLSelectElement;
   private readonly characterScaleSelect: HTMLSelectElement;
+  private readonly playLeftInput: HTMLInputElement;
+  private readonly playRightInput: HTMLInputElement;
+  private readonly playTopInput: HTMLInputElement;
+  private readonly playBottomInput: HTMLInputElement;
+  private readonly playAreaNote: HTMLElement;
+  private readonly newLevelModal: HTMLElement;
+  private readonly newLevelSizeSelect: HTMLSelectElement;
+  private readonly newLevelPlayableNote: HTMLElement;
   private readonly scaleCompareCanvas: HTMLCanvasElement;
   private readonly scaleNote: HTMLElement;
   private readonly cameraZoomSelect: HTMLSelectElement;
@@ -198,7 +212,7 @@ export class EditorUi {
         </div>
         <button id="ed-grid" class="ed-toggle">Grid</button>
         <div class="ed-group" role="group" aria-label="File">
-          <button id="ed-new">New</button>
+          <button id="ed-new" title="Clear the current level">Clear</button>
           <button id="ed-save">Export</button>
           <label class="ed-load">Import<input id="ed-file" type="file" accept="application/json,.json" hidden /></label>
         </div>
@@ -235,6 +249,15 @@ export class EditorUi {
               <input id="ed-height" class="ed-number" type="number" min="18" max="60" step="1" aria-label="Level height" />
               <button id="ed-size-apply">Apply</button>
             </div>
+            <h3>Playable area</h3>
+            <div class="ed-play-area">
+              <label>Left <input id="ed-play-left" class="ed-number" type="number" min="0" step="1" /></label>
+              <label>Right <input id="ed-play-right" class="ed-number" type="number" min="0" step="1" /></label>
+              <label>Top <input id="ed-play-top" class="ed-number" type="number" min="0" step="1" /></label>
+              <label>Bottom <input id="ed-play-bottom" class="ed-number" type="number" min="0" step="1" /></label>
+            </div>
+            <button id="ed-play-apply">Apply margins</button>
+            <p id="ed-play-note" class="ed-selected-tile"></p>
             <h3>Sky and scenery</h3>
             <div class="ed-skybox">
               <label>Skybox <input id="ed-skybox" type="color" value="#0a0b10" /></label>
@@ -277,6 +300,19 @@ export class EditorUi {
         </div>
       </div>
       <div id="ed-toast" class="ed-toast" role="status"></div>
+      <div id="ed-new-level-modal" class="ed-modal" hidden>
+        <div class="ed-modal-card" role="dialog" aria-modal="true" aria-labelledby="ed-new-level-title">
+          <h2 id="ed-new-level-title">New level</h2>
+          <label class="ed-modal-label">Size
+            <select id="ed-new-level-size" class="ed-layer"></select>
+          </label>
+          <p id="ed-new-level-playable" class="ed-selected-tile"></p>
+          <div class="ed-modal-actions">
+            <button id="ed-new-level-cancel" class="ed-ghost">Cancel</button>
+            <button id="ed-new-level-create" class="ed-primary">Create Blank Slab</button>
+          </div>
+        </div>
+      </div>
     `;
 
     this.nameInput = this.get<HTMLInputElement>('ed-name');
@@ -302,6 +338,14 @@ export class EditorUi {
     this.foregroundSelect = this.get<HTMLSelectElement>('ed-foreground');
     this.analogSelect = this.get<HTMLSelectElement>('ed-analog');
     this.characterScaleSelect = this.get<HTMLSelectElement>('ed-character-scale');
+    this.playLeftInput = this.get<HTMLInputElement>('ed-play-left');
+    this.playRightInput = this.get<HTMLInputElement>('ed-play-right');
+    this.playTopInput = this.get<HTMLInputElement>('ed-play-top');
+    this.playBottomInput = this.get<HTMLInputElement>('ed-play-bottom');
+    this.playAreaNote = this.get<HTMLElement>('ed-play-note');
+    this.newLevelModal = this.get<HTMLElement>('ed-new-level-modal');
+    this.newLevelSizeSelect = this.get<HTMLSelectElement>('ed-new-level-size');
+    this.newLevelPlayableNote = this.get<HTMLElement>('ed-new-level-playable');
     this.scaleCompareCanvas = this.get<HTMLCanvasElement>('ed-scale-compare');
     this.scaleNote = this.get<HTMLElement>('ed-scale-note');
     this.cameraZoomSelect = this.get<HTMLSelectElement>('ed-camera-zoom');
@@ -388,6 +432,13 @@ export class EditorUi {
     customOption.textContent = 'Custom (dev)';
     this.sizeSelect.append(customOption);
 
+    for (const preset of BLANK_SLAB_PRESETS) {
+      const option = document.createElement('option');
+      option.value = keyForSize(preset.width, preset.height);
+      option.textContent = preset.label;
+      this.newLevelSizeSelect.append(option);
+    }
+
     for (const button of root.querySelectorAll<HTMLButtonElement>('[data-tool]')) {
       const tool = button.dataset.tool as EditorTool;
       button.addEventListener('click', () => this.callbacks.onTool(tool));
@@ -399,7 +450,22 @@ export class EditorUi {
     this.redoButton.addEventListener('click', () => this.callbacks.onRedo());
     this.get('ed-menu').addEventListener('click', () => this.callbacks.onMenu());
     this.get('ed-new').addEventListener('click', () => this.callbacks.onNew());
-    this.get('ed-new-level').addEventListener('click', () => this.callbacks.onNewLevel());
+    this.get('ed-new-level').addEventListener('click', () => this.openNewLevelDialog());
+    this.get('ed-new-level-cancel').addEventListener('click', () => this.closeNewLevelDialog());
+    this.get('ed-new-level-create').addEventListener('click', () => {
+      const preset = this.currentNewLevelPreset();
+      if (preset) {
+        this.callbacks.onNewLevel(preset.width, preset.height);
+      }
+      this.closeNewLevelDialog();
+    });
+    this.newLevelSizeSelect.addEventListener('change', () => this.renderNewLevelPreview());
+    this.get('ed-play-apply').addEventListener('click', () => this.callbacks.onPlayArea({
+      left: Number(this.playLeftInput.value),
+      right: Number(this.playRightInput.value),
+      top: Number(this.playTopInput.value),
+      bottom: Number(this.playBottomInput.value),
+    }));
     this.get('ed-save').addEventListener('click', () => this.callbacks.onSave());
     this.get('ed-save-draft').addEventListener('click', () => this.callbacks.onSaveDraft());
     this.projectButton.addEventListener('click', () => this.callbacks.onSaveToProject());
@@ -458,6 +524,7 @@ export class EditorUi {
     );
 
     this.setSize(level.width, level.height);
+    this.setPlayArea(level.playArea, level.width, level.height);
     this.setSkybox(level.skybox);
     this.setBackground(level.background);
     this.setForeground(level.foreground);
@@ -736,6 +803,42 @@ export class EditorUi {
 
   setCameraFollow(id: string | undefined): void {
     this.cameraFollowSelect.value = normalizeCameraFollow(id);
+  }
+
+  setPlayArea(area: PlayArea | undefined, width: number, height: number): void {
+    const resolved = area ?? { x: 0, y: 0, width, height };
+    this.playLeftInput.value = String(resolved.x);
+    this.playRightInput.value = String(width - (resolved.x + resolved.width));
+    this.playTopInput.value = String(resolved.y);
+    this.playBottomInput.value = String(height - (resolved.y + resolved.height));
+    this.playAreaNote.textContent = `Playable ${resolved.width} × ${resolved.height} at ${resolved.x}, ${resolved.y} · canvas ${width} × ${height}`;
+  }
+
+  private openNewLevelDialog(): void {
+    this.renderNewLevelPreview();
+    this.newLevelModal.hidden = false;
+    this.newLevelSizeSelect.focus();
+  }
+
+  private closeNewLevelDialog(): void {
+    this.newLevelModal.hidden = true;
+  }
+
+  private currentNewLevelPreset() {
+    return BLANK_SLAB_PRESETS.find(
+      (preset) => keyForSize(preset.width, preset.height) === this.newLevelSizeSelect.value,
+    );
+  }
+
+  private renderNewLevelPreview(): void {
+    const preset = this.currentNewLevelPreset();
+    if (!preset) {
+      this.newLevelPlayableNote.textContent = '';
+      return;
+    }
+    this.newLevelPlayableNote.textContent =
+      `Playable ${preset.playArea.width} × ${preset.playArea.height} · ` +
+      `${preset.playArea.x} side / ${preset.playArea.y} top margin`;
   }
 
   private currentCameraZoom(): number {

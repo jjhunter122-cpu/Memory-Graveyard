@@ -2,6 +2,7 @@ import {
   EMPTY_TILE,
   type LevelData,
   type LevelEntity,
+  type PlayArea,
 } from '../game/level/schema';
 import { CAMERA } from '../game/config';
 
@@ -107,6 +108,54 @@ export function setForeground(level: LevelData, id: string | undefined): LevelDa
 
 export function setAnalogFx(level: LevelData, id: string | undefined): LevelData {
   return setOptionalField(level, 'analogFx', id);
+}
+
+/** Clamps a play area so it always covers at least one tile inside the canvas. */
+export function clampPlayArea(
+  area: PlayArea,
+  width: number,
+  height: number,
+): PlayArea {
+  const x = Math.min(Math.max(0, Math.round(area.x)), Math.max(0, width - 1));
+  const y = Math.min(Math.max(0, Math.round(area.y)), Math.max(0, height - 1));
+  return {
+    x,
+    y,
+    width: Math.min(Math.max(1, Math.round(area.width)), width - x),
+    height: Math.min(Math.max(1, Math.round(area.height)), height - y),
+  };
+}
+
+/**
+ * Sets the playable rectangle. The full-canvas rectangle is omitted so old
+ * levels keep the implicit default.
+ */
+export function setPlayArea(level: LevelData, area: PlayArea): LevelData {
+  const next = clampPlayArea(area, level.width, level.height);
+  const isFull =
+    next.x === 0 &&
+    next.y === 0 &&
+    next.width === level.width &&
+    next.height === level.height;
+  const value = isFull ? undefined : next;
+  if (
+    level.playArea === value ||
+    (level.playArea &&
+      value &&
+      level.playArea.x === value.x &&
+      level.playArea.y === value.y &&
+      level.playArea.width === value.width &&
+      level.playArea.height === value.height)
+  ) {
+    return level;
+  }
+  const result = { ...level };
+  if (value === undefined) {
+    delete result.playArea;
+  } else {
+    result.playArea = value;
+  }
+  return result;
 }
 
 /**
@@ -218,13 +267,17 @@ export function resizeLevel(level: LevelData, width: number, height: number): Le
     }
     return { ...layer, data };
   });
-  return {
+  const result: LevelData = {
     ...level,
     width,
     height,
     layers,
     entities: level.entities.filter((entity) => entity.x < width && entity.y < height),
   };
+  if (level.playArea) {
+    result.playArea = clampPlayArea(level.playArea, width, height);
+  }
+  return result;
 }
 
 /** Blanks every layer and removes all entities. */

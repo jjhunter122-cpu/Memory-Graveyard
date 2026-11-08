@@ -10,6 +10,7 @@ import {
   setAnalogFx,
   setBackground,
   setForeground,
+  setPlayArea,
   setSkybox,
   setTile,
   tileAt,
@@ -101,6 +102,25 @@ describe('level operations', () => {
     const smaller = resizeLevel(level, 2, 2);
     expect(smaller.entities).toHaveLength(0);
     expect(tileAt(smaller, 0, 1, 1)).toBe(EMPTY_TILE);
+  });
+
+  it('sets, clears and clamps the playable area', () => {
+    const level = makeLevel();
+    const inset = setPlayArea(level, { x: 1, y: 1, width: 2, height: 1 });
+    expect(inset.playArea).toEqual({ x: 1, y: 1, width: 2, height: 1 });
+    expect(setPlayArea(inset, { x: 0, y: 0, width: 4, height: 3 }).playArea).toBeUndefined();
+    expect(setPlayArea(level, { x: 3, y: 2, width: 20, height: 20 }).playArea).toEqual({
+      x: 3,
+      y: 2,
+      width: 1,
+      height: 1,
+    });
+  });
+
+  it('clamps the playable area when resizing the canvas', () => {
+    const level = setPlayArea(makeLevel(), { x: 1, y: 0, width: 3, height: 2 });
+    const smaller = resizeLevel(level, 3, 2);
+    expect(smaller.playArea).toEqual({ x: 1, y: 0, width: 2, height: 2 });
   });
 
   it('sets and clears the skybox colour', () => {

@@ -46,7 +46,7 @@ export class PlayScene extends Scene {
   private completed = false;
   private dead = false;
   private graceRemaining: number = MONSTER.graceSeconds;
-  private levelHeightPx = 0;
+  private playableBottomPx = 0;
   private catchRadius: number = MONSTER.catchRadius;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -107,7 +107,8 @@ export class PlayScene extends Scene {
 
   override onInitialize(_engine: Engine): void {
     this.built = buildLevel(this, this.level, this.manifest, this.textures);
-    this.levelHeightPx = this.built.heightPx;
+    this.playableBottomPx =
+      this.built.playAreaPx.y + this.built.playAreaPx.height;
     const scale = normalizeCharacterScale(this.level.characterScale);
     const metrics = characterMetrics(scale, this.level.tileSize);
     this.catchRadius = metrics.catchRadius;
@@ -143,7 +144,13 @@ export class PlayScene extends Scene {
     }
 
     this.camera.zoom = normalizeCameraZoom(this.level.cameraZoom);
-    this.cameraFollow = new CameraFollow(this, findCameraFollowPreset(this.level.cameraFollow));
+    this.cameraFollow = new CameraFollow(
+      this,
+      findCameraFollowPreset(this.level.cameraFollow),
+      this.level.playArea
+        ? { width: this.built.widthPx, height: this.built.heightPx }
+        : undefined,
+    );
     this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.built.memories.length);
   }
@@ -420,7 +427,7 @@ export class PlayScene extends Scene {
   }
 
   private checkFall(): void {
-    if (this.player.pos.y > this.levelHeightPx + LEVEL.killMargin) {
+    if (this.player.pos.y > this.playableBottomPx + LEVEL.killMargin) {
       this.die('fell');
     }
   }

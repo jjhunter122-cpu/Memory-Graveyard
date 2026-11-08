@@ -79,7 +79,7 @@ function vec(x: number, y: number): Vector {
 
 function fakeScene(x: number, y: number): Scene {
   return {
-    camera: { pos: vec(x, y) },
+    camera: { pos: vec(x, y), zoom: 1 },
   } as unknown as Scene;
 }
 
@@ -148,5 +148,17 @@ describe('camera follow presets', () => {
     const beforeLanding = scene.camera.pos.y;
     follow.update(vec(100, 100), 1 / 60, { vy: 0, grounded: true });
     expect(scene.camera.pos.y).toBeGreaterThanOrEqual(beforeLanding);
+  });
+
+  it('clamps the camera to the scene canvas when bounds are set', () => {
+    const scene = fakeScene(400, 776);
+    const follow = new CameraFollow(
+      scene,
+      findCameraFollowPreset('momentum'),
+      { width: 1920, height: 864 },
+    );
+    follow.snap(vec(400, 776));
+    expect(scene.camera.pos.x).toBe(480);
+    expect(scene.camera.pos.y).toBe(594);
   });
 });

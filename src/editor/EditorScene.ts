@@ -3,6 +3,7 @@ import {
   Color,
   CollisionType,
   Keys,
+  Rectangle,
   Scene,
   Sprite,
   type Engine,
@@ -17,8 +18,10 @@ import { findBackgroundPreset, findForegroundPreset } from '../game/scenery';
 import {
   EMPTY_TILE,
   parseLevel,
+  resolvePlayArea,
   serializeLevel,
   type LevelData,
+  type PlayArea,
 } from '../game/level/schema';
 import { History } from './history';
 import {
@@ -34,6 +37,7 @@ import {
   setCameraZoom,
   setCharacterScale,
   setForeground,
+  setPlayArea,
   setSkybox,
   setTile,
   tileAt,
@@ -89,6 +93,7 @@ export class EditorScene extends Scene {
   private cursor: Actor | null = null;
   private skyboxActor: Actor | null = null;
   private sceneryActors: Actor[] = [];
+  private playAreaActor: Actor | null = null;
 
   private painting = false;
   private lastPaintedIndex = -1;
@@ -481,7 +486,7 @@ export class EditorScene extends Scene {
     }
   }
 
-  private newLevel(): void {
+  private newLevel(width: number, height: number): void {
     this.flushAutosave();
     let name = BLANK_SLAB_NAME;
     let counter = 2;
@@ -489,12 +494,12 @@ export class EditorScene extends Scene {
       name = `${BLANK_SLAB_NAME} ${counter}`;
       counter += 1;
     }
-    const level = createDefaultLevel(name);
+    const level = createDefaultLevel(name, width, height);
     this.loadLevel(level, true);
     this.selectedTile = DEFAULT_FLOOR_TOP_TILE;
     this.setTab('tiles');
     this.ui?.setTile(DEFAULT_FLOOR_TOP_TILE);
-    this.ui?.toast('created Blank Slab');
+    this.ui?.toast(`created ${name}`);
   }
 
   private async saveToProject(): Promise<void> {
@@ -594,6 +599,7 @@ export class EditorScene extends Scene {
     this.rebuildEntities();
     this.refreshSkybox();
     this.refreshScenery();
+    this.refreshPlayArea();
 
     this.ui?.setName(this.level.name);
     this.ui?.setEntityCount(this.level.entities.length);
@@ -605,6 +611,34 @@ export class EditorScene extends Scene {
     this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
     this.ui?.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
     this.ui?.setCameraFollow(this.level.cameraFollow);
+    this.ui?.setPlayArea(this.level.playArea, this.level.width, this.level.height);
+  }
+
+  private refreshPlayArea(): void {
+    this.playAreaActor?.kill();
+    this.playAreaActor = null;
+    const area = resolvePlayArea(this.level);
+    const width = area.width * this.tileSize;
+    const height = area.height * this.tileSize;
+    const actor = new Actor({
+      x: area.x * this.tileSize + width / 2,
+      y: area.y * this.tileSize + height / 2,
+      width,
+      height,
+      collisionType: CollisionType.PreventCollision,
+      z: 9,
+    });
+    actor.graphics.use(
+      new Rectangle({
+        width,
+        height,
+        color: Color.Transparent,
+        strokeColor: Color.fromHex('#7ce7ff'),
+        lineWidth: 2,
+      }),
+    );
+    this.playAreaActor = actor;
+    this.add(actor);
   }
 
   private refreshSkybox(): void {
@@ -924,6 +958,23 @@ export class EditorScene extends Scene {
           this.ui?.setCameraFollow(this.level.cameraFollow);
         }
       },
+      onPlayArea: (margins) => {
+        const area: PlayArea = {
+          x: margins.left,
+          y: margins.top,
+          width: this.level.width - margins.left - margins.right,
+          height: this.level.height - margins.top - margins.bottom,
+        };
+        const next = setPlayArea(this.level, area);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshPlayArea();
+          this.ui?.setPlayArea(this.level.playArea, this.level.width, this.level.height);
+          this.ui?.toast('updated playable area');
+        } else {
+          this.ui?.setPlayArea(this.level.playArea, this.level.width, this.level.height);
+        }
+      },
       onToggleGrid: () => this.toggleGrid(),
       onUndo: () => this.undo(),
       onRedo: () => this.redo(),
@@ -935,7 +986,7 @@ export class EditorScene extends Scene {
       onSave: () => this.save(),
       onSaveDraft: () => this.saveDraft(),
       onSaveToProject: () => void this.saveToProject(),
-      onNewLevel: () => this.newLevel(),
+      onNewLevel: (width, height) => this.newLevel(width, height),
       onLoadShipped: (id) => void this.loadShipped(id),
       onLoadDraft: (id) => this.loadDraft(id),
       onDeleteDraft: (id) => this.deleteDraft(id),

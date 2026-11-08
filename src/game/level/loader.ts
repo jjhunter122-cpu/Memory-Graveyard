@@ -4,7 +4,7 @@ import { COLORS } from '../config';
 import { ONEWAY_GROUP, SOLID_GROUP } from '../physics/collisionGroups';
 import { Memory } from '../actors/Memory';
 import { Exit } from '../actors/Exit';
-import { EMPTY_TILE, type LevelData } from './schema';
+import { EMPTY_TILE, resolvePlayArea, type LevelData } from './schema';
 import { tileIndex, type AssetManifest, type TileDef } from './manifest';
 import { tileSurfaceTop } from './surfaces';
 import { mergeHorizontal, toGrid, type TileRun } from './tiles';
@@ -178,6 +178,8 @@ export type MonsterVariant = 'ghost' | 'skeleton';
 export interface BuiltLevel {
   widthPx: number;
   heightPx: number;
+  /** Playable rectangle in world pixels. */
+  playAreaPx: { x: number; y: number; width: number; height: number };
   spawn: { x: number; y: number };
   /** Undefined means the level has no pursuer. */
   monsterSpawn?: { x: number; y: number };
@@ -350,10 +352,14 @@ function addForeground(
 }
 
 /**
- * Invisible solid side walls. The top and bottom stay open; PlayScene's fall
- * check is the kill plane below the level.
+ * Invisible solid side walls at the playable edges. The top and bottom stay
+ * open; PlayScene's fall check is the kill plane below the playable area.
  */
-function addWorldBounds(scene: Scene, widthPx: number, heightPx: number): void {
+function addWorldBounds(
+  scene: Scene,
+  playAreaPx: { x: number; y: number; width: number; height: number },
+  heightPx: number,
+): void {
   const thickness = 32;
   const wall = (x: number, y: number, width: number, height: number): void => {
     const actor = new Actor({
@@ -369,9 +375,14 @@ function addWorldBounds(scene: Scene, widthPx: number, heightPx: number): void {
     scene.add(actor);
   };
 
-  wall(-thickness / 2, heightPx / 2, thickness, heightPx + thickness * 2);
   wall(
-    widthPx + thickness / 2,
+    playAreaPx.x - thickness / 2,
+    heightPx / 2,
+    thickness,
+    heightPx + thickness * 2,
+  );
+  wall(
+    playAreaPx.x + playAreaPx.width + thickness / 2,
     heightPx / 2,
     thickness,
     heightPx + thickness * 2,
@@ -393,6 +404,13 @@ export function buildLevel(
   const tileSize = level.tileSize;
   const widthPx = level.width * tileSize;
   const heightPx = level.height * tileSize;
+  const playArea = resolvePlayArea(level);
+  const playAreaPx = {
+    x: playArea.x * tileSize,
+    y: playArea.y * tileSize,
+    width: playArea.width * tileSize,
+    height: playArea.height * tileSize,
+  };
 
   const solidTopAt = makeSurfaceGrid(level.width, level.height);
   const oneWayTopAt = makeSurfaceGrid(level.width, level.height);
@@ -466,7 +484,7 @@ export function buildLevel(
 
   addBackground(scene, level, widthPx, heightPx, textures);
   addForeground(scene, level, widthPx, heightPx, textures);
-  addWorldBounds(scene, widthPx, heightPx);
+  addWorldBounds(scene, playAreaPx, heightPx);
 
   for (const layer of level.layers) {
     const grid = toGrid(layer.data, level.width, level.height);
@@ -560,6 +578,7 @@ export function buildLevel(
   return {
     widthPx,
     heightPx,
+    playAreaPx,
     spawn,
     monsterSpawn,
     monsterVariant,

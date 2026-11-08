@@ -18,6 +18,7 @@ and swapping placeholder colours for real tilesets is a manifest-only change.
   "tileSize": 32,
   "width": 40,
   "height": 18,
+  "playArea": { "x": 4, "y": 2, "width": 32, "height": 16 },
   "layers": [
     {
       "name": "terrain",
@@ -35,6 +36,9 @@ and swapping placeholder colours for real tilesets is a manifest-only change.
 ```
 
 - `data` is row-major and must contain exactly `width * height` entries.
+- `playArea` is an optional tile rectangle where the player can go. The rest of
+  the canvas is decorative scenery. When absent, the whole canvas is playable.
+  Side walls and the fall plane use the playable rectangle.
 - `-1` (`EMPTY_TILE`) means "nothing here".
 - Entity `x`/`y` are **tile coordinates**. Known types: `spawn`, `monster`,
   `memory`, `exit`. Unknown types are ignored, so newer levels still load in

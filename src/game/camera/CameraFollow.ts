@@ -1,10 +1,16 @@
 import type { Scene, Vector } from 'excalibur';
+import { VIEW } from '../config';
 import {
   DEFAULT_CAMERA_FOLLOW,
   cameraFallLead,
   findCameraFollowPreset,
   type CameraFollowSettings,
 } from './cameraFollowSettings';
+
+export interface CameraBounds {
+  width: number;
+  height: number;
+}
 
 /**
  * Smoothly follows a target with a small deadzone. It deliberately does not
@@ -23,6 +29,7 @@ export class CameraFollow {
   constructor(
     private readonly scene: Scene,
     settings: CameraFollowSettings = findCameraFollowPreset(DEFAULT_CAMERA_FOLLOW),
+    private readonly bounds?: CameraBounds,
   ) {
     this.settings = settings;
   }
@@ -66,14 +73,35 @@ export class CameraFollow {
       y += (dy - Math.sign(dy) * settings.deadzoneY) * lerpY;
     }
 
-    camera.pos.setTo(x, y);
+    const position = this.clamp(x, y);
+    camera.pos.setTo(position.x, position.y);
   }
 
   /** Center immediately, e.g. on level start or respawn. */
   snap(target: Vector): void {
-    this.scene.camera.pos.setTo(target.x, target.y);
+    const position = this.clamp(target.x, target.y);
+    this.scene.camera.pos.setTo(position.x, position.y);
     this.leadY = 0;
     this.dip = 0;
     this.wasGrounded = true;
+  }
+
+  private clamp(x: number, y: number): { x: number; y: number } {
+    if (!this.bounds) {
+      return { x, y };
+    }
+    const zoom = this.scene.camera.zoom || 1;
+    const halfWidth = VIEW.width / (2 * zoom);
+    const halfHeight = VIEW.height / (2 * zoom);
+    return {
+      x:
+        this.bounds.width >= halfWidth * 2
+          ? Math.min(Math.max(x, halfWidth), this.bounds.width - halfWidth)
+          : this.bounds.width / 2,
+      y:
+        this.bounds.height >= halfHeight * 2
+          ? Math.min(Math.max(y, halfHeight), this.bounds.height - halfHeight)
+          : this.bounds.height / 2,
+    };
   }
 }

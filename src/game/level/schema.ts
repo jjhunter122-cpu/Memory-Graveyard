@@ -28,6 +28,14 @@ export interface LevelEntity {
   y: number;
 }
 
+/** Playable rectangle in tile coordinates. The rest of the canvas is scenery. */
+export interface PlayArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface LevelData {
   version: number;
   name: string;
@@ -36,6 +44,8 @@ export interface LevelData {
   height: number;
   layers: TileLayer[];
   entities: LevelEntity[];
+  /** Optional playable rectangle. Missing means the whole canvas is playable. */
+  playArea?: PlayArea;
   /** Optional solid skybox colour behind the level. */
   skybox?: string;
   /** Optional background scenery preset id. */
@@ -154,6 +164,29 @@ export function validateLevel(raw: unknown): LevelData {
     layers,
     entities,
   };
+  if (obj.playArea !== undefined) {
+    const area = asRecord(obj.playArea, 'playArea');
+    if (
+      !isInteger(area.x) ||
+      !isInteger(area.y) ||
+      !isInteger(area.width) ||
+      !isInteger(area.height) ||
+      area.width <= 0 ||
+      area.height <= 0 ||
+      area.x < 0 ||
+      area.y < 0 ||
+      area.x + area.width > width ||
+      area.y + area.height > height
+    ) {
+      throw new LevelValidationError('playArea must fit inside the level canvas');
+    }
+    result.playArea = {
+      x: area.x,
+      y: area.y,
+      width: area.width,
+      height: area.height,
+    };
+  }
   if (obj.skybox !== undefined) {
     if (typeof obj.skybox !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(obj.skybox)) {
       throw new LevelValidationError('skybox must be a six-digit hex colour');
@@ -194,8 +227,19 @@ export function validateLevel(raw: unknown): LevelData {
   return result;
 }
 
-export function parseLevel(text: string): LevelData {
-  let raw: unknown;
+/** Returns the level play rectangle, defaulting to the whole canvas. */
+export function resolvePlayArea(level: LevelData): PlayArea {
+  return (
+    level.playArea ?? {
+      x: 0,
+      y: 0,
+      width: level.width,
+      height: level.height,
+    }
+  );
+}
+
+export function parseLevel(text: string): LevelData {  let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch (error) {
