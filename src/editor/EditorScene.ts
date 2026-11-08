@@ -57,6 +57,7 @@ const MAX_ZOOM = 3;
 const ENTITY_STYLE: Record<EditorEntityType, { color: string; radius: number }> = {
   spawn: { color: '#7cff9e', radius: 9 },
   monster: { color: '#ff6b7a', radius: 10 },
+  skeleton: { color: '#e2c79b', radius: 10 },
   memory: { color: '#7ce7ff', radius: 9 },
   exit: { color: '#b6ff7c', radius: 11 },
   checkpoint: { color: '#c79bff', radius: 8 },
@@ -732,6 +733,26 @@ export class EditorScene extends Scene {
         new Sprite({
           image: texture,
           destSize: { width, height },
+        }),
+      );
+    } else if (def.half && texture) {
+      const displayHeight = this.tileSize / 2;
+      actor = new Actor({
+        x: x * this.tileSize + this.tileSize / 2,
+        y:
+          y * this.tileSize +
+          (def.half === 'bottom' ? this.tileSize / 2 : 0) +
+          displayHeight / 2,
+        width: this.tileSize - 1,
+        height: displayHeight,
+        color: Color.fromHex(def.color),
+        collisionType: CollisionType.PreventCollision,
+        z: 1,
+      });
+      actor.graphics.use(
+        new Sprite({
+          image: texture,
+          destSize: { width: this.tileSize - 1, height: displayHeight },
         }),
       );
     } else {

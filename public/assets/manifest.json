@@ -103,17 +103,23 @@
         },
         {
           "id": 21,
-          "name": "grass edge left",
+          "name": "ramp up",
           "collision": "none",
           "color": "#3f5a2f",
-          "image": "DRYFIT/gothicvania/tiles/gv-grass-edge-left.png"
+          "image": "DRYFIT/gothicvania/tiles/gv-grass-edge-left.png",
+          "slope": "up",
+          "slopeOffset": 16,
+          "slopeRise": 12
         },
         {
           "id": 22,
-          "name": "grass edge right",
+          "name": "ramp down",
           "collision": "none",
           "color": "#3f5a2f",
-          "image": "DRYFIT/gothicvania/tiles/gv-grass-edge-right.png"
+          "image": "DRYFIT/gothicvania/tiles/gv-grass-edge-right.png",
+          "slope": "down",
+          "slopeOffset": 16,
+          "slopeRise": 12
         },
         {
           "id": 23,
@@ -121,6 +127,68 @@
           "collision": "oneway",
           "color": "#5a4a3a",
           "image": "DRYFIT/gothicvania/tiles/gv-platform.png"
+        },
+        {
+          "id": 24,
+          "name": "grass topper top",
+          "collision": "solid",
+          "color": "#3f5a2f",
+          "image": "DRYFIT/gothicvania/tiles/gv-grass-topper-a.png",
+          "half": "top"
+        },
+        {
+          "id": 25,
+          "name": "grass topper bottom",
+          "collision": "solid",
+          "color": "#3f5a2f",
+          "image": "DRYFIT/gothicvania/tiles/gv-grass-topper-a.png",
+          "half": "bottom"
+        },
+        {
+          "id": 26,
+          "name": "grass arch top",
+          "collision": "solid",
+          "color": "#3f5a2f",
+          "image": "DRYFIT/gothicvania/tiles/gv-grass-topper-b.png",
+          "half": "top"
+        },
+        {
+          "id": 27,
+          "name": "grass arch bottom",
+          "collision": "solid",
+          "color": "#3f5a2f",
+          "image": "DRYFIT/gothicvania/tiles/gv-grass-topper-b.png",
+          "half": "bottom"
+        },
+        {
+          "id": 28,
+          "name": "dirt topper top",
+          "collision": "solid",
+          "color": "#4a2d2a",
+          "image": "DRYFIT/gothicvania/tiles/gv-dirt-topper-a.png",
+          "half": "top"
+        },
+        {
+          "id": 29,
+          "name": "dirt topper bottom",
+          "collision": "solid",
+          "color": "#4a2d2a",
+          "image": "DRYFIT/gothicvania/tiles/gv-dirt-topper-a.png",
+          "half": "bottom"
+        },
+        {
+          "id": 42,
+          "name": "dirt-rock transition A",
+          "collision": "solid",
+          "color": "#3a2440",
+          "image": "DRYFIT/gothicvania/tiles/gv-dirt-rock-a.png"
+        },
+        {
+          "id": 43,
+          "name": "dirt-rock transition B",
+          "collision": "solid",
+          "color": "#3a2440",
+          "image": "DRYFIT/gothicvania/tiles/gv-dirt-rock-b.png"
         },
         {
           "id": 30,

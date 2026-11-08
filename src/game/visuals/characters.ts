@@ -83,3 +83,57 @@ export function createGhostAnimation(image: ImageSource): Animation {
   }
   return new Animation({ frames, strategy: AnimationStrategy.Loop });
 }
+
+const SKELETON_FRAME_WIDTH = 44;
+const SKELETON_FRAME_HEIGHT = 52;
+const SKELETON_COLUMNS = 14;
+const SKELETON_DISPLAY_WIDTH = 40;
+const SKELETON_DISPLAY_HEIGHT = 48;
+
+export interface SkeletonAnimations {
+  walk: Animation;
+  rise: Animation;
+}
+
+/**
+ * The skeleton sheet has 8 walk frames followed by 6 rise frames, all 44x52.
+ * Rise freezes on its last frame; PlayScene switches to the walk loop.
+ */
+export function createSkeletonAnimations(image: ImageSource): SkeletonAnimations {
+  const sheet = SpriteSheet.fromImageSource({
+    image,
+    grid: {
+      rows: 1,
+      columns: SKELETON_COLUMNS,
+      spriteWidth: SKELETON_FRAME_WIDTH,
+      spriteHeight: SKELETON_FRAME_HEIGHT,
+    },
+  });
+
+  const walkFrames = [];
+  for (let index = 0; index < 8; index += 1) {
+    const sprite = sheet.sprites[index];
+    if (!sprite) {
+      continue;
+    }
+    sprite.width = SKELETON_DISPLAY_WIDTH;
+    sprite.height = SKELETON_DISPLAY_HEIGHT;
+    walkFrames.push({ graphic: sprite, duration: 110 });
+  }
+
+  const riseFrames = [];
+  for (let index = 8; index < 14; index += 1) {
+    const sprite = sheet.sprites[index];
+    if (!sprite) {
+      continue;
+    }
+    sprite.width = SKELETON_DISPLAY_WIDTH;
+    sprite.height = SKELETON_DISPLAY_HEIGHT;
+    riseFrames.push({ graphic: sprite, duration: 120 });
+  }
+
+  return {
+    walk: new Animation({ frames: walkFrames, strategy: AnimationStrategy.Loop }),
+    rise: new Animation({ frames: riseFrames, strategy: AnimationStrategy.Freeze }),
+  };
+}

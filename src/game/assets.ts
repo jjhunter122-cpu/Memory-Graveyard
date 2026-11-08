@@ -14,14 +14,19 @@ export const TEMP_ASSETS = true;
 
 /** Cropped, evenly spaced hero frames used by the dry-fit animations. */
 export const DRYFIT_HERO_SHEET = 'assets/DRYFIT/gothicvania/hero/hero-sheet.png';
-/** Six-frame ghost monster used as the dry-fit pursuer. */
+/** Six-frame ghost monster used as an alternate dry-fit pursuer. */
 export const DRYFIT_GHOST_SHEET = 'assets/DRYFIT/ghost/anim-nme-ghost.png';
+/** Eight walk frames and six rise frames for the skeleton pursuer. */
+export const DRYFIT_SKELETON_SHEET =
+  'assets/DRYFIT/gothicvania/enemies/skeleton/skeleton-sheet.png';
 
 export interface GameTextures {
   /** Sprite sheet for the temporary player animations. */
   heroSheet?: ImageSource;
-  /** Sprite sheet for the temporary pursuer animation. */
+  /** Sprite sheet for the alternate ghost pursuer. */
   ghostSheet?: ImageSource;
+  /** Sprite sheet for the skeleton pursuer. */
+  skeletonSheet?: ImageSource;
   /** Scene-dressing art, keyed by path relative to `public/assets`. */
   scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
@@ -67,6 +72,9 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   const ghostSheet = TEMP_ASSETS
     ? new ImageSource(`${base}${DRYFIT_GHOST_SHEET}`)
     : undefined;
+  const skeletonSheet = TEMP_ASSETS
+    ? new ImageSource(`${base}${DRYFIT_SKELETON_SHEET}`)
+    : undefined;
 
   const resources = [...tiles.values(), ...scenery.values()];
   if (heroSheet) {
@@ -75,6 +83,12 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   if (ghostSheet) {
     resources.push(ghostSheet);
   }
+  if (skeletonSheet) {
+    resources.push(skeletonSheet);
+  }
 
-  return { textures: { heroSheet, ghostSheet, scenery, tiles }, resources };
+  return {
+    textures: { heroSheet, ghostSheet, skeletonSheet, scenery, tiles },
+    resources,
+  };
 }

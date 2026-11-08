@@ -30,6 +30,14 @@ export interface TileDef {
   scale?: number;
   /** Which tile edge decor art is pinned to. Defaults to bottom. */
   anchor?: 'bottom' | 'top';
+  /** Restrict collision and art to one 16px half of the tile. */
+  half?: 'top' | 'bottom';
+  /** Marks this tile as a walkable ramp surface. */
+  slope?: 'up' | 'down';
+  /** Distance from the tile top to the high end of a slope surface. */
+  slopeOffset?: number;
+  /** Vertical rise across the width of a slope tile. */
+  slopeRise?: number;
 }
 
 export interface Tileset {
@@ -140,11 +148,39 @@ function validateTile(raw: unknown, index: number): TileDef {
     }
     def.anchor = tile.anchor;
   }
+  if (tile.half !== undefined) {
+    if (tile.half !== 'top' && tile.half !== 'bottom') {
+      throw new ManifestValidationError(`tile ${tile.id} half must be top or bottom`);
+    }
+    def.half = tile.half;
+  }
+  if (tile.slope !== undefined) {
+    if (tile.slope !== 'up' && tile.slope !== 'down') {
+      throw new ManifestValidationError(`tile ${tile.id} slope must be up or down`);
+    }
+    def.slope = tile.slope;
+  }
+  if (tile.slopeOffset !== undefined) {
+    if (!isNonNegativeNumber(tile.slopeOffset)) {
+      throw new ManifestValidationError(`tile ${tile.id} slopeOffset must be non-negative`);
+    }
+    def.slopeOffset = tile.slopeOffset;
+  }
+  if (tile.slopeRise !== undefined) {
+    if (!isPositiveNumber(tile.slopeRise)) {
+      throw new ManifestValidationError(`tile ${tile.id} slopeRise must be a positive number`);
+    }
+    def.slopeRise = tile.slopeRise;
+  }
   return def;
 }
 
 function isPositiveNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
 export function validateManifest(raw: unknown): AssetManifest {

@@ -30,12 +30,39 @@ function tileTexture(def: TileDef, textures?: GameTextures): ImageSource | undef
  */
 function addTileGraphic(
   scene: Scene,
+  def: TileDef,
   texture: ImageSource,
   run: TileRun,
   tileSize: number,
   tint: string,
   z: number,
 ): void {
+  const displayHeight = def.half ? tileSize / 2 : tileSize;
+  const displayTop = run.y * tileSize + (def.half === 'bottom' ? tileSize / 2 : 0);
+  const runWidth = run.width * tileSize;
+
+  if (def.half) {
+    const actor = new Actor({
+      x: (run.x + run.width / 2) * tileSize,
+      y: displayTop + displayHeight / 2,
+      width: runWidth,
+      height: displayHeight,
+      collisionType: CollisionType.PreventCollision,
+      z,
+    });
+    actor.graphics.use(
+      new TiledSprite({
+        image: texture,
+        sourceView: { x: 0, y: 0, width: texture.width, height: texture.height },
+        width: runWidth,
+        height: displayHeight,
+        tint: Color.fromHex(tint),
+      }),
+    );
+    scene.add(actor);
+    return;
+  }
+
   const sourceSize = Math.min(tileSize, texture.width, texture.height);
   const variantsX = Math.max(1, Math.floor(texture.width / sourceSize));
   const variantsY = Math.max(1, Math.floor(texture.height / sourceSize));
@@ -44,7 +71,7 @@ function addTileGraphic(
   const actor = new Actor({
     x: (run.x + run.width / 2) * tileSize,
     y: (run.y + run.height / 2) * tileSize,
-    width: run.width * tileSize,
+    width: runWidth,
     height: run.height * tileSize,
     collisionType: CollisionType.PreventCollision,
     z,
@@ -58,7 +85,7 @@ function addTileGraphic(
         width: sourceSize,
         height: sourceSize,
       },
-      width: run.width * tileSize,
+      width: runWidth,
       height: run.height * tileSize,
       tint: Color.fromHex(tint),
     }),
@@ -112,15 +139,26 @@ export type GroundProbe = (
   ignoreOneWay: boolean,
 ) => boolean;
 
+/** Returns the slope surface under the player, or null when not on a ramp. */
+export type SlopeProbe = (
+  centerX: number,
+  feetY: number,
+  halfWidth: number,
+) => number | null;
+
+export type MonsterVariant = 'ghost' | 'skeleton';
+
 export interface BuiltLevel {
   widthPx: number;
   heightPx: number;
   spawn: { x: number; y: number };
   /** Undefined means the level has no pursuer. */
   monsterSpawn?: { x: number; y: number };
+  monsterVariant?: MonsterVariant;
   memories: Memory[];
   exits: Exit[];
   groundProbe: GroundProbe;
+  slopeProbe: SlopeProbe;
 }
 
 function tileCenter(tile: number, tileSize: number): number {
@@ -135,24 +173,29 @@ function addSolid(
   textures?: GameTextures,
 ): void {
   const width = run.width * tileSize;
-  const height = run.height * tileSize;
+  const height = def.half ? tileSize / 2 : run.height * tileSize;
   const left = run.x * tileSize;
-  const top = run.y * tileSize;
+  const top = run.y * tileSize + (def.half === 'bottom' ? tileSize / 2 : 0);
   const texture = tileTexture(def, textures);
 
   if (def.collision === 'oneway') {
-    const thickness = Math.min(ONEWAY_THICKNESS, tileSize);
-    scene.add(
-      new Actor({
-        x: left + width / 2,
-        y: top + thickness / 2,
-        width,
-        height: thickness,
-        color: Color.fromHex(def.color),
-        collisionType: CollisionType.Fixed,
-        collisionGroup: ONEWAY_GROUP,
-      }),
-    );
+    const thickness = Math.min(ONEWAY_THICKNESS, height);
+    const body = new Actor({
+      x: left + width / 2,
+      y: top + thickness / 2,
+      width,
+      height: thickness,
+      color: Color.fromHex(def.color),
+      collisionType: CollisionType.Fixed,
+      collisionGroup: ONEWAY_GROUP,
+    });
+    if (texture) {
+      body.graphics.visible = false;
+    }
+    scene.add(body);
+    if (texture) {
+      addTileGraphic(scene, def, texture, run, tileSize, TILE_IMAGE_TINT, 0);
+    }
     return;
   }
 
@@ -172,7 +215,7 @@ function addSolid(
   scene.add(body);
 
   if (texture) {
-    addTileGraphic(scene, texture, run, tileSize, TILE_IMAGE_TINT, 0);
+    addTileGraphic(scene, def, texture, run, tileSize, TILE_IMAGE_TINT, 0);
   }
 
   if (def.cap) {
@@ -298,6 +341,7 @@ export function buildLevel(
 
   const solidAt = makeGrid(level.width, level.height);
   const oneWayAt = makeGrid(level.width, level.height);
+  const slopes: { x0: number; x1: number; y0: number; y1: number }[] = [];
 
   // Record which tiles are landable, for the deterministic ground probe.
   for (const layer of level.layers) {
@@ -341,6 +385,22 @@ export function buildLevel(
     return false;
   };
 
+  const slopeProbe: SlopeProbe = (centerX, feetY) => {
+    let best: number | null = null;
+    for (const slope of slopes) {
+      if (centerX < slope.x0 || centerX > slope.x1) {
+        continue;
+      }
+      const t = (centerX - slope.x0) / (slope.x1 - slope.x0);
+      const surfaceY = slope.y0 + (slope.y1 - slope.y0) * t;
+      const distance = Math.abs(surfaceY - feetY);
+      if (distance <= 40 && (best === null || distance < Math.abs(best - feetY))) {
+        best = surfaceY;
+      }
+    }
+    return best;
+  };
+
   addBackground(scene, level, widthPx, heightPx, textures);
   addForeground(scene, level, widthPx, heightPx, textures);
   addWorldBounds(scene, widthPx, heightPx);
@@ -353,6 +413,21 @@ export function buildLevel(
       if (!def) {
         continue;
       }
+      if (def.slope) {
+        const offset = def.slopeOffset ?? 16;
+        const rise = def.slopeRise ?? 12;
+        for (let x = run.x; x < run.x + run.width; x += 1) {
+          const top = run.y * tileSize;
+          const yLeft = def.slope === 'up' ? top + offset + rise : top + offset;
+          const yRight = def.slope === 'up' ? top + offset : top + offset + rise;
+          slopes.push({
+            x0: x * tileSize,
+            x1: (x + 1) * tileSize,
+            y0: yLeft,
+            y1: yRight,
+          });
+        }
+      }
       if (layer.collide && def.collision !== 'none') {
         addSolid(scene, def, run, tileSize, textures);
       } else {
@@ -360,7 +435,7 @@ export function buildLevel(
         if (def.decor && texture) {
           addDecor(scene, def, texture, run, tileSize);
         } else if (texture) {
-          addTileGraphic(scene, texture, run, tileSize, TILE_IMAGE_TINT, 0);
+          addTileGraphic(scene, def, texture, run, tileSize, TILE_IMAGE_TINT, 0);
         } else {
           scene.add(
             new Actor({
@@ -380,6 +455,7 @@ export function buildLevel(
   const memories: Memory[] = [];
   const exits: Exit[] = [];
   let monsterSpawn: { x: number; y: number } | undefined;
+  let monsterVariant: MonsterVariant | undefined;
   let spawn = {
     x: tileCenter(Math.floor(level.width / 2), tileSize),
     y: tileCenter(Math.floor(level.height / 2), tileSize),
@@ -406,6 +482,11 @@ export function buildLevel(
       }
       case 'monster':
         monsterSpawn = { x, y };
+        monsterVariant = 'ghost';
+        break;
+      case 'skeleton':
+        monsterSpawn = { x, y };
+        monsterVariant = 'skeleton';
         break;
       default:
         // Unknown entity types are ignored for forward compatibility.
@@ -418,9 +499,11 @@ export function buildLevel(
     heightPx,
     spawn,
     monsterSpawn,
+    monsterVariant,
     memories,
     exits,
     groundProbe,
+    slopeProbe,
   };
 }
 

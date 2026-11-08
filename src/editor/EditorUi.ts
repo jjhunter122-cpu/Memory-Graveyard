@@ -39,7 +39,8 @@ export interface EditorUiCallbacks {
 
 const ENTITY_LABELS: Record<EditorEntityType, string> = {
   spawn: 'spawn',
-  monster: 'monster',
+  monster: 'monster (ghost)',
+  skeleton: 'skeleton',
   memory: 'memory',
   exit: 'exit',
   checkpoint: 'checkpoint',
@@ -182,7 +183,7 @@ export class EditorUi {
       button.className = 'ed-swatch';
       button.title = `${tile.name} (${tile.collision})`;
       const imageStyle = tile.image
-        ? tile.decor
+        ? tile.decor || tile.half
           ? `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:contain;background-repeat:no-repeat;background-position:center bottom;image-rendering:pixelated;`
           : `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:cover;background-position:center;image-rendering:pixelated;`
         : '';

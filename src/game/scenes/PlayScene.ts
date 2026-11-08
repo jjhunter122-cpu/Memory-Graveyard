@@ -16,7 +16,9 @@ import { debugOverlay } from '../ui/DebugOverlay';
 import {
   createGhostAnimation,
   createHeroAnimations,
+  createSkeletonAnimations,
   type HeroAnimationName,
+  type SkeletonAnimations,
 } from '../visuals/characters';
 
 export type PlayOrigin = 'campaign' | 'levelSelect' | 'editor';
@@ -45,7 +47,9 @@ export class PlayScene extends Scene {
   private heroAnimations?: Record<HeroAnimationName, Animation>;
   private heroAnimationName: HeroAnimationName | null = null;
   private ghostAnimation?: Animation;
-  private facingRight = false;
+  private skeletonAnimations?: SkeletonAnimations;
+  private skeletonRiseRemaining = 0;
+  private facingRight = true;
 
   private collected = 0;
   private completed = false;
@@ -115,6 +119,7 @@ export class PlayScene extends Scene {
       this.built.spawn.x,
       this.built.spawn.y,
       this.built.groundProbe,
+      this.built.slopeProbe,
     );
     this.player.on('collisionstart', (event) => {
       // Actor-level collision events carry the geometry Collider; the actor is
@@ -137,7 +142,11 @@ export class PlayScene extends Scene {
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
-      if (this.textures.ghostSheet) {
+      if (this.built.monsterVariant === 'skeleton' && this.textures.skeletonSheet) {
+        this.skeletonAnimations = createSkeletonAnimations(this.textures.skeletonSheet);
+        this.skeletonRiseRemaining = 0.72;
+        this.monster.graphics.use(this.skeletonAnimations.rise);
+      } else if (this.textures.ghostSheet) {
         this.ghostAnimation = createGhostAnimation(this.textures.ghostSheet);
         this.monster.graphics.use(this.ghostAnimation);
       }
@@ -188,6 +197,7 @@ export class PlayScene extends Scene {
     }
 
     this.cameraFollow.update(this.player.pos, dt);
+    this.updateMonsterVisual(dt);
     this.checkFall();
     if (this.dead) {
       return;
@@ -243,7 +253,25 @@ export class PlayScene extends Scene {
 
     const graphic = this.player.graphics.current;
     if (graphic) {
-      graphic.flipHorizontal = this.facingRight;
+      // The hero sheet faces right, so flip it when moving left.
+      graphic.flipHorizontal = !this.facingRight;
+    }
+  }
+
+  private updateMonsterVisual(dt: number): void {
+    if (!this.monster || !this.skeletonAnimations) {
+      return;
+    }
+    if (this.skeletonRiseRemaining > 0) {
+      this.skeletonRiseRemaining = Math.max(0, this.skeletonRiseRemaining - dt);
+      if (this.skeletonRiseRemaining === 0) {
+        this.monster.graphics.use(this.skeletonAnimations.walk);
+      }
+    }
+    const graphic = this.monster.graphics.current;
+    if (graphic) {
+      // Skeleton art faces left; flip it to face the player.
+      graphic.flipHorizontal = this.player.pos.x > this.monster.pos.x;
     }
   }
 
@@ -469,8 +497,12 @@ export class PlayScene extends Scene {
     this.graceRemaining = MONSTER.graceSeconds;
     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
     this.heroAnimationName = null;
-    this.facingRight = false;
+    this.facingRight = true;
     this.setHeroAnimation('idle');
+    if (this.skeletonAnimations) {
+      this.skeletonRiseRemaining = 0.72;
+      this.monster?.graphics.use(this.skeletonAnimations.rise);
+    }
     this.cameraFollow.update(this.player.pos, 1);
     this.hud.setProgress(0, this.totalMemories);
 
