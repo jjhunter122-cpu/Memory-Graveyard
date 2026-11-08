@@ -7,7 +7,7 @@
   "skybox": "#0a0b10",
   "background": "gothicvania",
   "foreground": "gothicvines",
-  "analogFx": "full",
+  "analogFx": "vignette",
   "layers": [
     {
       "name": "terrain",

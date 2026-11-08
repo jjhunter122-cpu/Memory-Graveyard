@@ -2,17 +2,12 @@ import {
   ANALOG_FX_BASE,
   ANALOG_FX_FPS,
   ANALOG_FX_FRAMES,
-  isAnalogFxPreset,
+  normalizeAnalogFxPreset,
 } from '../analogFx';
 
-type LayerName = 'rec' | 'static' | 'scanlines' | 'vignette';
+type LayerName = 'static' | 'scanlines' | 'vignette';
 
-const LAYERS: readonly LayerName[] = ['rec', 'static', 'scanlines', 'vignette'];
-
-function recPath(index: number): string {
-  const frame = String(index).padStart(3, '0');
-  return `${import.meta.env.BASE_URL}${ANALOG_FX_BASE}/rec_hud/640x360/rec_hud_${frame}.png`;
-}
+const LAYERS: readonly LayerName[] = ['static', 'scanlines', 'vignette'];
 
 function staticPath(index: number): string {
   const frame = String(index).padStart(3, '0');
@@ -35,7 +30,8 @@ class AnalogOverlay {
 
   setPreset(preset: string | undefined): void {
     this.stop();
-    if (!isAnalogFxPreset(preset)) {
+    const normalized = normalizeAnalogFxPreset(preset);
+    if (!normalized) {
       this.clear();
       return;
     }
@@ -46,22 +42,17 @@ class AnalogOverlay {
     }
     this.root.classList.add('active');
 
-    const full = preset === 'full';
-    this.setLayerVisible('rec', full || preset === 'rec');
-    this.setLayerVisible('static', full || preset === 'static');
-    this.setLayerVisible('scanlines', full || preset === 'scanlines');
-    this.setLayerVisible('vignette', full || preset === 'vignette');
+    const combined = normalized === 'combined';
+    this.setLayerVisible('static', combined || normalized === 'static');
+    this.setLayerVisible('scanlines', combined || normalized === 'scanlines');
+    this.setLayerVisible('vignette', combined || normalized === 'vignette');
 
-    const rec = this.layers.rec;
     const grain = this.layers.static;
-    if (rec) {
-      rec.src = recPath(this.frame % ANALOG_FX_FRAMES.rec);
-    }
     if (grain) {
       grain.src = staticPath(this.frame % ANALOG_FX_FRAMES.static);
     }
 
-    if (full || preset === 'rec' || preset === 'static') {
+    if (combined || normalized === 'static') {
       this.start();
     }
   }
@@ -106,10 +97,6 @@ class AnalogOverlay {
 
     if (!this.preloaded) {
       this.preloaded = true;
-      for (let index = 0; index < ANALOG_FX_FRAMES.rec; index += 1) {
-        const image = new Image();
-        image.src = recPath(index);
-      }
       for (let index = 0; index < ANALOG_FX_FRAMES.static; index += 1) {
         const image = new Image();
         image.src = staticPath(index);
@@ -139,11 +126,7 @@ class AnalogOverlay {
     }
     const interval = 1000 / ANALOG_FX_FPS;
     this.timer = setInterval(() => {
-      this.frame = (this.frame + 1) % ANALOG_FX_FRAMES.rec;
-      const rec = this.layers.rec;
-      if (rec) {
-        rec.src = recPath(this.frame % ANALOG_FX_FRAMES.rec);
-      }
+      this.frame = (this.frame + 1) % ANALOG_FX_FRAMES.static;
       const grain = this.layers.static;
       if (grain) {
         grain.src = staticPath(this.frame % ANALOG_FX_FRAMES.static);

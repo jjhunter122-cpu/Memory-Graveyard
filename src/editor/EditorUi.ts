@@ -1,7 +1,7 @@
 import type { AssetManifest } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
 import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
-import { ANALOG_FX_OPTIONS } from '../game/analogFx';
+import { ANALOG_FX_OPTIONS, normalizeAnalogFxPreset } from '../game/analogFx';
 import {
   BACKGROUND_PRESETS,
   FOREGROUND_PRESETS,
@@ -371,7 +371,7 @@ export class EditorUi {
   }
 
   setAnalogFx(id: string | undefined): void {
-    this.analogSelect.value = id ?? '';
+    this.analogSelect.value = normalizeAnalogFxPreset(id) ?? '';
   }
 
   setTile(id: number): void {

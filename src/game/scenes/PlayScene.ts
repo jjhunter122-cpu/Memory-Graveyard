@@ -1,5 +1,5 @@
 import { Keys, Scene, type Animation, type Engine } from 'excalibur';
-import { LEVEL, MONSTER } from '../config';
+import { CAMERA, LEVEL, MONSTER } from '../config';
 import type { LevelData } from '../level/schema';
 import type { AssetManifest } from '../level/manifest';
 import type { GameTextures } from '../assets';
@@ -156,8 +156,9 @@ export class PlayScene extends Scene {
       this.add(this.monster);
     }
 
-    this.cameraFollow = new CameraFollow(this, this.built.widthPx, this.built.heightPx);
-    this.cameraFollow.update(this.player.pos, 1);
+    this.camera.zoom = CAMERA.zoom;
+    this.cameraFollow = new CameraFollow(this);
+    this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.built.memories.length);
   }
 
@@ -506,7 +507,7 @@ export class PlayScene extends Scene {
       this.skeletonRiseRemaining = 0.72;
       this.monster?.graphics.use(this.skeletonAnimations.rise);
     }
-    this.cameraFollow.update(this.player.pos, 1);
+    this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.totalMemories);
 
     if (this.built.monsterSpawn) {

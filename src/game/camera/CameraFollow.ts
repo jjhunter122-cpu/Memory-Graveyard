@@ -1,21 +1,12 @@
 import type { Scene, Vector } from 'excalibur';
-import { VIEW } from '../config';
-import { clamp } from '../systems/graveyard';
+import { CAMERA } from '../config';
 
-const DEADZONE_X = 48;
-const DEADZONE_Y = 36;
-const FOLLOW_LERP = 6;
-
-/** Smoothly follows a target, with a deadzone, clamped to the level bounds. */
+/**
+ * Smoothly follows a target with a small deadzone. It deliberately does not
+ * clamp to the level bounds, so the target stays centered even at the edges.
+ */
 export class CameraFollow {
-  private readonly halfWidth = VIEW.width / 2;
-  private readonly halfHeight = VIEW.height / 2;
-
-  constructor(
-    private readonly scene: Scene,
-    private readonly levelWidth: number,
-    private readonly levelHeight: number,
-  ) {}
+  constructor(private readonly scene: Scene) {}
 
   update(target: Vector, dt: number): void {
     const camera = this.scene.camera;
@@ -24,17 +15,20 @@ export class CameraFollow {
 
     const dx = target.x - x;
     const dy = target.y - y;
-    const lerp = Math.min(1, FOLLOW_LERP * dt);
+    const lerp = Math.min(1, CAMERA.followLerp * dt);
 
-    if (Math.abs(dx) > DEADZONE_X) {
-      x += (dx - Math.sign(dx) * DEADZONE_X) * lerp;
+    if (Math.abs(dx) > CAMERA.deadzoneX) {
+      x += (dx - Math.sign(dx) * CAMERA.deadzoneX) * lerp;
     }
-    if (Math.abs(dy) > DEADZONE_Y) {
-      y += (dy - Math.sign(dy) * DEADZONE_Y) * lerp;
+    if (Math.abs(dy) > CAMERA.deadzoneY) {
+      y += (dy - Math.sign(dy) * CAMERA.deadzoneY) * lerp;
     }
 
-    const clampedX = clamp(x, this.halfWidth, this.levelWidth - this.halfWidth);
-    const clampedY = clamp(y, this.halfHeight, this.levelHeight - this.halfHeight);
-    camera.pos.setTo(clampedX, clampedY);
+    camera.pos.setTo(x, y);
+  }
+
+  /** Center immediately, e.g. on level start or respawn. */
+  snap(target: Vector): void {
+    this.scene.camera.pos.setTo(target.x, target.y);
   }
 }

@@ -1,6 +1,6 @@
 /** Plain data shared by the editor dropdown and the in-game overlay. */
 
-export type AnalogFxPreset = 'scanlines' | 'vignette' | 'static' | 'rec' | 'full';
+export type AnalogFxPreset = 'vignette' | 'scanlines' | 'static' | 'combined';
 
 export interface AnalogFxOption {
   id: string;
@@ -9,29 +9,35 @@ export interface AnalogFxOption {
 
 export const ANALOG_FX_OPTIONS: readonly AnalogFxOption[] = [
   { id: '', label: 'None' },
-  { id: 'scanlines', label: 'Scanlines' },
   { id: 'vignette', label: 'Vignette' },
+  { id: 'scanlines', label: 'Scanlines' },
   { id: 'static', label: 'Static / grain' },
-  { id: 'rec', label: 'REC HUD' },
-  { id: 'full', label: 'Full (all overlays)' },
+  { id: 'combined', label: 'Combined (vignette + scanlines + static)' },
 ];
 
 export const ANALOG_FX_BASE =
   'assets/DRYFIT/analog-fx/LESED_Analog_Horror_Screen_FX_Free/overlays';
 
 export const ANALOG_FX_FRAMES = {
-  rec: 24,
   static: 8,
 } as const;
 
 export const ANALOG_FX_FPS = 12;
 
-export function isAnalogFxPreset(value: string | undefined): value is AnalogFxPreset {
-  return (
-    value === 'scanlines' ||
+/** Maps the retired `full` preset onto the new combined preset. */
+export function normalizeAnalogFxPreset(
+  value: string | undefined,
+): AnalogFxPreset | undefined {
+  if (value === 'full') {
+    return 'combined';
+  }
+  if (
     value === 'vignette' ||
+    value === 'scanlines' ||
     value === 'static' ||
-    value === 'rec' ||
-    value === 'full'
-  );
+    value === 'combined'
+  ) {
+    return value;
+  }
+  return undefined;
 }

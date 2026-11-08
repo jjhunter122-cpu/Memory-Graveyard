@@ -16,7 +16,7 @@ describe('dry-fit GothicVania level', () => {
   it('keeps the selected background, foreground and analog FX presets', () => {
     expect(level.background).toBe('gothicvania');
     expect(level.foreground).toBe('gothicvines');
-    expect(['scanlines', 'vignette', 'static', 'rec', 'full']).toContain(level.analogFx);
+    expect(level.analogFx).toBe('vignette');
   });
 
   it('only references tile ids defined in the manifest', () => {

@@ -8,6 +8,18 @@ export const VIEW = {
 /** Logical tile size in pixels. Levels are authored on this grid. */
 export const TILE = 32;
 
+/** Gameplay camera feel. The editor keeps its own camera settings. */
+export const CAMERA = {
+  /** World zoom. 1.35 shows roughly 22 x 12.5 tiles. */
+  zoom: 1.35,
+  /** Horizontal deadzone in world pixels before the camera starts following. */
+  deadzoneX: 24,
+  /** Vertical deadzone in world pixels before the camera starts following. */
+  deadzoneY: 18,
+  /** Follow smoothing per second. Lower is lazier. */
+  followLerp: 5,
+} as const;
+
 export const PHYSICS = {
   gravityY: 1500,
   /**

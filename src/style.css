@@ -64,10 +64,6 @@ body {
   mix-blend-mode: screen;
 }
 
-.analog-layer[data-layer='rec'] {
-  opacity: 0.86;
-}
-
 #hud {
   position: absolute;
   inset: 0;
