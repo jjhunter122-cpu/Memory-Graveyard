@@ -1,4 +1,4 @@
-import { Keys, Scene, type Engine } from 'excalibur';
+import { Keys, Scene, Sprite, type Engine } from 'excalibur';
 import { LEVEL, MONSTER } from '../config';
 import type { LevelData } from '../level/schema';
 import type { AssetManifest } from '../level/manifest';
@@ -118,12 +118,28 @@ export class PlayScene extends Scene {
       }
     });
     this.add(this.player);
+    if (this.textures.hero) {
+      this.player.graphics.use(
+        new Sprite({
+          image: this.textures.hero,
+          destSize: { width: 36, height: 30 },
+        }),
+      );
+    }
 
     if (this.built.monsterSpawn) {
       this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y);
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
+      if (this.textures.monster) {
+        this.monster.graphics.use(
+          new Sprite({
+            image: this.textures.monster,
+            destSize: { width: 28, height: 48 },
+          }),
+        );
+      }
       this.add(this.monster);
     }
 

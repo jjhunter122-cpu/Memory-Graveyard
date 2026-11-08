@@ -15,11 +15,16 @@ export const TEMP_ASSETS = true;
  * manifest because it is scenery, not a tile: it spans the whole level rather
  * than sitting on the 32px grid.
  */
-export const LEVEL_BACKGROUND = 'assets/TEMP/wallpaper_color.png';
+export const LEVEL_BACKGROUND = 'assets/DRYFIT/gothicvania/environment/background.png';
+export const DRYFIT_HERO = 'assets/DRYFIT/gothicvania/hero/hero-idle-crop.png';
+export const DRYFIT_MONSTER = 'assets/DRYFIT/gothicvania/enemies/ghost-1-crop.png';
 
 export interface GameTextures {
   /** Backdrop texture, if one was configured. */
   background?: ImageSource;
+  /** Temporary player/monster art for the dry-fit branch. */
+  hero?: ImageSource;
+  monster?: ImageSource;
   /** Tile art, keyed by the manifest's `image` path. */
   tiles: Map<string, ImageSource>;
 }
@@ -55,10 +60,18 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   const background = TEMP_ASSETS
     ? new ImageSource(`${base}${LEVEL_BACKGROUND}`)
     : undefined;
+  const hero = TEMP_ASSETS ? new ImageSource(`${base}${DRYFIT_HERO}`) : undefined;
+  const monster = TEMP_ASSETS ? new ImageSource(`${base}${DRYFIT_MONSTER}`) : undefined;
   const resources = [...tiles.values()];
   if (background) {
     resources.push(background);
   }
+  if (hero) {
+    resources.push(hero);
+  }
+  if (monster) {
+    resources.push(monster);
+  }
 
-  return { textures: { background, tiles }, resources };
+  return { textures: { background, hero, monster, tiles }, resources };
 }

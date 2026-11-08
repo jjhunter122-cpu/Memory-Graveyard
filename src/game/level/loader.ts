@@ -15,8 +15,8 @@ const CAP_HEIGHT = 6;
  * Temporary tint for painted tile textures. The placeholder `color` is too dark
  * to multiply a light texture by, so art is tinted to a mid stone tone instead.
  */
-const TILE_IMAGE_TINT = '#9aa0b8';
-const BACKGROUND_IMAGE_TINT = '#7d8299';
+const TILE_IMAGE_TINT = '#ffffff';
+const BACKGROUND_IMAGE_TINT = '#ffffff';
 
 function tileTexture(def: TileDef, textures?: GameTextures): ImageSource | undefined {
   return def.image ? textures?.tiles.get(def.image) : undefined;
@@ -35,9 +35,11 @@ function addTileGraphic(
   tint: string,
   z: number,
 ): void {
-  const variantX = (run.x * 37 + run.y * 17) % 4;
-  const variantY = (run.x * 11 + run.y * 29) % 4;
   const sourceSize = Math.min(tileSize, texture.width, texture.height);
+  const variantsX = Math.max(1, Math.floor(texture.width / sourceSize));
+  const variantsY = Math.max(1, Math.floor(texture.height / sourceSize));
+  const variantX = (run.x * 37 + run.y * 17) % variantsX;
+  const variantY = (run.x * 11 + run.y * 29) % variantsY;
   const actor = new Actor({
     x: (run.x + run.width / 2) * tileSize,
     y: (run.y + run.height / 2) * tileSize,
@@ -212,7 +214,7 @@ function addBackground(
         image: background,
         destSize: { width: tile, height: tile },
         tint: Color.fromHex(BACKGROUND_IMAGE_TINT),
-        opacity: 0.5,
+        opacity: 0.7,
       }),
     );
     scene.add(actor);

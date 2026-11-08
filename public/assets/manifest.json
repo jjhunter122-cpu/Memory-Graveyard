@@ -20,6 +20,26 @@
           "color": "#8a754e"
         }
       ]
+    },
+    {
+      "name": "gothicvania-dryfit",
+      "tiles": [
+        {
+          "id": 10,
+          "name": "gothic grass",
+          "collision": "solid",
+          "color": "#3f5a2f",
+          "cap": "#9acb57",
+          "image": "DRYFIT/gothicvania/tiles/gv-grass.png"
+        },
+        {
+          "id": 11,
+          "name": "gothic dirt",
+          "collision": "solid",
+          "color": "#4a2d2a",
+          "image": "DRYFIT/gothicvania/tiles/gv-dirt.png"
+        }
+      ]
     }
   ]
 }

@@ -164,7 +164,10 @@ export class EditorUi {
       const button = document.createElement('button');
       button.className = 'ed-swatch';
       button.title = `${tile.name} (${tile.collision})`;
-      button.innerHTML = `<i style="background:${tile.color}"></i><span>${tile.name}</span>`;
+      const imageStyle = tile.image
+        ? `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:cover;background-position:center;image-rendering:pixelated;`
+        : '';
+      button.innerHTML = `<i style="background-color:${tile.color};${imageStyle}"></i><span>${tile.name}</span>`;
       button.addEventListener('click', () => this.callbacks.onTile(tile.id));
       tilesHost.append(button);
       this.tileButtons.set(tile.id, button);

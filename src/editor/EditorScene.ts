@@ -4,9 +4,11 @@ import {
   CollisionType,
   Keys,
   Scene,
+  Sprite,
   type Engine,
   type Subscription,
 } from 'excalibur';
+import type { GameTextures } from '../game/assets';
 import { VIEW } from '../game/config';
 import { tileIndex, type AssetManifest, type TileDef } from '../game/level/manifest';
 import { clampSize } from '../game/level/sizes';
@@ -40,6 +42,7 @@ export interface EditorSceneOptions {
   onMenu: () => void;
   drafts: DraftStore;
   library: LevelLibrary;
+  textures: GameTextures;
   onProjectSaved?: () => Promise<void> | void;
 }
 
@@ -657,6 +660,7 @@ export class EditorScene extends Scene {
     if (!def) {
       return;
     }
+    const texture = def.image ? this.options.textures.tiles.get(def.image) : undefined;
     const actor = new Actor({
       x: x * this.tileSize + this.tileSize / 2,
       y: y * this.tileSize + this.tileSize / 2,
@@ -666,6 +670,14 @@ export class EditorScene extends Scene {
       collisionType: CollisionType.PreventCollision,
       z: 1,
     });
+    if (texture) {
+      actor.graphics.use(
+        new Sprite({
+          image: texture,
+          destSize: { width: this.tileSize - 1, height: this.tileSize - 1 },
+        }),
+      );
+    }
     if (layerIndex !== this.activeLayer) {
       actor.graphics.opacity = 0.45;
     }

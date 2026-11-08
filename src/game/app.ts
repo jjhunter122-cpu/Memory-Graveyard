@@ -201,6 +201,7 @@ export class GameApp {
       onMenu: () => void this.showTitle(),
       drafts: this.drafts,
       library: this.library,
+      textures: this.textures,
       onProjectSaved: () => this.library.reload(),
     });
   }
