@@ -1,5 +1,5 @@
 import { Keys, Scene, type Animation, type Engine } from 'excalibur';
-import { CAMERA, LEVEL, MONSTER } from '../config';
+import { LEVEL, MONSTER } from '../config';
 import type { LevelData } from '../level/schema';
 import type { AssetManifest } from '../level/manifest';
 import type { GameTextures } from '../assets';
@@ -10,6 +10,7 @@ import { Exit } from '../actors/Exit';
 import { Monster } from '../actors/Monster';
 import { TrailFollower, TrailRecorder } from '../chase/trail';
 import { CameraFollow } from '../camera/CameraFollow';
+import { normalizeCameraZoom } from '../camera/cameraZoom';
 import { characterMetrics, normalizeCharacterScale } from '../characterScale';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
@@ -174,7 +175,7 @@ export class PlayScene extends Scene {
       this.add(this.monster);
     }
 
-    this.camera.zoom = CAMERA.zoom;
+    this.camera.zoom = normalizeCameraZoom(this.level.cameraZoom);
     this.cameraFollow = new CameraFollow(this);
     this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.built.memories.length);

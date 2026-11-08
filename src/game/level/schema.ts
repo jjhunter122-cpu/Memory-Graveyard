@@ -47,6 +47,8 @@ export interface LevelData {
    * 1.5, 1.75 and 2 make both the player and the monster that tall in tiles.
    */
   characterScale?: number;
+  /** Optional world zoom. Lower pulls the camera back and shows more level. */
+  cameraZoom?: number;
 }
 
 export class LevelValidationError extends Error {
@@ -169,6 +171,13 @@ export function validateLevel(raw: unknown): LevelData {
       throw new LevelValidationError('characterScale must be 1, 1.5, 1.75 or 2');
     }
     result.characterScale = scale;
+  }
+  if (obj.cameraZoom !== undefined) {
+    const zoom = obj.cameraZoom;
+    if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom < 0.5 || zoom > 2) {
+      throw new LevelValidationError('cameraZoom must be a number between 0.5 and 2');
+    }
+    result.cameraZoom = zoom;
   }
   return result;
 }

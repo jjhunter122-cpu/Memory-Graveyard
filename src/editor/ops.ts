@@ -3,6 +3,7 @@ import {
   type LevelData,
   type LevelEntity,
 } from '../game/level/schema';
+import { CAMERA } from '../game/config';
 
 /** Immutable level-document operations used by the editor. */
 
@@ -122,6 +123,24 @@ export function setCharacterScale(level: LevelData, scale: number): LevelData {
     delete result.characterScale;
   } else {
     result.characterScale = next;
+  }
+  return result;
+}
+
+/**
+ * Sets the level's camera zoom. The default gameplay zoom is omitted so
+ * existing levels keep their current framing.
+ */
+export function setCameraZoom(level: LevelData, zoom: number): LevelData {
+  const next = zoom === CAMERA.zoom ? undefined : zoom;
+  if (level.cameraZoom === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result.cameraZoom;
+  } else {
+    result.cameraZoom = next;
   }
   return result;
 }

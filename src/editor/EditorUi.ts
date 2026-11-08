@@ -7,6 +7,11 @@ import {
   characterMetrics,
   normalizeCharacterScale,
 } from '../game/characterScale';
+import {
+  CAMERA_ZOOM_OPTIONS,
+  cameraCoverage,
+  normalizeCameraZoom,
+} from '../game/camera/cameraZoom';
 import type { GameTextures } from '../game/assets';
 import {
   BACKGROUND_PRESETS,
@@ -28,6 +33,7 @@ export interface EditorUiCallbacks {
   onForeground(id: string | undefined): void;
   onAnalogFx(id: string | undefined): void;
   onCharacterScale(scale: number): void;
+  onCameraZoom(zoom: number): void;
   onToggleGrid(): void;
   onUndo(): void;
   onRedo(): void;
@@ -130,6 +136,8 @@ export class EditorUi {
   private readonly characterScaleSelect: HTMLSelectElement;
   private readonly scaleCompareCanvas: HTMLCanvasElement;
   private readonly scaleNote: HTMLElement;
+  private readonly cameraZoomSelect: HTMLSelectElement;
+  private readonly cameraZoomNote: HTMLElement;
   private readonly tilesetSelect: HTMLSelectElement;
   private readonly tilesHost: HTMLElement;
   private readonly selectedTileLabel: HTMLElement;
@@ -225,6 +233,11 @@ export class EditorUi {
             <div class="ed-scenery">
               <label>Preset <select id="ed-analog" class="ed-layer"></select></label>
             </div>
+            <h3>Camera</h3>
+            <div class="ed-scenery">
+              <label>Distance <select id="ed-camera-zoom" class="ed-layer"></select></label>
+            </div>
+            <p id="ed-camera-zoom-note" class="ed-selected-tile"></p>
             <h3>Character scale</h3>
             <div class="ed-scenery">
               <label>Height <select id="ed-character-scale" class="ed-layer"></select></label>
@@ -275,6 +288,8 @@ export class EditorUi {
     this.characterScaleSelect = this.get<HTMLSelectElement>('ed-character-scale');
     this.scaleCompareCanvas = this.get<HTMLCanvasElement>('ed-scale-compare');
     this.scaleNote = this.get<HTMLElement>('ed-scale-note');
+    this.cameraZoomSelect = this.get<HTMLSelectElement>('ed-camera-zoom');
+    this.cameraZoomNote = this.get<HTMLElement>('ed-camera-zoom-note');
     this.tilesetSelect = this.get<HTMLSelectElement>('ed-tileset');
     this.tilesHost = this.get<HTMLElement>('ed-tiles');
     this.selectedTileLabel = this.get<HTMLElement>('ed-selected-tile');
@@ -292,6 +307,12 @@ export class EditorUi {
       element.value = String(option.value);
       element.textContent = option.label;
       this.characterScaleSelect.append(element);
+    }
+    for (const option of CAMERA_ZOOM_OPTIONS) {
+      const element = document.createElement('option');
+      element.value = String(option.value);
+      element.textContent = option.label;
+      this.cameraZoomSelect.append(element);
     }
 
     for (const group of this.tileGroups) {
@@ -406,6 +427,9 @@ export class EditorUi {
     this.characterScaleSelect.addEventListener('change', () =>
       this.callbacks.onCharacterScale(Number(this.characterScaleSelect.value)),
     );
+    this.cameraZoomSelect.addEventListener('change', () =>
+      this.callbacks.onCameraZoom(Number(this.cameraZoomSelect.value)),
+    );
 
     this.setSize(level.width, level.height);
     this.setSkybox(level.skybox);
@@ -413,6 +437,7 @@ export class EditorUi {
     this.setForeground(level.foreground);
     this.setAnalogFx(level.analogFx);
     this.setCharacterScale(level.characterScale, level.tileSize);
+    this.setCameraZoom(level.cameraZoom, level.tileSize);
     this.setTab('tiles');
   }
 
@@ -672,6 +697,18 @@ export class EditorUi {
     this.characterScaleSelect.value = String(normalizeCharacterScale(scale));
     this.scaleNote.textContent = `Compared against a ${tileSize}px tile. Applies to both the player and the monster.`;
     this.drawScaleComparison();
+    this.setCameraZoom(this.currentCameraZoom(), tileSize);
+  }
+
+  setCameraZoom(zoom: number | undefined, tileSize: number): void {
+    const normalized = normalizeCameraZoom(zoom);
+    this.cameraZoomSelect.value = String(normalized);
+    const coverage = cameraCoverage(normalized, tileSize);
+    this.cameraZoomNote.textContent = `Shows about ${coverage.width.toFixed(0)} × ${coverage.height.toFixed(1)} tiles at ${tileSize}px.`;
+  }
+
+  private currentCameraZoom(): number {
+    return Number(this.cameraZoomSelect.value) || normalizeCameraZoom(undefined);
   }
 
   /** Renders all four character heights side by side for quick comparison. */
