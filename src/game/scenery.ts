@@ -54,8 +54,27 @@ export const BACKGROUND_PRESETS: readonly SceneryPreset[] = [
     ],
   },
   {
+    id: 'pixel-platformer-world-flat',
+    name: 'Pixel Platformer World — Flat',
+    layers: [
+      { image: 'DRYFIT/pixel-platformer-world/Background/background1.png', height: 1, anchor: 'center' },
+    ],
+  },
+  {
+    id: 'pixel-platformer-world-layers',
+    name: 'Pixel Platformer World — Layers',
+    layers: [
+      { image: 'DRYFIT/pixel-platformer-world/Background/background1.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background2.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background3.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background4.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background5.png', height: 1, anchor: 'center' },
+      { image: 'DRYFIT/pixel-platformer-world/Background/background6.png', height: 1, anchor: 'center' },
+    ],
+  },
+  {
     id: 'pixel-platformer-world',
-    name: 'Pixel Platformer World',
+    name: 'Pixel Platformer World — Room',
     layers: [
       { image: 'DRYFIT/pixel-platformer-world/Background/background1.png', height: 1, anchor: 'center' },
       { image: 'DRYFIT/pixel-platformer-world/Background/background2.png', height: 1, anchor: 'center' },

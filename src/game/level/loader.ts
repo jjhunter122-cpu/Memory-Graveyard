@@ -64,6 +64,31 @@ function addTileGraphic(
     return;
   }
 
+  if (texture.width < tileSize && texture.height < tileSize) {
+    // Small source art (for example 16x16 Pixel tiles in a 32px level) must be
+    // scaled up to fill the cell. A TiledSprite would repeat it at native size
+    // and make one cell look like four tiny tiles.
+    for (let x = run.x; x < run.x + run.width; x += 1) {
+      const spriteActor = new Actor({
+        x: (x + 0.5) * tileSize,
+        y: (run.y + 0.5) * tileSize,
+        width: tileSize,
+        height: tileSize,
+        collisionType: CollisionType.PreventCollision,
+        z,
+      });
+      spriteActor.graphics.use(
+        new Sprite({
+          image: texture,
+          destSize: { width: tileSize, height: tileSize },
+          tint: Color.fromHex(tint),
+        }),
+      );
+      scene.add(spriteActor);
+    }
+    return;
+  }
+
   const sourceSize = Math.min(tileSize, texture.width, texture.height);
   const variantsX = Math.max(1, Math.floor(texture.width / sourceSize));
   const variantsY = Math.max(1, Math.floor(texture.height / sourceSize));

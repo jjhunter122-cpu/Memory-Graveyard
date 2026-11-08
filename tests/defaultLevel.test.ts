@@ -54,11 +54,20 @@ describe('default level template', () => {
 
 describe('Pixel walkable palette', () => {
   it('adds solid walkable Pixel tiles to the manifest', () => {
-    for (const id of [63, 64, 65, 66, 67, 68, 69]) {
+    for (const id of [63, 64, 65, 66, 67, 68, 69, 70, 71, 75, 76, 77]) {
       const tile = tiles.get(id);
       expect(tile, `missing tile ${id}`).toBeDefined();
       expect(tile?.collision).toBe('solid');
       expect(tile?.image).toMatch(/^DRYFIT\/pixel-platformer-world\/tiles\//);
     }
+  });
+
+  it('keeps the visual-only slants and plant in the palette', () => {
+    for (const id of [72, 73, 74]) {
+      const tile = tiles.get(id);
+      expect(tile?.collision).toBe('none');
+      expect(tile?.image).toMatch(/^DRYFIT\/pixel-platformer-world\/tiles\//);
+    }
+    expect(tiles.get(78)?.decor).toBe(true);
   });
 });

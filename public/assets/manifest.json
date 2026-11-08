@@ -331,6 +331,27 @@
           "image": "DRYFIT/pixel-platformer-world/tiles/pixel-grass-top-b.png"
         },
         {
+          "id": 70,
+          "name": "pixel green top A",
+          "collision": "solid",
+          "color": "#3b5a3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-green-top-a.png"
+        },
+        {
+          "id": 71,
+          "name": "pixel green fill B",
+          "collision": "solid",
+          "color": "#334d3b",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-green-top-b.png"
+        },
+        {
+          "id": 75,
+          "name": "pixel stone top",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-stone-top.png"
+        },
+        {
           "id": 65,
           "name": "pixel stone wall A",
           "collision": "solid",
@@ -352,6 +373,13 @@
           "image": "DRYFIT/pixel-platformer-world/tiles/pixel-stone-fill.png"
         },
         {
+          "id": 76,
+          "name": "pixel stone underside",
+          "collision": "solid",
+          "color": "#3a302c",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-stone-underside.png"
+        },
+        {
           "id": 68,
           "name": "pixel brown platform A",
           "collision": "solid",
@@ -364,6 +392,45 @@
           "collision": "solid",
           "color": "#2a2320",
           "image": "DRYFIT/pixel-platformer-world/tiles/pixel-brown-platform-b.png"
+        },
+        {
+          "id": 77,
+          "name": "pixel column",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-column.png"
+        },
+        {
+          "id": 72,
+          "name": "pixel green slant A (visual)",
+          "collision": "none",
+          "color": "#3b5a3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-green-slant-a.png"
+        },
+        {
+          "id": 73,
+          "name": "pixel green slant B (visual)",
+          "collision": "none",
+          "color": "#3b5a3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-green-slant-b.png"
+        },
+        {
+          "id": 74,
+          "name": "pixel green edge (visual)",
+          "collision": "none",
+          "color": "#3b5a3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-green-edge.png"
+        },
+        {
+          "id": 78,
+          "name": "pixel plant",
+          "collision": "none",
+          "color": "#2e6b3f",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-plant.png",
+          "decor": true,
+          "width": 16,
+          "height": 16,
+          "anchor": "bottom"
         },
         {
           "id": 61,
