@@ -317,11 +317,53 @@
       "name": "pixel-platformer-world-test",
       "tiles": [
         {
-          "id": 60,
-          "name": "collision",
+          "id": 63,
+          "name": "pixel grass top A",
           "collision": "solid",
-          "color": "#2f6b4f",
-          "hidden": true
+          "color": "#2e6b3f",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-grass-top-a.png"
+        },
+        {
+          "id": 64,
+          "name": "pixel grass top B",
+          "collision": "solid",
+          "color": "#2e6b3f",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-grass-top-b.png"
+        },
+        {
+          "id": 65,
+          "name": "pixel stone wall A",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-stone-wall-a.png"
+        },
+        {
+          "id": 66,
+          "name": "pixel stone wall B",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-stone-wall-b.png"
+        },
+        {
+          "id": 67,
+          "name": "pixel stone fill",
+          "collision": "solid",
+          "color": "#3a302c",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-stone-fill.png"
+        },
+        {
+          "id": 68,
+          "name": "pixel brown platform A",
+          "collision": "solid",
+          "color": "#5a3a32",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-brown-platform-a.png"
+        },
+        {
+          "id": 69,
+          "name": "pixel dark frame B",
+          "collision": "solid",
+          "color": "#2a2320",
+          "image": "DRYFIT/pixel-platformer-world/tiles/pixel-brown-platform-b.png"
         },
         {
           "id": 61,
@@ -344,6 +386,13 @@
           "width": 8,
           "height": 9,
           "anchor": "bottom"
+        },
+        {
+          "id": 60,
+          "name": "collision",
+          "collision": "solid",
+          "color": "#2f6b4f",
+          "hidden": true
         }
       ]
     }

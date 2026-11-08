@@ -2,6 +2,7 @@
 
 export type EditorTool = 'paint' | 'erase';
 export type EditorMode = 'tiles' | 'entities';
+export type EditorTab = 'tiles' | 'visual' | 'entities';
 
 export type EditorEntityType =
   | 'spawn'

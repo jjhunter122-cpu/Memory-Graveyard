@@ -15,7 +15,6 @@ import { addSceneryPreset } from '../game/level/scenery';
 import { clampSize } from '../game/level/sizes';
 import { findBackgroundPreset, findForegroundPreset } from '../game/scenery';
 import {
-  createLevel,
   EMPTY_TILE,
   parseLevel,
   serializeLevel,
@@ -36,8 +35,9 @@ import {
   setTile,
   tileAt,
 } from './ops';
+import { createDefaultLevel } from './defaultLevel';
 import { EditorUi, type EditorUiCallbacks } from './EditorUi';
-import type { EditorEntityType, EditorMode, EditorTool } from './types';
+import type { EditorEntityType, EditorMode, EditorTab, EditorTool } from './types';
 import { DraftStore, type LevelLibrary } from '../game/storage/levels';
 import { setMode } from '../game/ui/mode';
 import { slug } from '../game/util/slug';
@@ -67,11 +67,12 @@ const ENTITY_STYLE: Record<EditorEntityType, { color: string; radius: number }> 
 export class EditorScene extends Scene {
   private level: LevelData;
   private readonly tiles: Map<number, TileDef>;
-  private readonly tileSize: number;
+  private tileSize: number;
   private readonly history: History<LevelData>;
 
   private tool: EditorTool = 'paint';
   private mode: EditorMode = 'tiles';
+  private tab: EditorTab = 'tiles';
   private selectedTile: number;
   private selectedEntity: EditorEntityType = 'memory';
   private activeLayer = 0;
@@ -103,7 +104,7 @@ export class EditorScene extends Scene {
       const key = event.key.toLowerCase();
       if (key === 'q') {
         event.preventDefault();
-        this.setEditMode(this.mode === 'tiles' ? 'entities' : 'tiles');
+        this.setTab(this.tab === 'tiles' ? 'entities' : 'tiles');
       } else if (key === 'b') {
         event.preventDefault();
         this.toggleTool();
@@ -140,20 +141,19 @@ export class EditorScene extends Scene {
 
   override onInitialize(_engine: Engine): void {
     this.buildGrid();
-    this.cursor = new Actor({
-      width: this.tileSize,
-      height: this.tileSize,
-      color: new Color(255, 255, 255, 0.16),
-      collisionType: CollisionType.PreventCollision,
-      z: 10,
-    });
-    this.add(this.cursor);
+    this.createCursor();
 
     const root = document.getElementById('editor-ui');
     if (root) {
-      this.ui = new EditorUi(root, this.manifest, this.level, this.callbacks());
+      this.ui = new EditorUi(
+        root,
+        this.manifest,
+        this.level,
+        this.callbacks(),
+        this.options.textures,
+      );
       this.ui.setTool(this.tool);
-      this.ui.setMode(this.mode);
+      this.ui.setTab(this.tab);
       this.ui.setTile(this.selectedTile);
       this.ui.setEntity(this.selectedEntity);
       this.ui.setLayers(this.level.layers, this.activeLayer);
@@ -190,6 +190,7 @@ export class EditorScene extends Scene {
 
   override onDeactivate(): void {
     this.flushAutosave();
+    this.ui?.dispose();
     window.removeEventListener('keydown', this.onKeyDown);
     for (const subscription of this.subscriptions) {
       subscription.close();
@@ -247,6 +248,9 @@ export class EditorScene extends Scene {
   // ---- pointer --------------------------------------------------------------
 
   private onPointerDown(native: Event): void {
+    if (this.tab === 'visual') {
+      return;
+    }
     if (native instanceof MouseEvent && native.button === 2) {
       return;
     }
@@ -274,7 +278,7 @@ export class EditorScene extends Scene {
   }
 
   private paintAtPointerCurrent(): void {
-    if (this.mode !== 'tiles') {
+    if (this.tab === 'visual' || this.mode !== 'tiles') {
       return;
     }
     const tile = this.tileUnderPointer();
@@ -300,6 +304,11 @@ export class EditorScene extends Scene {
 
   private updateCursor(engine: Engine): void {
     if (!this.cursor) {
+      return;
+    }
+    if (this.tab === 'visual') {
+      this.cursor.graphics.visible = false;
+      this.ui?.setCursor(null, null);
       return;
     }
     const tile = this.tileUnderPointer();
@@ -397,6 +406,8 @@ export class EditorScene extends Scene {
 
   private loadLevel(level: LevelData, saveDraft = false): void {
     this.level = level;
+    this.tileSize = level.tileSize;
+    this.createCursor();
     this.history.reset(level);
     this.activeLayer = 0;
     this.ui?.setName(level.name);
@@ -472,13 +483,11 @@ export class EditorScene extends Scene {
       name = `Untitled level ${counter}`;
       counter += 1;
     }
-    const level = createLevel(
-      name,
-      this.level.width,
-      this.level.height,
-      this.tileSize,
-    );
+    const level = createDefaultLevel(name);
     this.loadLevel(level, true);
+    this.selectedTile = 1;
+    this.setTab('tiles');
+    this.ui?.setTile(1);
     this.ui?.toast('created new level');
   }
 
@@ -657,9 +666,25 @@ export class EditorScene extends Scene {
     this.buildGrid();
   }
 
-  private setEditMode(mode: EditorMode): void {
-    this.mode = mode;
-    this.ui?.setMode(mode);
+  private setTab(tab: EditorTab): void {
+    this.tab = tab;
+    if (tab !== 'visual') {
+      this.mode = tab;
+    }
+    this.painting = false;
+    this.ui?.setTab(tab);
+  }
+
+  private createCursor(): void {
+    this.cursor?.kill();
+    this.cursor = new Actor({
+      width: this.tileSize,
+      height: this.tileSize,
+      color: new Color(255, 255, 255, 0.16),
+      collisionType: CollisionType.PreventCollision,
+      z: 10,
+    });
+    this.add(this.cursor);
   }
 
   private toggleTool(): void {
@@ -818,18 +843,18 @@ export class EditorScene extends Scene {
         this.tool = tool;
         this.ui?.setTool(tool);
       },
-      onMode: (mode) => this.setEditMode(mode),
+      onTab: (tab) => this.setTab(tab),
       onTile: (id) => {
         this.selectedTile = id;
         this.tool = 'paint';
-        this.setEditMode('tiles');
+        this.setTab('tiles');
         this.ui?.setTool('paint');
         this.ui?.setTile(id);
       },
       onEntity: (type) => {
         this.selectedEntity = type;
         this.tool = 'paint';
-        this.setEditMode('entities');
+        this.setTab('entities');
         this.ui?.setTool('paint');
         this.ui?.setEntity(type);
       },
@@ -914,6 +939,8 @@ export class EditorScene extends Scene {
       const text = await file.text();
       const loaded = parseLevel(text);
       this.level = loaded;
+      this.tileSize = loaded.tileSize;
+      this.createCursor();
       this.history.reset(loaded);
       this.activeLayer = 0;
       this.ui?.setName(loaded.name);

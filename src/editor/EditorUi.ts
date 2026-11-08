@@ -1,18 +1,19 @@
-import type { AssetManifest } from '../game/level/manifest';
+import type { AssetManifest, TileDef } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
 import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
 import { ANALOG_FX_OPTIONS, normalizeAnalogFxPreset } from '../game/analogFx';
+import type { GameTextures } from '../game/assets';
 import {
   BACKGROUND_PRESETS,
   FOREGROUND_PRESETS,
   type SceneryPreset,
 } from '../game/scenery';
 import type { DraftSummary, LevelEntry } from '../game/storage/levels';
-import type { EditorEntityType, EditorMode, EditorTool } from './types';
+import type { EditorEntityType, EditorTab, EditorTool } from './types';
 
 export interface EditorUiCallbacks {
   onTool(tool: EditorTool): void;
-  onMode(mode: EditorMode): void;
+  onTab(tab: EditorTab): void;
   onTile(id: number): void;
   onEntity(type: EditorEntityType): void;
   onLayer(index: number): void;
@@ -48,11 +49,61 @@ const ENTITY_LABELS: Record<EditorEntityType, string> = {
   checkpoint: 'checkpoint',
 };
 
+const ENTITY_COLORS: Record<EditorEntityType, string> = {
+  spawn: '#7cff9e',
+  monster: '#ff6b7a',
+  skeleton: '#e2c79b',
+  memory: '#7ce7ff',
+  exit: '#b6ff7c',
+  checkpoint: '#c79bff',
+};
+
+const TILESET_LABELS: Record<string, string> = {
+  placeholder: 'OG',
+  'gothicvania-dryfit': 'GothicVania',
+  'pixel-platformer-world-test': 'Pixel Platformer World',
+};
+
+interface TileGroup {
+  id: string;
+  label: string;
+  tiles: TileDef[];
+}
+
+interface CharacterPreviewConfig {
+  sheet: 'hero' | 'ghost' | 'skeleton';
+  frameWidth: number;
+  frameHeight: number;
+  frameCount: number;
+  displayWidth: number;
+  displayHeight: number;
+}
+
+const CHARACTER_PREVIEWS: Partial<Record<EditorEntityType, CharacterPreviewConfig>> = {
+  spawn: { sheet: 'hero', frameWidth: 90, frameHeight: 50, frameCount: 4, displayWidth: 54, displayHeight: 30 },
+  monster: { sheet: 'ghost', frameWidth: 32, frameHeight: 32, frameCount: 6, displayWidth: 40, displayHeight: 40 },
+  skeleton: { sheet: 'skeleton', frameWidth: 44, frameHeight: 52, frameCount: 8, displayWidth: 40, displayHeight: 48 },
+};
+
+interface EntityPreview {
+  canvas: HTMLCanvasElement;
+  sheet?: HTMLImageElement;
+  frameWidth: number;
+  frameHeight: number;
+  frameCount: number;
+  displayWidth: number;
+  displayHeight: number;
+  color: string;
+  shape: 'circle' | 'square';
+}
+
 /** Builds and owns the DOM chrome around the editor canvas. */
 export class EditorUi {
   private readonly toolButtons = new Map<EditorTool, HTMLButtonElement>();
   private readonly tileButtons = new Map<number, HTMLButtonElement>();
   private readonly entityButtons = new Map<EditorEntityType, HTMLButtonElement>();
+  private readonly tabButtons = new Map<EditorTab, HTMLButtonElement>();
+  private readonly tabPanels = new Map<EditorTab, HTMLElement>();
   private readonly layerSelect: HTMLSelectElement;
   private readonly nameInput: HTMLInputElement;
   private readonly gridButton: HTMLButtonElement;
@@ -61,7 +112,6 @@ export class EditorUi {
   private readonly fileInput: HTMLInputElement;
   private readonly projectButton: HTMLButtonElement;
   private readonly tierInput: HTMLInputElement;
-  private readonly modeButton: HTMLButtonElement;
   private readonly toolIndicator: HTMLElement;
   private readonly sizeSelect: HTMLSelectElement;
   private readonly customSizeEl: HTMLElement;
@@ -71,12 +121,20 @@ export class EditorUi {
   private readonly backgroundSelect: HTMLSelectElement;
   private readonly foregroundSelect: HTMLSelectElement;
   private readonly analogSelect: HTMLSelectElement;
+  private readonly tilesetSelect: HTMLSelectElement;
+  private readonly tilesHost: HTMLElement;
+  private readonly selectedTileLabel: HTMLElement;
   private readonly shippedHost: HTMLElement;
   private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
   private readonly countEl: HTMLElement;
   private readonly toastEl: HTMLElement;
-  private mode: EditorMode = 'tiles';
+  private readonly tileGroups: TileGroup[] = [];
+  private readonly previewEntries: EntityPreview[] = [];
+  private currentGroupId = '';
+  private selectedTileId: number | null = null;
+  private previewFrame = 0;
+  private previewTimer: ReturnType<typeof setInterval> | null = null;
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
@@ -84,8 +142,13 @@ export class EditorUi {
     manifest: AssetManifest,
     level: LevelData,
     private readonly callbacks: EditorUiCallbacks,
+    private readonly textures: GameTextures,
   ) {
-    const tiles = manifest.tilesets.flatMap((tileset) => tileset.tiles);
+    this.tileGroups = manifest.tilesets.map((tileset) => ({
+      id: tileset.name,
+      label: TILESET_LABELS[tileset.name] ?? tileset.name,
+      tiles: tileset.tiles,
+    }));
 
     root.innerHTML = `
       <div class="ed-toolbar">
@@ -94,7 +157,6 @@ export class EditorUi {
         <div class="ed-group" role="group" aria-label="Tool">
           <button data-tool="paint">Paint</button>
           <button data-tool="erase">Erase</button>
-          <button id="ed-mode" class="ed-toggle">Tiles</button>
           <span id="ed-tool-indicator" class="ed-tool-indicator">B · PAINT</span>
         </div>
         <div class="ed-group" role="group" aria-label="History">
@@ -118,29 +180,45 @@ export class EditorUi {
       </div>
       <div class="ed-body">
         <aside class="ed-palette">
-          <h3>Level settings</h3>
-          <select id="ed-size" class="ed-layer"></select>
-          <div id="ed-custom-size" class="ed-custom-size">
-            <input id="ed-width" class="ed-number" type="number" min="40" max="120" step="1" aria-label="Level width" />
-            <span>×</span>
-            <input id="ed-height" class="ed-number" type="number" min="18" max="60" step="1" aria-label="Level height" />
-            <button id="ed-size-apply">Apply</button>
+          <div class="ed-tabs" role="tablist" aria-label="Editor panels">
+            <button data-tab="tiles" class="active">Tiles</button>
+            <button data-tab="visual">Visual</button>
+            <button data-tab="entities">Entities</button>
           </div>
-          <div class="ed-skybox">
-            <label>Skybox <input id="ed-skybox" type="color" value="#0a0b10" /></label>
-            <button id="ed-skybox-default">Default</button>
+          <div class="ed-layer-row">
+            <label>Layer <select id="ed-layer" class="ed-layer"></select></label>
           </div>
-          <div class="ed-scenery">
-            <label>Background <select id="ed-background" class="ed-layer"></select></label>
-            <label>Foreground <select id="ed-foreground" class="ed-layer"></select></label>
-            <label>Analog FX <select id="ed-analog" class="ed-layer"></select></label>
+          <div class="ed-tab-panel" data-panel="tiles">
+            <label class="ed-tileset-select">Tile set <select id="ed-tileset" class="ed-layer"></select></label>
+            <div id="ed-tiles" class="ed-tile-grid"></div>
+            <p id="ed-selected-tile" class="ed-selected-tile">Selected: —</p>
           </div>
-          <h3>Layer</h3>
-          <select id="ed-layer" class="ed-layer"></select>
-          <h3>Tiles</h3>
-          <div id="ed-tiles" class="ed-swatches"></div>
-          <h3>Entities</h3>
-          <div id="ed-entities" class="ed-swatches"></div>
+          <div class="ed-tab-panel" data-panel="visual" hidden>
+            <h3>Level size</h3>
+            <select id="ed-size" class="ed-layer"></select>
+            <div id="ed-custom-size" class="ed-custom-size">
+              <input id="ed-width" class="ed-number" type="number" min="40" max="120" step="1" aria-label="Level width" />
+              <span>×</span>
+              <input id="ed-height" class="ed-number" type="number" min="18" max="60" step="1" aria-label="Level height" />
+              <button id="ed-size-apply">Apply</button>
+            </div>
+            <h3>Sky and scenery</h3>
+            <div class="ed-skybox">
+              <label>Skybox <input id="ed-skybox" type="color" value="#0a0b10" /></label>
+              <button id="ed-skybox-default">Default</button>
+            </div>
+            <div class="ed-scenery">
+              <label>Background <select id="ed-background" class="ed-layer"></select></label>
+              <label>Foreground <select id="ed-foreground" class="ed-layer"></select></label>
+            </div>
+            <h3>Analog FX</h3>
+            <div class="ed-scenery">
+              <label>Preset <select id="ed-analog" class="ed-layer"></select></label>
+            </div>
+          </div>
+          <div class="ed-tab-panel" data-panel="entities" hidden>
+            <div id="ed-entities" class="ed-entity-grid"></div>
+          </div>
           <h3>Levels</h3>
           <button id="ed-new-level" class="ed-new-level">New level</button>
           <div id="ed-shipped" class="ed-level-list"></div>
@@ -169,7 +247,6 @@ export class EditorUi {
     this.cursorEl = this.get<HTMLElement>('ed-cursor');
     this.countEl = this.get<HTMLElement>('ed-count');
     this.toastEl = this.get<HTMLElement>('ed-toast');
-    this.modeButton = this.get<HTMLButtonElement>('ed-mode');
     this.toolIndicator = this.get<HTMLElement>('ed-tool-indicator');
     this.sizeSelect = this.get<HTMLSelectElement>('ed-size');
     this.customSizeEl = this.get<HTMLElement>('ed-custom-size');
@@ -179,6 +256,10 @@ export class EditorUi {
     this.backgroundSelect = this.get<HTMLSelectElement>('ed-background');
     this.foregroundSelect = this.get<HTMLSelectElement>('ed-foreground');
     this.analogSelect = this.get<HTMLSelectElement>('ed-analog');
+    this.tilesetSelect = this.get<HTMLSelectElement>('ed-tileset');
+    this.tilesHost = this.get<HTMLElement>('ed-tiles');
+    this.selectedTileLabel = this.get<HTMLElement>('ed-selected-tile');
+
     this.fillScenerySelect(this.backgroundSelect, BACKGROUND_PRESETS);
     this.fillScenerySelect(this.foregroundSelect, FOREGROUND_PRESETS);
     for (const option of ANALOG_FX_OPTIONS) {
@@ -188,31 +269,42 @@ export class EditorUi {
       this.analogSelect.append(element);
     }
 
-    const tilesHost = this.get<HTMLElement>('ed-tiles');
-    for (const tile of tiles) {
-      const button = document.createElement('button');
-      button.className = 'ed-swatch';
-      button.title = `${tile.name} (${tile.collision})`;
-      const imageStyle = tile.image
-        ? tile.decor || tile.half
-          ? `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:contain;background-repeat:no-repeat;background-position:center bottom;image-rendering:pixelated;`
-          : `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:cover;background-position:center;image-rendering:pixelated;`
-        : '';
-      button.innerHTML = `<i style="background-color:${tile.color};${imageStyle}"></i><span>${tile.name}</span>`;
-      button.addEventListener('click', () => this.callbacks.onTile(tile.id));
-      tilesHost.append(button);
-      this.tileButtons.set(tile.id, button);
+    for (const group of this.tileGroups) {
+      const option = document.createElement('option');
+      option.value = group.id;
+      option.textContent = group.label;
+      this.tilesetSelect.append(option);
+    }
+    if (this.tileGroups[0]) {
+      this.renderTileGroup(this.tileGroups[0].id);
     }
 
     const entityHost = this.get<HTMLElement>('ed-entities');
     for (const type of Object.keys(ENTITY_LABELS) as EditorEntityType[]) {
       const button = document.createElement('button');
-      button.className = 'ed-swatch ed-entity';
-      button.textContent = ENTITY_LABELS[type];
+      button.className = 'ed-swatch ed-entity-card';
+      const canvas = document.createElement('canvas');
+      canvas.width = 56;
+      canvas.height = 48;
+      canvas.className = 'ed-entity-preview';
+      const label = document.createElement('span');
+      label.textContent = ENTITY_LABELS[type];
+      button.append(canvas, label);
       button.addEventListener('click', () => this.callbacks.onEntity(type));
       entityHost.append(button);
       this.entityButtons.set(type, button);
+      this.previewEntries.push(this.createPreview(type, canvas));
     }
+
+    root.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((button) => {
+      const tab = button.dataset.tab as EditorTab;
+      this.tabButtons.set(tab, button);
+      button.addEventListener('click', () => this.callbacks.onTab(tab));
+    });
+    root.querySelectorAll<HTMLElement>('[data-panel]').forEach((panel) => {
+      const tab = panel.dataset.panel as EditorTab;
+      this.tabPanels.set(tab, panel);
+    });
 
     this.setLayers(level.layers, 0);
 
@@ -258,9 +350,7 @@ export class EditorUi {
     );
     this.nameInput.addEventListener('change', () => this.callbacks.onRename(this.nameInput.value));
 
-    this.modeButton.addEventListener('click', () => {
-      this.callbacks.onMode(this.mode === 'tiles' ? 'entities' : 'tiles');
-    });
+    this.tilesetSelect.addEventListener('change', () => this.selectTileGroup(this.tilesetSelect.value));
     this.sizeSelect.addEventListener('change', () => {
       const preset = presetForKey(this.sizeSelect.value);
       if (preset) {
@@ -294,6 +384,172 @@ export class EditorUi {
     this.setBackground(level.background);
     this.setForeground(level.foreground);
     this.setAnalogFx(level.analogFx);
+    this.setTab('tiles');
+  }
+
+  private renderTileGroup(groupId: string): void {
+    const group = this.tileGroups.find((candidate) => candidate.id === groupId) ?? this.tileGroups[0];
+    if (!group) {
+      return;
+    }
+    this.currentGroupId = group.id;
+    this.tilesetSelect.value = group.id;
+    this.tilesHost.innerHTML = '';
+    this.tileButtons.clear();
+
+    for (const tile of group.tiles) {
+      const button = document.createElement('button');
+      button.className = 'ed-swatch ed-tile';
+      button.title = `${tile.name} (${tile.collision})`;
+      button.innerHTML = `<i style="background-color:${tile.color};${this.tileImageStyle(tile)}"></i><span>${escapeAttr(tile.name)}</span>`;
+      button.addEventListener('click', () => this.callbacks.onTile(tile.id));
+      this.tilesHost.append(button);
+      this.tileButtons.set(tile.id, button);
+    }
+
+    this.updateSelectedTileLabel();
+    this.highlightSelectedTile();
+  }
+
+  private selectTileGroup(groupId: string): void {
+    this.renderTileGroup(groupId);
+    const group = this.tileGroups.find((candidate) => candidate.id === groupId);
+    if (
+      group &&
+      this.selectedTileId !== null &&
+      !group.tiles.some((tile) => tile.id === this.selectedTileId)
+    ) {
+      const first = group.tiles[0];
+      if (first) {
+        this.callbacks.onTile(first.id);
+      }
+    }
+  }
+
+  private tileImageStyle(tile: TileDef): string {
+    if (!tile.image) {
+      return '';
+    }
+    if (tile.decor || tile.half) {
+      return `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:contain;background-repeat:no-repeat;background-position:center bottom;image-rendering:pixelated;`;
+    }
+    return `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:cover;background-position:center;image-rendering:pixelated;`;
+  }
+
+  private highlightSelectedTile(): void {
+    for (const [key, button] of this.tileButtons) {
+      button.classList.toggle('active', key === this.selectedTileId);
+    }
+    this.updateSelectedTileLabel();
+  }
+
+  private updateSelectedTileLabel(): void {
+    if (this.selectedTileId === null) {
+      this.selectedTileLabel.textContent = 'Selected: —';
+      return;
+    }
+    const tile = this.tileGroups
+      .flatMap((group) => group.tiles)
+      .find((candidate) => candidate.id === this.selectedTileId);
+    this.selectedTileLabel.textContent = tile ? `Selected: ${tile.name}` : 'Selected: —';
+  }
+
+  private createPreview(type: EditorEntityType, canvas: HTMLCanvasElement): EntityPreview {
+    const config = CHARACTER_PREVIEWS[type];
+    const sheet = config ? this.sheetFor(config.sheet) : undefined;
+    return {
+      canvas,
+      sheet,
+      frameWidth: config?.frameWidth ?? 0,
+      frameHeight: config?.frameHeight ?? 0,
+      frameCount: config?.frameCount ?? 1,
+      displayWidth: config?.displayWidth ?? 0,
+      displayHeight: config?.displayHeight ?? 0,
+      color: ENTITY_COLORS[type],
+      shape: type === 'exit' ? 'square' : 'circle',
+    };
+  }
+
+  private sheetFor(kind: 'hero' | 'ghost' | 'skeleton'): HTMLImageElement | undefined {
+    const source =
+      kind === 'hero'
+        ? this.textures.heroSheet
+        : kind === 'ghost'
+          ? this.textures.ghostSheet
+          : this.textures.skeletonSheet;
+    return source?.data;
+  }
+
+  private startEntityPreviews(): void {
+    if (this.previewTimer !== null) {
+      return;
+    }
+    this.drawEntityPreviews();
+    this.previewTimer = setInterval(() => {
+      this.previewFrame += 1;
+      this.drawEntityPreviews();
+    }, 110);
+  }
+
+  private stopEntityPreviews(): void {
+    if (this.previewTimer !== null) {
+      clearInterval(this.previewTimer);
+      this.previewTimer = null;
+    }
+  }
+
+  private drawEntityPreviews(): void {
+    for (const entry of this.previewEntries) {
+      this.drawPreview(entry);
+    }
+  }
+
+  private drawPreview(entry: EntityPreview): void {
+    const context = entry.canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+    context.clearRect(0, 0, entry.canvas.width, entry.canvas.height);
+    context.imageSmoothingEnabled = false;
+
+    if (entry.sheet && entry.frameWidth > 0 && entry.frameHeight > 0 && entry.frameCount > 1) {
+      const index = this.previewFrame % entry.frameCount;
+      const sourceX = index * entry.frameWidth;
+      const dx = Math.round((entry.canvas.width - entry.displayWidth) / 2);
+      const dy = Math.round((entry.canvas.height - entry.displayHeight) / 2);
+      context.drawImage(
+        entry.sheet,
+        sourceX,
+        0,
+        entry.frameWidth,
+        entry.frameHeight,
+        dx,
+        dy,
+        entry.displayWidth,
+        entry.displayHeight,
+      );
+      return;
+    }
+
+    context.fillStyle = entry.color;
+    const size = 16;
+    const x = (entry.canvas.width - size) / 2;
+    const y = (entry.canvas.height - size) / 2;
+    if (entry.shape === 'square') {
+      context.fillRect(x, y, size, size);
+    } else {
+      context.beginPath();
+      context.arc(entry.canvas.width / 2, entry.canvas.height / 2, size / 2, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  dispose(): void {
+    this.stopEntityPreviews();
+    if (this.toastTimer !== null) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
   }
 
   private fillScenerySelect(select: HTMLSelectElement, presets: readonly SceneryPreset[]): void {
@@ -345,10 +601,18 @@ export class EditorUi {
     this.toolIndicator.textContent = `B · ${tool.toUpperCase()}`;
   }
 
-  setMode(mode: EditorMode): void {
-    this.mode = mode;
-    this.modeButton.textContent = mode === 'tiles' ? 'Tiles' : 'Entities';
-    this.modeButton.classList.toggle('active', mode === 'entities');
+  setTab(tab: EditorTab): void {
+    for (const [key, button] of this.tabButtons) {
+      button.classList.toggle('active', key === tab);
+    }
+    for (const [key, panel] of this.tabPanels) {
+      panel.hidden = key !== tab;
+    }
+    if (tab === 'entities') {
+      this.startEntityPreviews();
+    } else {
+      this.stopEntityPreviews();
+    }
   }
 
   setSize(width: number, height: number): void {
@@ -375,8 +639,14 @@ export class EditorUi {
   }
 
   setTile(id: number): void {
-    for (const [key, button] of this.tileButtons) {
-      button.classList.toggle('active', key === id);
+    this.selectedTileId = id;
+    const group = this.tileGroups.find((candidate) =>
+      candidate.tiles.some((tile) => tile.id === id),
+    );
+    if (group && group.id !== this.currentGroupId) {
+      this.renderTileGroup(group.id);
+    } else {
+      this.highlightSelectedTile();
     }
   }
 

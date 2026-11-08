@@ -36,6 +36,12 @@
       "name": "New Tile Set test",
       "file": "levels/new-tile-set-test.json",
       "tier": "dev"
+    },
+    {
+      "id": "default-test",
+      "name": "Default Test",
+      "file": "levels/default-test.json",
+      "tier": "dev"
     }
   ]
 }
