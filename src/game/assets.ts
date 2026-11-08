@@ -11,7 +11,15 @@ import { sceneryImagePaths } from './scenery';
  */
 export const TEMP_ASSETS = true;
 
+/**
+ * Temporary wallpaper used by the existing OG levels when they have no skybox
+ * or scenery preset.
+ */
+export const LEVEL_BACKGROUND = 'assets/TEMP/wallpaper_color.png';
+
 export interface GameTextures {
+  /** Fallback wallpaper for levels without a skybox or scenery preset. */
+  background?: ImageSource;
   /**
    * Reserved for character sheets. The current main game uses placeholder
    * player/monster rectangles, so these stay undefined until real art arrives.
@@ -58,8 +66,17 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     scenery.set(path, new ImageSource(`${base}assets/${path}`));
   }
 
+  const background = TEMP_ASSETS
+    ? new ImageSource(`${base}${LEVEL_BACKGROUND}`)
+    : undefined;
+
+  const resources = [...tiles.values(), ...scenery.values()];
+  if (background) {
+    resources.push(background);
+  }
+
   return {
-    textures: { scenery, tiles },
-    resources: [...tiles.values(), ...scenery.values()],
+    textures: { background, scenery, tiles },
+    resources,
   };
 }

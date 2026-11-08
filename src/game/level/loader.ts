@@ -19,6 +19,7 @@ const CAP_HEIGHT = 6;
  * to multiply a light texture by, so art is tinted to a mid stone tone instead.
  */
 const TILE_IMAGE_TINT = '#ffffff';
+const BACKGROUND_IMAGE_TINT = '#7d8299';
 
 function tileTexture(def: TileDef, textures?: GameTextures): ImageSource | undefined {
   return def.image ? textures?.tiles.get(def.image) : undefined;
@@ -292,6 +293,34 @@ function addBackground(
   }
 
   if (!level.skybox) {
+    const background = textures?.background;
+    if (background) {
+      // Existing OG levels relied on the temporary wallpaper when they had no
+      // skybox or scenery preset. Keep that fallback so their look is unchanged.
+      const tile = Math.max(256, heightPx);
+      const columns = Math.ceil(widthPx / tile);
+      for (let column = 0; column < columns; column += 1) {
+        const actor = new Actor({
+          x: column * tile + tile / 2,
+          y: heightPx / 2,
+          width: tile,
+          height: tile,
+          collisionType: CollisionType.PreventCollision,
+          z: -30,
+        });
+        actor.graphics.use(
+          new Sprite({
+            image: background,
+            destSize: { width: tile, height: tile },
+            tint: Color.fromHex(BACKGROUND_IMAGE_TINT),
+            opacity: 0.5,
+          }),
+        );
+        scene.add(actor);
+      }
+      return;
+    }
+
     scene.add(
       new Actor({
         x: widthPx / 2,
