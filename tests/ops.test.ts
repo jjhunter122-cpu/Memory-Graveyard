@@ -7,6 +7,8 @@ import {
   removeEntitiesAt,
   renameLevel,
   resizeLevel,
+  setBackground,
+  setForeground,
   setSkybox,
   setTile,
   tileAt,
@@ -105,5 +107,16 @@ describe('level operations', () => {
     const withSky = setSkybox(level, '#112233');
     expect(withSky.skybox).toBe('#112233');
     expect(setSkybox(withSky, undefined).skybox).toBeUndefined();
+  });
+
+  it('sets and clears scenery presets', () => {
+    const level = makeLevel();
+    const withBackground = setBackground(level, 'gothicvania');
+    expect(withBackground.background).toBe('gothicvania');
+    expect(setBackground(withBackground, undefined).background).toBeUndefined();
+
+    const withForeground = setForeground(level, 'gothicvines');
+    expect(withForeground.foreground).toBe('gothicvines');
+    expect(setForeground(withForeground, 'none').foreground).toBeUndefined();
   });
 });

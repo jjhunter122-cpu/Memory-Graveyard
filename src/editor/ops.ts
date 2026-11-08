@@ -96,6 +96,32 @@ export function setSkybox(level: LevelData, skybox: string | undefined): LevelDa
   return next;
 }
 
+export function setBackground(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'background', id);
+}
+
+export function setForeground(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'foreground', id);
+}
+
+function setOptionalField(
+  level: LevelData,
+  key: 'background' | 'foreground',
+  value: string | undefined,
+): LevelData {
+  const next = value === '' || value === 'none' ? undefined : value;
+  if (level[key] === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result[key];
+  } else {
+    result[key] = next;
+  }
+  return result;
+}
+
 /** True when resizing to width x height would discard tiles or entities. */
 export function hasContentOutside(
   level: LevelData,

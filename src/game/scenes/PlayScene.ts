@@ -1,4 +1,4 @@
-import { Keys, Scene, Sprite, type Engine } from 'excalibur';
+import { Keys, Scene, type Animation, type Engine } from 'excalibur';
 import { LEVEL, MONSTER } from '../config';
 import type { LevelData } from '../level/schema';
 import type { AssetManifest } from '../level/manifest';
@@ -13,6 +13,11 @@ import { CameraFollow } from '../camera/CameraFollow';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
+import {
+  createGhostAnimation,
+  createHeroAnimations,
+  type HeroAnimationName,
+} from '../visuals/characters';
 
 export type PlayOrigin = 'campaign' | 'levelSelect' | 'editor';
 
@@ -37,6 +42,10 @@ export class PlayScene extends Scene {
   private follower?: TrailFollower;
   private cameraFollow!: CameraFollow;
   private built!: BuiltLevel;
+  private heroAnimations?: Record<HeroAnimationName, Animation>;
+  private heroAnimationName: HeroAnimationName | null = null;
+  private ghostAnimation?: Animation;
+  private facingRight = false;
 
   private collected = 0;
   private completed = false;
@@ -118,13 +127,9 @@ export class PlayScene extends Scene {
       }
     });
     this.add(this.player);
-    if (this.textures.hero) {
-      this.player.graphics.use(
-        new Sprite({
-          image: this.textures.hero,
-          destSize: { width: 36, height: 30 },
-        }),
-      );
+    if (this.textures.heroSheet) {
+      this.heroAnimations = createHeroAnimations(this.textures.heroSheet);
+      this.setHeroAnimation('idle');
     }
 
     if (this.built.monsterSpawn) {
@@ -132,13 +137,9 @@ export class PlayScene extends Scene {
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
-      if (this.textures.monster) {
-        this.monster.graphics.use(
-          new Sprite({
-            image: this.textures.monster,
-            destSize: { width: 28, height: 48 },
-          }),
-        );
+      if (this.textures.ghostSheet) {
+        this.ghostAnimation = createGhostAnimation(this.textures.ghostSheet);
+        this.monster.graphics.use(this.ghostAnimation);
       }
       this.add(this.monster);
     }
@@ -210,8 +211,39 @@ export class PlayScene extends Scene {
     if (this.paused || this.dead) {
       return;
     }
+    this.updateHeroAnimation();
     if (engine.input.keyboard.wasPressed(Keys.R)) {
       this.restart();
+    }
+  }
+
+  private setHeroAnimation(name: HeroAnimationName): void {
+    if (!this.heroAnimations || this.heroAnimationName === name) {
+      return;
+    }
+    this.heroAnimationName = name;
+    this.player.graphics.use(this.heroAnimations[name]);
+  }
+
+  private updateHeroAnimation(): void {
+    if (!this.heroAnimations) {
+      return;
+    }
+    const vx = this.player.vel.x;
+    const vy = this.player.vel.y;
+    if (Math.abs(vx) > 12) {
+      this.facingRight = vx > 0;
+    }
+
+    if (this.player.controller.isGrounded) {
+      this.setHeroAnimation(Math.abs(vx) > 12 ? 'run' : 'idle');
+    } else {
+      this.setHeroAnimation(vy < 0 ? 'jump' : 'fall');
+    }
+
+    const graphic = this.player.graphics.current;
+    if (graphic) {
+      graphic.flipHorizontal = this.facingRight;
     }
   }
 
@@ -436,6 +468,9 @@ export class PlayScene extends Scene {
     this.completed = false;
     this.graceRemaining = MONSTER.graceSeconds;
     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
+    this.heroAnimationName = null;
+    this.facingRight = false;
+    this.setHeroAnimation('idle');
     this.cameraFollow.update(this.player.pos, 1);
     this.hud.setProgress(0, this.totalMemories);
 

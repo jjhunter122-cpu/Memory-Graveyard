@@ -11,7 +11,9 @@ import {
 import type { GameTextures } from '../game/assets';
 import { VIEW } from '../game/config';
 import { tileIndex, type AssetManifest, type TileDef } from '../game/level/manifest';
+import { addSceneryPreset } from '../game/level/scenery';
 import { clampSize } from '../game/level/sizes';
+import { findBackgroundPreset, findForegroundPreset } from '../game/scenery';
 import {
   createLevel,
   EMPTY_TILE,
@@ -27,6 +29,8 @@ import {
   removeEntitiesAt,
   renameLevel,
   resizeLevel,
+  setBackground,
+  setForeground,
   setSkybox,
   setTile,
   tileAt,
@@ -78,6 +82,7 @@ export class EditorScene extends Scene {
   private entityActors: Actor[] = [];
   private cursor: Actor | null = null;
   private skyboxActor: Actor | null = null;
+  private sceneryActors: Actor[] = [];
 
   private painting = false;
   private lastPaintedIndex = -1;
@@ -149,9 +154,11 @@ export class EditorScene extends Scene {
       this.ui.setMode(this.mode);
       this.ui.setTile(this.selectedTile);
       this.ui.setEntity(this.selectedEntity);
-      this.ui.setLayer(this.activeLayer);
+      this.ui.setLayers(this.level.layers, this.activeLayer);
       this.ui.setSize(this.level.width, this.level.height);
       this.ui.setSkybox(this.level.skybox);
+      this.ui.setBackground(this.level.background);
+      this.ui.setForeground(this.level.foreground);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
@@ -390,7 +397,7 @@ export class EditorScene extends Scene {
     this.history.reset(level);
     this.activeLayer = 0;
     this.ui?.setName(level.name);
-    this.ui?.setLayer(0);
+    this.ui?.setLayers(level.layers, 0);
     this.ui?.setHistory(false, false);
     this.rebuildGrid();
     this.refreshAll();
@@ -568,11 +575,14 @@ export class EditorScene extends Scene {
     });
     this.rebuildEntities();
     this.refreshSkybox();
+    this.refreshScenery();
 
     this.ui?.setName(this.level.name);
     this.ui?.setEntityCount(this.level.entities.length);
     this.ui?.setSize(this.level.width, this.level.height);
     this.ui?.setSkybox(this.level.skybox);
+    this.ui?.setBackground(this.level.background);
+    this.ui?.setForeground(this.level.foreground);
   }
 
   private refreshSkybox(): void {
@@ -590,9 +600,49 @@ export class EditorScene extends Scene {
       height: heightPx,
       color: Color.fromHex(this.level.skybox),
       collisionType: CollisionType.PreventCollision,
-      z: -20,
+      z: -40,
     });
     this.add(this.skyboxActor);
+  }
+
+  private refreshScenery(): void {
+    for (const actor of this.sceneryActors) {
+      actor.kill();
+    }
+    this.sceneryActors = [];
+
+    const widthPx = this.level.width * this.tileSize;
+    const heightPx = this.level.height * this.tileSize;
+
+    const background = findBackgroundPreset(this.level.background);
+    if (background) {
+      this.sceneryActors.push(
+        ...addSceneryPreset(
+          this,
+          background,
+          this.options.textures,
+          widthPx,
+          heightPx,
+          -30,
+          1,
+        ),
+      );
+    }
+
+    const foreground = findForegroundPreset(this.level.foreground);
+    if (foreground) {
+      this.sceneryActors.push(
+        ...addSceneryPreset(
+          this,
+          foreground,
+          this.options.textures,
+          widthPx,
+          heightPx,
+          3,
+          0.45,
+        ),
+      );
+    }
   }
 
   private rebuildGrid(): void {
@@ -661,22 +711,47 @@ export class EditorScene extends Scene {
       return;
     }
     const texture = def.image ? this.options.textures.tiles.get(def.image) : undefined;
-    const actor = new Actor({
-      x: x * this.tileSize + this.tileSize / 2,
-      y: y * this.tileSize + this.tileSize / 2,
-      width: this.tileSize - 1,
-      height: this.tileSize - 1,
-      color: Color.fromHex(def.color),
-      collisionType: CollisionType.PreventCollision,
-      z: 1,
-    });
-    if (texture) {
+    let actor: Actor;
+    if (def.decor && texture) {
+      const scale = def.scale ?? 1;
+      const width = def.width ?? texture.width * scale;
+      const height = def.height ?? texture.height * scale;
+      actor = new Actor({
+        x: x * this.tileSize + this.tileSize / 2,
+        y:
+          def.anchor === 'top'
+            ? y * this.tileSize + height / 2
+            : (y + 1) * this.tileSize - height / 2,
+        width,
+        height,
+        color: Color.fromHex(def.color),
+        collisionType: CollisionType.PreventCollision,
+        z: 2,
+      });
       actor.graphics.use(
         new Sprite({
           image: texture,
-          destSize: { width: this.tileSize - 1, height: this.tileSize - 1 },
+          destSize: { width, height },
         }),
       );
+    } else {
+      actor = new Actor({
+        x: x * this.tileSize + this.tileSize / 2,
+        y: y * this.tileSize + this.tileSize / 2,
+        width: this.tileSize - 1,
+        height: this.tileSize - 1,
+        color: Color.fromHex(def.color),
+        collisionType: CollisionType.PreventCollision,
+        z: 1,
+      });
+      if (texture) {
+        actor.graphics.use(
+          new Sprite({
+            image: texture,
+            destSize: { width: this.tileSize - 1, height: this.tileSize - 1 },
+          }),
+        );
+      }
     }
     if (layerIndex !== this.activeLayer) {
       actor.graphics.opacity = 0.45;
@@ -745,6 +820,22 @@ export class EditorScene extends Scene {
           this.ui?.setSkybox(this.level.skybox);
         }
       },
+      onBackground: (id) => {
+        const next = setBackground(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshScenery();
+          this.ui?.setBackground(this.level.background);
+        }
+      },
+      onForeground: (id) => {
+        const next = setForeground(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshScenery();
+          this.ui?.setForeground(this.level.foreground);
+        }
+      },
       onToggleGrid: () => this.toggleGrid(),
       onUndo: () => this.undo(),
       onRedo: () => this.redo(),
@@ -793,7 +884,7 @@ export class EditorScene extends Scene {
       this.history.reset(loaded);
       this.activeLayer = 0;
       this.ui?.setName(loaded.name);
-      this.ui?.setLayer(0);
+      this.ui?.setLayers(loaded.layers, 0);
       this.ui?.setHistory(false, false);
       this.refreshAll();
       this.centerCamera();

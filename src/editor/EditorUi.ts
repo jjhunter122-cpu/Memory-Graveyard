@@ -1,6 +1,11 @@
 import type { AssetManifest } from '../game/level/manifest';
 import type { LevelData } from '../game/level/schema';
 import { LEVEL_SIZE_PRESETS, keyForSize, presetForKey } from '../game/level/sizes';
+import {
+  BACKGROUND_PRESETS,
+  FOREGROUND_PRESETS,
+  type SceneryPreset,
+} from '../game/scenery';
 import type { DraftSummary, LevelEntry } from '../game/storage/levels';
 import type { EditorEntityType, EditorMode, EditorTool } from './types';
 
@@ -12,6 +17,8 @@ export interface EditorUiCallbacks {
   onLayer(index: number): void;
   onResize(width: number, height: number): void;
   onSkybox(color: string | undefined): void;
+  onBackground(id: string | undefined): void;
+  onForeground(id: string | undefined): void;
   onToggleGrid(): void;
   onUndo(): void;
   onRedo(): void;
@@ -58,6 +65,8 @@ export class EditorUi {
   private readonly widthInput: HTMLInputElement;
   private readonly heightInput: HTMLInputElement;
   private readonly skyboxInput: HTMLInputElement;
+  private readonly backgroundSelect: HTMLSelectElement;
+  private readonly foregroundSelect: HTMLSelectElement;
   private readonly shippedHost: HTMLElement;
   private readonly draftsHost: HTMLElement;
   private readonly cursorEl: HTMLElement;
@@ -105,15 +114,6 @@ export class EditorUi {
       </div>
       <div class="ed-body">
         <aside class="ed-palette">
-          <h3>Tiles</h3>
-          <div id="ed-tiles" class="ed-swatches"></div>
-          <h3>Entities</h3>
-          <div id="ed-entities" class="ed-swatches"></div>
-          <h3>Levels</h3>
-          <button id="ed-new-level" class="ed-new-level">New level</button>
-          <div id="ed-shipped" class="ed-level-list"></div>
-          <h3>My drafts</h3>
-          <div id="ed-drafts" class="ed-drafts"></div>
           <h3>Level settings</h3>
           <select id="ed-size" class="ed-layer"></select>
           <div id="ed-custom-size" class="ed-custom-size">
@@ -126,8 +126,21 @@ export class EditorUi {
             <label>Skybox <input id="ed-skybox" type="color" value="#0a0b10" /></label>
             <button id="ed-skybox-default">Default</button>
           </div>
+          <div class="ed-scenery">
+            <label>Background <select id="ed-background" class="ed-layer"></select></label>
+            <label>Foreground <select id="ed-foreground" class="ed-layer"></select></label>
+          </div>
           <h3>Layer</h3>
           <select id="ed-layer" class="ed-layer"></select>
+          <h3>Tiles</h3>
+          <div id="ed-tiles" class="ed-swatches"></div>
+          <h3>Entities</h3>
+          <div id="ed-entities" class="ed-swatches"></div>
+          <h3>Levels</h3>
+          <button id="ed-new-level" class="ed-new-level">New level</button>
+          <div id="ed-shipped" class="ed-level-list"></div>
+          <h3>My drafts</h3>
+          <div id="ed-drafts" class="ed-drafts"></div>
         </aside>
         <div class="ed-statusbar">
           <span id="ed-cursor">tile —</span>
@@ -158,6 +171,10 @@ export class EditorUi {
     this.widthInput = this.get<HTMLInputElement>('ed-width');
     this.heightInput = this.get<HTMLInputElement>('ed-height');
     this.skyboxInput = this.get<HTMLInputElement>('ed-skybox');
+    this.backgroundSelect = this.get<HTMLSelectElement>('ed-background');
+    this.foregroundSelect = this.get<HTMLSelectElement>('ed-foreground');
+    this.fillScenerySelect(this.backgroundSelect, BACKGROUND_PRESETS);
+    this.fillScenerySelect(this.foregroundSelect, FOREGROUND_PRESETS);
 
     const tilesHost = this.get<HTMLElement>('ed-tiles');
     for (const tile of tiles) {
@@ -165,7 +182,9 @@ export class EditorUi {
       button.className = 'ed-swatch';
       button.title = `${tile.name} (${tile.collision})`;
       const imageStyle = tile.image
-        ? `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:cover;background-position:center;image-rendering:pixelated;`
+        ? tile.decor
+          ? `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:contain;background-repeat:no-repeat;background-position:center bottom;image-rendering:pixelated;`
+          : `background-image:url('${import.meta.env.BASE_URL}assets/${tile.image}');background-size:cover;background-position:center;image-rendering:pixelated;`
         : '';
       button.innerHTML = `<i style="background-color:${tile.color};${imageStyle}"></i><span>${tile.name}</span>`;
       button.addEventListener('click', () => this.callbacks.onTile(tile.id));
@@ -183,12 +202,7 @@ export class EditorUi {
       this.entityButtons.set(type, button);
     }
 
-    level.layers.forEach((layer, index) => {
-      const option = document.createElement('option');
-      option.value = String(index);
-      option.textContent = layer.name;
-      this.layerSelect.append(option);
-    });
+    this.setLayers(level.layers, 0);
 
     for (const preset of LEVEL_SIZE_PRESETS) {
       const option = document.createElement('option');
@@ -253,9 +267,30 @@ export class EditorUi {
     this.get('ed-skybox-default').addEventListener('click', () =>
       this.callbacks.onSkybox(undefined),
     );
+    this.backgroundSelect.addEventListener('change', () =>
+      this.callbacks.onBackground(this.backgroundSelect.value || undefined),
+    );
+    this.foregroundSelect.addEventListener('change', () =>
+      this.callbacks.onForeground(this.foregroundSelect.value || undefined),
+    );
 
     this.setSize(level.width, level.height);
     this.setSkybox(level.skybox);
+    this.setBackground(level.background);
+    this.setForeground(level.foreground);
+  }
+
+  private fillScenerySelect(select: HTMLSelectElement, presets: readonly SceneryPreset[]): void {
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = 'None';
+    select.append(none);
+    for (const preset of presets) {
+      const option = document.createElement('option');
+      option.value = preset.id;
+      option.textContent = preset.name;
+      select.append(option);
+    }
   }
 
   private get<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -311,6 +346,14 @@ export class EditorUi {
     this.skyboxInput.value = color ?? '#0a0b10';
   }
 
+  setBackground(id: string | undefined): void {
+    this.backgroundSelect.value = id ?? '';
+  }
+
+  setForeground(id: string | undefined): void {
+    this.foregroundSelect.value = id ?? '';
+  }
+
   setTile(id: number): void {
     for (const [key, button] of this.tileButtons) {
       button.classList.toggle('active', key === id);
@@ -321,6 +364,17 @@ export class EditorUi {
     for (const [key, button] of this.entityButtons) {
       button.classList.toggle('active', key === type);
     }
+  }
+
+  setLayers(layers: readonly { name: string }[], active: number): void {
+    this.layerSelect.innerHTML = '';
+    layers.forEach((layer, index) => {
+      const option = document.createElement('option');
+      option.value = String(index);
+      option.textContent = layer.name;
+      this.layerSelect.append(option);
+    });
+    this.layerSelect.value = String(active);
   }
 
   setLayer(index: number): void {

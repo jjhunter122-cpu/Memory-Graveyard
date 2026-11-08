@@ -401,6 +401,21 @@ body.mode-editing .editor-ui {
   background: none;
 }
 
+.ed-scenery {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: #cfd0e6;
+}
+
+.ed-scenery label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .ed-statusbar {
   position: absolute;
   bottom: 0;

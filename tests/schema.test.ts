@@ -25,6 +25,23 @@ describe('level schema', () => {
     expect(parseLevel(serializeLevel(level))).toEqual(level);
   });
 
+  it('round-trips background and foreground preset ids', () => {
+    const level = createLevel('Scenery', 2, 2, 32);
+    level.background = 'gothicvania';
+    level.foreground = 'gothicvines';
+    expect(parseLevel(serializeLevel(level))).toEqual(level);
+  });
+
+  it('rejects an empty scenery preset id', () => {
+    const level = createLevel('Scenery', 2, 2, 32);
+    expect(() =>
+      validateLevel({ ...level, background: '' }),
+    ).toThrow(/background/);
+    expect(() =>
+      validateLevel({ ...level, foreground: '' }),
+    ).toThrow(/foreground/);
+  });
+
   it('rejects a malformed skybox colour', () => {
     const bad = {
       version: 1,

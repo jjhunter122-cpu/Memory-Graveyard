@@ -36,6 +36,10 @@ export interface LevelData {
   entities: LevelEntity[];
   /** Optional solid skybox colour behind the level. */
   skybox?: string;
+  /** Optional background scenery preset id. */
+  background?: string;
+  /** Optional foreground scenery preset id. */
+  foreground?: string;
 }
 
 export class LevelValidationError extends Error {
@@ -142,6 +146,15 @@ export function validateLevel(raw: unknown): LevelData {
       throw new LevelValidationError('skybox must be a six-digit hex colour');
     }
     result.skybox = obj.skybox;
+  }
+  for (const key of ['background', 'foreground'] as const) {
+    const value = obj[key];
+    if (value !== undefined) {
+      if (typeof value !== 'string' || value.length === 0) {
+        throw new LevelValidationError(`${key} must be a non-empty string`);
+      }
+      result[key] = value;
+    }
   }
   return result;
 }

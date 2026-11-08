@@ -20,6 +20,16 @@ export interface TileDef {
   image?: string;
   /** Optional source rect within `image`, defaulting to a full tile. */
   source?: { x: number; y: number; width: number; height: number };
+  /** Draw this tile as a free-standing prop anchored to the tile's bottom edge. */
+  decor?: boolean;
+  /** Optional display width for decor art, in pixels. */
+  width?: number;
+  /** Optional display height for decor art, in pixels. */
+  height?: number;
+  /** Optional multiplier used when `width` / `height` are not supplied. */
+  scale?: number;
+  /** Which tile edge decor art is pinned to. Defaults to bottom. */
+  anchor?: 'bottom' | 'top';
 }
 
 export interface Tileset {
@@ -103,7 +113,38 @@ function validateTile(raw: unknown, index: number): TileDef {
     }
     def.source = { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
   }
+  if (tile.decor === true) {
+    def.decor = true;
+  }
+  if (tile.width !== undefined) {
+    if (!isPositiveNumber(tile.width)) {
+      throw new ManifestValidationError(`tile ${tile.id} width must be a positive number`);
+    }
+    def.width = tile.width;
+  }
+  if (tile.height !== undefined) {
+    if (!isPositiveNumber(tile.height)) {
+      throw new ManifestValidationError(`tile ${tile.id} height must be a positive number`);
+    }
+    def.height = tile.height;
+  }
+  if (tile.scale !== undefined) {
+    if (!isPositiveNumber(tile.scale)) {
+      throw new ManifestValidationError(`tile ${tile.id} scale must be a positive number`);
+    }
+    def.scale = tile.scale;
+  }
+  if (tile.anchor !== undefined) {
+    if (tile.anchor !== 'bottom' && tile.anchor !== 'top') {
+      throw new ManifestValidationError(`tile ${tile.id} anchor must be bottom or top`);
+    }
+    def.anchor = tile.anchor;
+  }
   return def;
+}
+
+function isPositiveNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
 }
 
 export function validateManifest(raw: unknown): AssetManifest {
