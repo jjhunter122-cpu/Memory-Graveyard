@@ -30,6 +30,12 @@
       "name": "Default Test",
       "file": "levels/default-test.json",
       "tier": "dev"
+    },
+    {
+      "id": "blank-slab",
+      "name": "Blank Slab",
+      "file": "levels/blank-slab.json",
+      "tier": "dev"
     }
   ]
 }

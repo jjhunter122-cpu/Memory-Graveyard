@@ -59,12 +59,21 @@ export interface EditorUiCallbacks {
 
 const ENTITY_LABELS: Record<EditorEntityType, string> = {
   spawn: 'spawn',
-  monster: 'monster (ghost)',
+  monster: 'monster',
   skeleton: 'skeleton',
   memory: 'memory',
   exit: 'exit',
   checkpoint: 'checkpoint',
 };
+
+/** Entity buttons shown for now. Skeleton stays implemented but dormant. */
+const VISIBLE_ENTITY_TYPES: readonly EditorEntityType[] = [
+  'spawn',
+  'monster',
+  'memory',
+  'exit',
+  'checkpoint',
+];
 
 const ENTITY_COLORS: Record<EditorEntityType, string> = {
   spawn: '#7cff9e',
@@ -78,6 +87,7 @@ const ENTITY_COLORS: Record<EditorEntityType, string> = {
 const TILESET_LABELS: Record<string, string> = {
   placeholder: 'OG',
   'pixel-platformer-world': 'Pixel Platformer World',
+  grunge: 'Grunge',
 };
 
 interface TileGroup {
@@ -339,7 +349,7 @@ export class EditorUi {
     }
 
     const entityHost = this.get<HTMLElement>('ed-entities');
-    for (const type of Object.keys(ENTITY_LABELS) as EditorEntityType[]) {
+    for (const type of VISIBLE_ENTITY_TYPES) {
       const button = document.createElement('button');
       button.className = 'ed-swatch ed-entity-card';
       const canvas = document.createElement('canvas');

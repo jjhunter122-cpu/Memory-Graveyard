@@ -28,6 +28,13 @@ describe('asset manifest', () => {
     }
   });
 
+  it('adds the Grunge test tileset', () => {
+    const manifest = validateManifest(manifestJson);
+    const grunge = manifest.tilesets.find((tileset) => tileset.name === 'grunge');
+    expect(grunge?.tiles).toHaveLength(11);
+    expect(grunge?.tiles.some((tile) => tile.name === 'grunge door' && tile.decor)).toBe(true);
+  });
+
   it('rejects duplicate tile ids', () => {
     const bad = {
       version: 1,

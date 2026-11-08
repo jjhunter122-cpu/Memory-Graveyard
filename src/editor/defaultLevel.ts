@@ -6,13 +6,15 @@ export const DEFAULT_LEVEL_TILE_SIZE = 32;
 /** Pixel Platformer World moss grass top + fill. */
 export const DEFAULT_FLOOR_TOP_TILE = 79;
 export const DEFAULT_FLOOR_FILL_TILE = 80;
+/** Name used by the editor's New button and the shipped Blank Slab level. */
+export const BLANK_SLAB_NAME = 'Blank Slab';
 
 /**
- * The blank baseline used by the editor's New level button and the Default
- * Test level: Pixel moss floor, dark sky, Vignette, larger character and the
- * Wide + momentum camera.
+ * The blank baseline used by the editor's New level button and the Blank Slab
+ * level: Pixel moss floor, layered Pixel background, Vignette, larger character
+ * and the Wide + momentum camera.
  */
-export function createDefaultLevel(name: string): LevelData {
+export function createDefaultLevel(name: string = BLANK_SLAB_NAME): LevelData {
   const level = createLevel(
     name,
     DEFAULT_LEVEL_WIDTH,
@@ -38,6 +40,7 @@ export function createDefaultLevel(name: string): LevelData {
     },
   ];
   level.skybox = '#0a0b10';
+  level.background = 'pixel-platformer-world-layers';
   level.analogFx = 'vignette';
   level.characterScale = 1.75;
   level.cameraZoom = 1;

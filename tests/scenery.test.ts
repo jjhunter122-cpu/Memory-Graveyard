@@ -27,6 +27,12 @@ describe('Pixel Platformer World scenery presets', () => {
     }
   });
 
+  it('adds the Grunge corridor test background', () => {
+    const grunge = findBackgroundPreset('grunge-corridor');
+    expect(grunge).toBeDefined();
+    expect(grunge?.layers[0]?.image).toBe('grunge/grunge-tileset.png');
+  });
+
   it('keeps blank/none as the solid-sky option', () => {
     expect(findBackgroundPreset(undefined)).toBeUndefined();
     expect(findBackgroundPreset('none')).toBeUndefined();

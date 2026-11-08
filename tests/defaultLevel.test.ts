@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import defaultTestJson from '../public/levels/default-test.json';
+import blankSlabJson from '../public/levels/blank-slab.json';
 import manifestJson from '../public/assets/manifest.json';
 import {
   DEFAULT_FLOOR_FILL_TILE,
@@ -43,8 +44,14 @@ describe('default level template', () => {
     expect(level.characterScale).toBe(1.75);
     expect(level.cameraZoom).toBe(1);
     expect(level.cameraFollow).toBe('momentum');
-    expect(level.background).toBeUndefined();
+    expect(level.background).toBe('pixel-platformer-world-layers');
     expect(level.foreground).toBeUndefined();
+  });
+
+  it('ships Blank Slab with the same New-level template', () => {
+    const level = validateLevel(blankSlabJson);
+    const template = createDefaultLevel();
+    expect(level).toEqual(template);
   });
 
   it('ships the Default Test level with the same baseline', () => {

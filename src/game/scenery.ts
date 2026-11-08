@@ -81,6 +81,18 @@ export const BACKGROUND_PRESETS: readonly SceneryPreset[] = [
       },
     ],
   })),
+  {
+    id: 'grunge-corridor',
+    name: 'Grunge — Corridor (test)',
+    layers: [
+      {
+        image: 'grunge/grunge-tileset.png',
+        height: 0.28,
+        anchor: 'bottom',
+        repeat: false,
+      },
+    ],
+  },
 ];
 
 export const FOREGROUND_PRESETS: readonly SceneryPreset[] = [];

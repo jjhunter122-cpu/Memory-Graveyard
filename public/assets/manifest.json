@@ -801,6 +801,104 @@
           "hidden": true
         }
       ]
+    },
+    {
+      "name": "grunge",
+      "tiles": [
+        {
+          "id": 152,
+          "name": "grunge floor A",
+          "collision": "solid",
+          "color": "#3a2a22",
+          "image": "grunge/tiles/grunge-floor-a.png"
+        },
+        {
+          "id": 153,
+          "name": "grunge floor B",
+          "collision": "solid",
+          "color": "#3a2a22",
+          "image": "grunge/tiles/grunge-floor-b.png"
+        },
+        {
+          "id": 154,
+          "name": "grunge brick A",
+          "collision": "solid",
+          "color": "#4a2e22",
+          "image": "grunge/tiles/grunge-brick-a.png"
+        },
+        {
+          "id": 155,
+          "name": "grunge brick B",
+          "collision": "solid",
+          "color": "#4a2e22",
+          "image": "grunge/tiles/grunge-brick-b.png"
+        },
+        {
+          "id": 156,
+          "name": "grunge wall top",
+          "collision": "solid",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-wall-top.png"
+        },
+        {
+          "id": 157,
+          "name": "grunge beam",
+          "collision": "solid",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-beam.png"
+        },
+        {
+          "id": 158,
+          "name": "grunge fence",
+          "collision": "solid",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-fence.png"
+        },
+        {
+          "id": 159,
+          "name": "grunge fence section",
+          "collision": "none",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-fence-section.png",
+          "decor": true,
+          "width": 48,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 160,
+          "name": "grunge post",
+          "collision": "none",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-post.png",
+          "decor": true,
+          "width": 16,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 161,
+          "name": "grunge door",
+          "collision": "none",
+          "color": "#4a1e18",
+          "image": "grunge/tiles/grunge-door.png",
+          "decor": true,
+          "width": 32,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 162,
+          "name": "grunge lamp",
+          "collision": "none",
+          "color": "#d8c890",
+          "image": "grunge/tiles/grunge-lamp.png",
+          "decor": true,
+          "width": 16,
+          "height": 32,
+          "anchor": "top"
+        }
+      ]
     }
   ]
 }

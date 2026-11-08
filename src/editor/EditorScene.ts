@@ -38,7 +38,7 @@ import {
   setTile,
   tileAt,
 } from './ops';
-import { createDefaultLevel } from './defaultLevel';
+import { BLANK_SLAB_NAME, DEFAULT_FLOOR_TOP_TILE, createDefaultLevel } from './defaultLevel';
 import { EditorUi, type EditorUiCallbacks } from './EditorUi';
 import type { EditorEntityType, EditorMode, EditorTab, EditorTool } from './types';
 import { DraftStore, type LevelLibrary } from '../game/storage/levels';
@@ -483,18 +483,18 @@ export class EditorScene extends Scene {
 
   private newLevel(): void {
     this.flushAutosave();
-    let name = 'Untitled level';
+    let name = BLANK_SLAB_NAME;
     let counter = 2;
     while (this.options.drafts.has(slug(name))) {
-      name = `Untitled level ${counter}`;
+      name = `${BLANK_SLAB_NAME} ${counter}`;
       counter += 1;
     }
     const level = createDefaultLevel(name);
     this.loadLevel(level, true);
-    this.selectedTile = 1;
+    this.selectedTile = DEFAULT_FLOOR_TOP_TILE;
     this.setTab('tiles');
-    this.ui?.setTile(1);
-    this.ui?.toast('created new level');
+    this.ui?.setTile(DEFAULT_FLOOR_TOP_TILE);
+    this.ui?.toast('created Blank Slab');
   }
 
   private async saveToProject(): Promise<void> {
