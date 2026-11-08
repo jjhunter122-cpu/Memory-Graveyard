@@ -6,6 +6,8 @@
  * validated and round-tripped in tests and reused by the editor (M3).
  */
 
+import { isCameraFollowId } from '../camera/cameraFollowSettings';
+
 export const LEVEL_VERSION = 1;
 
 /** Tile id used for "nothing here". */
@@ -49,6 +51,8 @@ export interface LevelData {
   characterScale?: number;
   /** Optional world zoom. Lower pulls the camera back and shows more level. */
   cameraZoom?: number;
+  /** Optional camera-follow preset id. */
+  cameraFollow?: string;
 }
 
 export class LevelValidationError extends Error {
@@ -178,6 +182,14 @@ export function validateLevel(raw: unknown): LevelData {
       throw new LevelValidationError('cameraZoom must be a number between 0.5 and 2');
     }
     result.cameraZoom = zoom;
+  }
+  if (obj.cameraFollow !== undefined) {
+    if (!isCameraFollowId(obj.cameraFollow)) {
+      throw new LevelValidationError(
+        'cameraFollow must be current, soft, momentum or impact',
+      );
+    }
+    result.cameraFollow = obj.cameraFollow;
   }
   return result;
 }

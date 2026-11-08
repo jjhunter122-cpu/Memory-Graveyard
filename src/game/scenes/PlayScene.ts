@@ -10,6 +10,7 @@ import { Exit } from '../actors/Exit';
 import { Monster } from '../actors/Monster';
 import { TrailFollower, TrailRecorder } from '../chase/trail';
 import { CameraFollow } from '../camera/CameraFollow';
+import { findCameraFollowPreset } from '../camera/cameraFollowSettings';
 import { normalizeCameraZoom } from '../camera/cameraZoom';
 import { characterMetrics, normalizeCharacterScale } from '../characterScale';
 import { Hud } from '../ui/Hud';
@@ -176,7 +177,7 @@ export class PlayScene extends Scene {
     }
 
     this.camera.zoom = normalizeCameraZoom(this.level.cameraZoom);
-    this.cameraFollow = new CameraFollow(this);
+    this.cameraFollow = new CameraFollow(this, findCameraFollowPreset(this.level.cameraFollow));
     this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.built.memories.length);
   }
@@ -219,7 +220,10 @@ export class PlayScene extends Scene {
       this.hud.setThreat('SAFE', 'calm');
     }
 
-    this.cameraFollow.update(this.player.pos, dt);
+    this.cameraFollow.update(this.player.pos, dt, {
+      vy: this.player.vel.y,
+      grounded: this.player.controller.isGrounded,
+    });
     this.updateMonsterVisual(dt);
     this.checkFall();
     if (this.dead) {

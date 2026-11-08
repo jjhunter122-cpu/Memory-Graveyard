@@ -145,6 +145,21 @@ export function setCameraZoom(level: LevelData, zoom: number): LevelData {
   return result;
 }
 
+/** Sets the level's camera-follow preset. Current is the default and omitted. */
+export function setCameraFollow(level: LevelData, id: string | undefined): LevelData {
+  const next = id === 'current' || id === '' ? undefined : id;
+  if (level.cameraFollow === next) {
+    return level;
+  }
+  const result = { ...level };
+  if (next === undefined) {
+    delete result.cameraFollow;
+  } else {
+    result.cameraFollow = next;
+  }
+  return result;
+}
+
 function setOptionalField(
   level: LevelData,
   key: 'background' | 'foreground' | 'analogFx',

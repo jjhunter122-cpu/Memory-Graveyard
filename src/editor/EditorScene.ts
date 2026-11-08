@@ -30,6 +30,7 @@ import {
   resizeLevel,
   setAnalogFx,
   setBackground,
+  setCameraFollow,
   setCameraZoom,
   setCharacterScale,
   setForeground,
@@ -166,6 +167,7 @@ export class EditorScene extends Scene {
       this.ui.setAnalogFx(this.level.analogFx);
       this.ui.setCharacterScale(this.level.characterScale, this.level.tileSize);
       this.ui.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
+      this.ui.setCameraFollow(this.level.cameraFollow);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
@@ -602,6 +604,7 @@ export class EditorScene extends Scene {
     this.ui?.setAnalogFx(this.level.analogFx);
     this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
     this.ui?.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
+    this.ui?.setCameraFollow(this.level.cameraFollow);
   }
 
   private refreshSkybox(): void {
@@ -912,6 +915,13 @@ export class EditorScene extends Scene {
         if (next !== this.level) {
           this.commit(next);
           this.ui?.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
+        }
+      },
+      onCameraFollow: (id) => {
+        const next = setCameraFollow(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setCameraFollow(this.level.cameraFollow);
         }
       },
       onToggleGrid: () => this.toggleGrid(),

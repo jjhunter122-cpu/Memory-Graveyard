@@ -12,6 +12,10 @@ import {
   cameraCoverage,
   normalizeCameraZoom,
 } from '../game/camera/cameraZoom';
+import {
+  CAMERA_FOLLOW_PRESETS,
+  normalizeCameraFollow,
+} from '../game/camera/cameraFollowSettings';
 import type { GameTextures } from '../game/assets';
 import {
   BACKGROUND_PRESETS,
@@ -34,6 +38,7 @@ export interface EditorUiCallbacks {
   onAnalogFx(id: string | undefined): void;
   onCharacterScale(scale: number): void;
   onCameraZoom(zoom: number): void;
+  onCameraFollow(id: string): void;
   onToggleGrid(): void;
   onUndo(): void;
   onRedo(): void;
@@ -138,6 +143,7 @@ export class EditorUi {
   private readonly scaleNote: HTMLElement;
   private readonly cameraZoomSelect: HTMLSelectElement;
   private readonly cameraZoomNote: HTMLElement;
+  private readonly cameraFollowSelect: HTMLSelectElement;
   private readonly tilesetSelect: HTMLSelectElement;
   private readonly tilesHost: HTMLElement;
   private readonly selectedTileLabel: HTMLElement;
@@ -235,6 +241,7 @@ export class EditorUi {
             </div>
             <h3>Camera</h3>
             <div class="ed-scenery">
+              <label>Follow <select id="ed-camera-follow" class="ed-layer"></select></label>
               <label>Distance <select id="ed-camera-zoom" class="ed-layer"></select></label>
             </div>
             <p id="ed-camera-zoom-note" class="ed-selected-tile"></p>
@@ -290,6 +297,7 @@ export class EditorUi {
     this.scaleNote = this.get<HTMLElement>('ed-scale-note');
     this.cameraZoomSelect = this.get<HTMLSelectElement>('ed-camera-zoom');
     this.cameraZoomNote = this.get<HTMLElement>('ed-camera-zoom-note');
+    this.cameraFollowSelect = this.get<HTMLSelectElement>('ed-camera-follow');
     this.tilesetSelect = this.get<HTMLSelectElement>('ed-tileset');
     this.tilesHost = this.get<HTMLElement>('ed-tiles');
     this.selectedTileLabel = this.get<HTMLElement>('ed-selected-tile');
@@ -313,6 +321,12 @@ export class EditorUi {
       element.value = String(option.value);
       element.textContent = option.label;
       this.cameraZoomSelect.append(element);
+    }
+    for (const preset of CAMERA_FOLLOW_PRESETS) {
+      const element = document.createElement('option');
+      element.value = preset.id;
+      element.textContent = preset.label;
+      this.cameraFollowSelect.append(element);
     }
 
     for (const group of this.tileGroups) {
@@ -430,6 +444,9 @@ export class EditorUi {
     this.cameraZoomSelect.addEventListener('change', () =>
       this.callbacks.onCameraZoom(Number(this.cameraZoomSelect.value)),
     );
+    this.cameraFollowSelect.addEventListener('change', () =>
+      this.callbacks.onCameraFollow(this.cameraFollowSelect.value),
+    );
 
     this.setSize(level.width, level.height);
     this.setSkybox(level.skybox);
@@ -438,6 +455,7 @@ export class EditorUi {
     this.setAnalogFx(level.analogFx);
     this.setCharacterScale(level.characterScale, level.tileSize);
     this.setCameraZoom(level.cameraZoom, level.tileSize);
+    this.setCameraFollow(level.cameraFollow);
     this.setTab('tiles');
   }
 
@@ -705,6 +723,10 @@ export class EditorUi {
     this.cameraZoomSelect.value = String(normalized);
     const coverage = cameraCoverage(normalized, tileSize);
     this.cameraZoomNote.textContent = `Shows about ${coverage.width.toFixed(0)} × ${coverage.height.toFixed(1)} tiles at ${tileSize}px.`;
+  }
+
+  setCameraFollow(id: string | undefined): void {
+    this.cameraFollowSelect.value = normalizeCameraFollow(id);
   }
 
   private currentCameraZoom(): number {
