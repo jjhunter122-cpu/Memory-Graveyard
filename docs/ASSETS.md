@@ -4,13 +4,15 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 
 ## Current state
 
-- The game renders placeholder rectangles and temporary textures.
-- `public/assets/TEMP/` contains **unlicensed** stand-ins gated by
+- **Pixel Platformer World** is imported in `public/assets/pixel-platformer-world/`
+  and is the current tile and background set.
+- New levels use a 32px grid with 16px Pixel art scaled into each cell.
+- `public/assets/TEMP/` still contains **unlicensed** stand-ins gated by
   `TEMP_ASSETS` in `src/game/assets.ts`. They must not ship.
-- There is no sprite-animation system yet; character and monster sheets will
-  need one when real art arrives.
-- Pixel filtering is not implemented yet. Pixel art will render smoothly until
-  that pass is done.
+- Player and monster visuals are still placeholder rectangles; the Pixel
+  character sprites are imported but not wired yet.
+- The LESED Vignette is in `public/assets/analog-fx/` and is the default
+  screen effect for new levels. Its custom licence is recorded in `CREDITS.md`.
 
 ## Visual direction
 
@@ -52,6 +54,14 @@ Preferred order:
 2. **CC-BY 4.0 / 3.0** — acceptable with clear attribution.
 3. **CC-BY-SA** — only if the pack is exceptional; share-alike adds obligations.
 4. **NC / ND / unclear / ripped / uncredited** — reject.
+
+### Recorded exceptions
+
+- **LESED Analog Horror Screen FX — Free Sampler** is a custom licence, not
+  CC0/CC-BY. It is allowed for this project because it explicitly permits use
+  in games and modification, with credit recorded in `CREDITS.md`. The overlay
+  files may not be redistributed on their own, so revisit this exception if the
+  repository is ever made public.
 
 Every shipped asset needs an entry in `CREDITS.md` with:
 
