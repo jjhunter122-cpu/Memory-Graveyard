@@ -3,30 +3,49 @@ import {
   Color,
   CollisionType,
   Keys,
+  Rectangle,
   Scene,
+  Sprite,
   type Engine,
   type Subscription,
 } from 'excalibur';
+import type { GameTextures } from '../game/assets';
 import { VIEW } from '../game/config';
 import { tileIndex, type AssetManifest, type TileDef } from '../game/level/manifest';
+import { addSceneryPreset } from '../game/level/scenery';
+import { clampSize } from '../game/level/sizes';
+import { findBackgroundPreset, findForegroundPreset } from '../game/scenery';
 import {
   EMPTY_TILE,
   parseLevel,
+  resolvePlayArea,
   serializeLevel,
   type LevelData,
+  type PlayArea,
 } from '../game/level/schema';
 import { History } from './history';
 import {
   addEntity,
   clearLevel,
+  hasContentOutside,
   removeEntitiesAt,
   renameLevel,
+  resizeLevel,
+  setAnalogFx,
+  setBackground,
+  setCameraFollow,
+  setCameraZoom,
+  setCharacterScale,
+  setForeground,
+  setPlayArea,
+  setSkybox,
   setTile,
   tileAt,
 } from './ops';
+import { BLANK_SLAB_NAME, DEFAULT_FLOOR_TOP_TILE, createDefaultLevel } from './defaultLevel';
 import { EditorUi, type EditorUiCallbacks } from './EditorUi';
-import type { EditorEntityType, EditorTool } from './types';
-import { DraftStore } from '../game/storage/levels';
+import type { EditorEntityType, EditorMode, EditorTab, EditorTool } from './types';
+import { DraftStore, type LevelLibrary } from '../game/storage/levels';
 import { setMode } from '../game/ui/mode';
 import { slug } from '../game/util/slug';
 
@@ -34,7 +53,9 @@ export interface EditorSceneOptions {
   onTestPlay: (level: LevelData) => void;
   onMenu: () => void;
   drafts: DraftStore;
-  onProjectSaved?: () => void;
+  library: LevelLibrary;
+  textures: GameTextures;
+  onProjectSaved?: () => Promise<void> | void;
 }
 
 const PAN_SPEED = 420;
@@ -43,6 +64,8 @@ const MAX_ZOOM = 3;
 
 const ENTITY_STYLE: Record<EditorEntityType, { color: string; radius: number }> = {
   spawn: { color: '#7cff9e', radius: 9 },
+  monster: { color: '#ff6b7a', radius: 10 },
+  skeleton: { color: '#e2c79b', radius: 10 },
   memory: { color: '#7ce7ff', radius: 9 },
   exit: { color: '#b6ff7c', radius: 11 },
   checkpoint: { color: '#c79bff', radius: 8 },
@@ -51,10 +74,12 @@ const ENTITY_STYLE: Record<EditorEntityType, { color: string; radius: number }> 
 export class EditorScene extends Scene {
   private level: LevelData;
   private readonly tiles: Map<number, TileDef>;
-  private readonly tileSize: number;
+  private tileSize: number;
   private readonly history: History<LevelData>;
 
   private tool: EditorTool = 'paint';
+  private mode: EditorMode = 'tiles';
+  private tab: EditorTab = 'tiles';
   private selectedTile: number;
   private selectedEntity: EditorEntityType = 'memory';
   private activeLayer = 0;
@@ -66,14 +91,38 @@ export class EditorScene extends Scene {
   private readonly tileActors = new Map<string, Actor>();
   private entityActors: Actor[] = [];
   private cursor: Actor | null = null;
+  private skyboxActor: Actor | null = null;
+  private sceneryActors: Actor[] = [];
+  private playAreaActor: Actor | null = null;
 
   private painting = false;
   private lastPaintedIndex = -1;
   private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
   private subscriptions: Subscription[] = [];
   private readonly onKeyDown = (event: KeyboardEvent): void => {
+    if (
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLSelectElement
+    ) {
+      return;
+    }
     const ctrl = event.ctrlKey || event.metaKey;
     if (!ctrl) {
+      const key = event.key.toLowerCase();
+      if (key === 'q') {
+        event.preventDefault();
+        this.setTab(this.tab === 'tiles' ? 'entities' : 'tiles');
+      } else if (key === 'b') {
+        event.preventDefault();
+        this.toggleTool();
+      } else if (key === 'g') {
+        event.preventDefault();
+        this.toggleGrid();
+      } else if (key === 'v') {
+        event.preventDefault();
+        this.saveDraft();
+      }
       return;
     }
     if (event.key === 'z' && !event.shiftKey) {
@@ -100,26 +149,34 @@ export class EditorScene extends Scene {
 
   override onInitialize(_engine: Engine): void {
     this.buildGrid();
-    this.cursor = new Actor({
-      width: this.tileSize,
-      height: this.tileSize,
-      color: new Color(255, 255, 255, 0.16),
-      collisionType: CollisionType.PreventCollision,
-      z: 10,
-    });
-    this.add(this.cursor);
+    this.createCursor();
 
     const root = document.getElementById('editor-ui');
     if (root) {
-      this.ui = new EditorUi(root, this.manifest, this.level, this.callbacks());
+      this.ui = new EditorUi(
+        root,
+        this.manifest,
+        this.level,
+        this.callbacks(),
+        this.options.textures,
+      );
       this.ui.setTool(this.tool);
+      this.ui.setTab(this.tab);
       this.ui.setTile(this.selectedTile);
       this.ui.setEntity(this.selectedEntity);
-      this.ui.setLayer(this.activeLayer);
+      this.ui.setLayers(this.level.layers, this.activeLayer);
+      this.ui.setSize(this.level.width, this.level.height);
+      this.ui.setSkybox(this.level.skybox);
+      this.ui.setBackground(this.level.background);
+      this.ui.setForeground(this.level.foreground);
+      this.ui.setAnalogFx(this.level.analogFx);
+      this.ui.setCharacterScale(this.level.characterScale, this.level.tileSize);
+      this.ui.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
+      this.ui.setCameraFollow(this.level.cameraFollow);
       this.ui.setGrid(this.showGrid);
       this.ui.setDevMode(import.meta.env.DEV);
       this.ui.setDevMade(this.devMade);
-      this.ui.setDrafts(this.options.drafts.list());
+      this.refreshLevelLists();
     }
 
     this.refreshAll();
@@ -144,6 +201,7 @@ export class EditorScene extends Scene {
 
   override onDeactivate(): void {
     this.flushAutosave();
+    this.ui?.dispose();
     window.removeEventListener('keydown', this.onKeyDown);
     for (const subscription of this.subscriptions) {
       subscription.close();
@@ -155,8 +213,12 @@ export class EditorScene extends Scene {
   override onPreUpdate(engine: Engine, elapsed: number): void {
     this.panCamera(engine, elapsed / 1000);
     this.updateCursor(engine);
-    if (this.painting && (this.tool === 'paint' || this.tool === 'erase')) {
-      this.paintAtPointer(engine);
+    if (this.painting) {
+      if (this.mode === 'tiles') {
+        this.paintAtPointer(engine);
+      } else if (this.tool === 'erase') {
+        this.eraseEntityAtPointerCurrent();
+      }
     }
   }
 
@@ -197,18 +259,27 @@ export class EditorScene extends Scene {
   // ---- pointer --------------------------------------------------------------
 
   private onPointerDown(native: Event): void {
+    if (this.tab === 'visual') {
+      return;
+    }
     if (native instanceof MouseEvent && native.button === 2) {
       return;
     }
-    if (this.tool === 'entity') {
-      const tile = this.tileUnderPointer();
-      if (tile) {
-        this.placeEntity(tile.x, tile.y);
-      }
+    const tile = this.tileUnderPointer();
+    if (!tile) {
       return;
     }
     this.painting = true;
     this.lastPaintedIndex = -1;
+    if (this.mode === 'entities') {
+      if (this.tool === 'erase') {
+        this.eraseEntityAtPointerCurrent();
+      } else {
+        this.placeEntity(tile.x, tile.y);
+        this.painting = false;
+      }
+      return;
+    }
     this.paintAtPointerCurrent();
   }
 
@@ -218,6 +289,9 @@ export class EditorScene extends Scene {
   }
 
   private paintAtPointerCurrent(): void {
+    if (this.tab === 'visual' || this.mode !== 'tiles') {
+      return;
+    }
     const tile = this.tileUnderPointer();
     if (!tile) {
       return;
@@ -229,7 +303,7 @@ export class EditorScene extends Scene {
     this.lastPaintedIndex = index;
 
     if (this.tool === 'erase') {
-      this.eraseAt(tile.x, tile.y);
+      this.eraseTileAt(tile.x, tile.y);
     } else {
       const next = setTile(this.level, this.activeLayer, tile.x, tile.y, this.selectedTile);
       if (next !== this.level) {
@@ -241,6 +315,11 @@ export class EditorScene extends Scene {
 
   private updateCursor(engine: Engine): void {
     if (!this.cursor) {
+      return;
+    }
+    if (this.tab === 'visual') {
+      this.cursor.graphics.visible = false;
+      this.ui?.setCursor(null, null);
       return;
     }
     const tile = this.tileUnderPointer();
@@ -255,6 +334,14 @@ export class EditorScene extends Scene {
       tile.x * this.tileSize + this.tileSize / 2,
       tile.y * this.tileSize + this.tileSize / 2,
     );
+    const previewColor =
+      this.mode === 'entities'
+        ? ENTITY_STYLE[this.selectedEntity].color
+        : (this.tiles.get(this.selectedTile)?.color ?? '#ffffff');
+    this.cursor.color = Color.fromHex(previewColor);
+    if (this.cursor.graphics.current) {
+      this.cursor.graphics.current.opacity = 0.35;
+    }
     this.ui?.setCursor(tile.x, tile.y);
   }
 
@@ -273,14 +360,33 @@ export class EditorScene extends Scene {
 
   // ---- editing --------------------------------------------------------------
 
-  private eraseAt(x: number, y: number): void {
-    let next = setTile(this.level, this.activeLayer, x, y, EMPTY_TILE);
-    next = removeEntitiesAt(next, x, y);
+  private eraseTileAt(x: number, y: number): void {
+    const next = setTile(this.level, this.activeLayer, x, y, EMPTY_TILE);
     if (next !== this.level) {
       this.commit(next);
       this.refreshTile(this.activeLayer, x, y);
+    }
+  }
+
+  private eraseEntityAt(x: number, y: number): void {
+    const next = removeEntitiesAt(this.level, x, y);
+    if (next !== this.level) {
+      this.commit(next);
       this.rebuildEntities();
     }
+  }
+
+  private eraseEntityAtPointerCurrent(): void {
+    const tile = this.tileUnderPointer();
+    if (!tile) {
+      return;
+    }
+    const index = tile.y * this.level.width + tile.x;
+    if (index === this.lastPaintedIndex) {
+      return;
+    }
+    this.lastPaintedIndex = index;
+    this.eraseEntityAt(tile.x, tile.y);
   }
 
   private placeEntity(x: number, y: number): void {
@@ -301,6 +407,32 @@ export class EditorScene extends Scene {
 
   // ---- drafts & project save ------------------------------------------------
 
+  private refreshLevelLists(): void {
+    this.ui?.setLevels(
+      this.options.library.shipped(),
+      this.options.drafts.list(),
+      this.level.name,
+    );
+  }
+
+  private loadLevel(level: LevelData, saveDraft = false): void {
+    this.level = level;
+    this.tileSize = level.tileSize;
+    this.createCursor();
+    this.history.reset(level);
+    this.activeLayer = 0;
+    this.ui?.setName(level.name);
+    this.ui?.setLayers(level.layers, 0);
+    this.ui?.setHistory(false, false);
+    this.rebuildGrid();
+    this.refreshAll();
+    this.centerCamera();
+    if (saveDraft) {
+      this.options.drafts.save(level);
+    }
+    this.refreshLevelLists();
+  }
+
   private scheduleAutosave(): void {
     if (this.autosaveTimer !== null) {
       clearTimeout(this.autosaveTimer);
@@ -308,7 +440,7 @@ export class EditorScene extends Scene {
     this.autosaveTimer = setTimeout(() => {
       this.autosaveTimer = null;
       this.options.drafts.save(this.level);
-      this.ui?.setDrafts(this.options.drafts.list());
+      this.refreshLevelLists();
     }, 500);
   }
 
@@ -322,13 +454,13 @@ export class EditorScene extends Scene {
 
   private saveDraft(): void {
     this.options.drafts.save(this.level);
-    this.ui?.setDrafts(this.options.drafts.list());
+    this.refreshLevelLists();
     this.ui?.toast('saved draft');
   }
 
   private deleteDraft(id: string): void {
     this.options.drafts.remove(id);
-    this.ui?.setDrafts(this.options.drafts.list());
+    this.refreshLevelLists();
     this.ui?.toast('draft deleted');
   }
 
@@ -338,15 +470,36 @@ export class EditorScene extends Scene {
       this.ui?.toast('draft not found');
       return;
     }
-    this.level = level;
-    this.history.reset(level);
-    this.activeLayer = 0;
-    this.ui?.setName(level.name);
-    this.ui?.setLayer(0);
-    this.ui?.setHistory(false, false);
-    this.refreshAll();
-    this.centerCamera();
+    this.flushAutosave();
+    this.loadLevel(level);
     this.ui?.toast(`loaded draft ${level.name}`);
+  }
+
+  private async loadShipped(id: string): Promise<void> {
+    this.flushAutosave();
+    try {
+      const level = await this.options.library.loadShipped(id);
+      this.loadLevel(level);
+      this.ui?.toast(`loaded ${level.name}`);
+    } catch (error) {
+      this.ui?.toast(`load failed: ${(error as Error).message}`, 3000);
+    }
+  }
+
+  private newLevel(width: number, height: number): void {
+    this.flushAutosave();
+    let name = BLANK_SLAB_NAME;
+    let counter = 2;
+    while (this.options.drafts.has(slug(name))) {
+      name = `${BLANK_SLAB_NAME} ${counter}`;
+      counter += 1;
+    }
+    const level = createDefaultLevel(name, width, height);
+    this.loadLevel(level, true);
+    this.selectedTile = DEFAULT_FLOOR_TOP_TILE;
+    this.setTab('tiles');
+    this.ui?.setTile(DEFAULT_FLOOR_TOP_TILE);
+    this.ui?.toast(`created ${name}`);
   }
 
   private async saveToProject(): Promise<void> {
@@ -367,7 +520,8 @@ export class EditorScene extends Scene {
       }
       const result = (await response.json()) as { file?: string };
       this.ui?.toast(`saved to ${result.file ?? `public/levels/${id}.json`}`, 2600);
-      this.options.onProjectSaved?.();
+      await this.options.onProjectSaved?.();
+      this.refreshLevelLists();
     } catch (error) {
       this.ui?.toast(`project save failed: ${(error as Error).message}`, 4000);
     }
@@ -443,9 +597,174 @@ export class EditorScene extends Scene {
       }
     });
     this.rebuildEntities();
+    this.refreshSkybox();
+    this.refreshScenery();
+    this.refreshPlayArea();
 
     this.ui?.setName(this.level.name);
     this.ui?.setEntityCount(this.level.entities.length);
+    this.ui?.setSize(this.level.width, this.level.height);
+    this.ui?.setSkybox(this.level.skybox);
+    this.ui?.setBackground(this.level.background);
+    this.ui?.setForeground(this.level.foreground);
+    this.ui?.setAnalogFx(this.level.analogFx);
+    this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
+    this.ui?.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
+    this.ui?.setCameraFollow(this.level.cameraFollow);
+    this.ui?.setPlayArea(this.level.playArea, this.level.width, this.level.height);
+  }
+
+  private refreshPlayArea(): void {
+    this.playAreaActor?.kill();
+    this.playAreaActor = null;
+    const area = resolvePlayArea(this.level);
+    const width = area.width * this.tileSize;
+    const height = area.height * this.tileSize;
+    const actor = new Actor({
+      x: area.x * this.tileSize + width / 2,
+      y: area.y * this.tileSize + height / 2,
+      width,
+      height,
+      collisionType: CollisionType.PreventCollision,
+      z: 9,
+    });
+    actor.graphics.use(
+      new Rectangle({
+        width,
+        height,
+        color: Color.Transparent,
+        strokeColor: Color.fromHex('#7ce7ff'),
+        lineWidth: 2,
+      }),
+    );
+    this.playAreaActor = actor;
+    this.add(actor);
+  }
+
+  private refreshSkybox(): void {
+    this.skyboxActor?.kill();
+    this.skyboxActor = null;
+    if (!this.level.skybox) {
+      return;
+    }
+    const widthPx = this.level.width * this.tileSize;
+    const heightPx = this.level.height * this.tileSize;
+    this.skyboxActor = new Actor({
+      x: widthPx / 2,
+      y: heightPx / 2,
+      width: widthPx,
+      height: heightPx,
+      color: Color.fromHex(this.level.skybox),
+      collisionType: CollisionType.PreventCollision,
+      z: -40,
+    });
+    this.add(this.skyboxActor);
+  }
+
+  private refreshScenery(): void {
+    for (const actor of this.sceneryActors) {
+      actor.kill();
+    }
+    this.sceneryActors = [];
+
+    const widthPx = this.level.width * this.tileSize;
+    const heightPx = this.level.height * this.tileSize;
+
+    const background = findBackgroundPreset(this.level.background);
+    if (background) {
+      this.sceneryActors.push(
+        ...addSceneryPreset(
+          this,
+          background,
+          this.options.textures,
+          widthPx,
+          heightPx,
+          -30,
+          1,
+        ),
+      );
+    }
+
+    const foreground = findForegroundPreset(this.level.foreground);
+    if (foreground) {
+      this.sceneryActors.push(
+        ...addSceneryPreset(
+          this,
+          foreground,
+          this.options.textures,
+          widthPx,
+          heightPx,
+          3,
+          0.45,
+        ),
+      );
+    }
+  }
+
+  private rebuildGrid(): void {
+    for (const actor of this.gridActors) {
+      actor.kill();
+    }
+    this.gridActors.length = 0;
+    this.buildGrid();
+  }
+
+  private setTab(tab: EditorTab): void {
+    this.tab = tab;
+    if (tab !== 'visual') {
+      this.mode = tab;
+    }
+    this.painting = false;
+    this.ui?.setTab(tab);
+  }
+
+  private createCursor(): void {
+    this.cursor?.kill();
+    this.cursor = new Actor({
+      width: this.tileSize,
+      height: this.tileSize,
+      color: new Color(255, 255, 255, 0.16),
+      collisionType: CollisionType.PreventCollision,
+      z: 10,
+    });
+    this.add(this.cursor);
+  }
+
+  private toggleTool(): void {
+    this.tool = this.tool === 'paint' ? 'erase' : 'paint';
+    this.ui?.setTool(this.tool);
+  }
+
+  private toggleGrid(): void {
+    this.showGrid = !this.showGrid;
+    for (const actor of this.gridActors) {
+      actor.graphics.visible = this.showGrid;
+    }
+    if (this.cursor) {
+      this.cursor.graphics.visible = this.showGrid;
+    }
+    this.ui?.setGrid(this.showGrid);
+  }
+
+  private resizeTo(width: number, height: number): void {
+    const size = clampSize(width, height, import.meta.env.DEV);
+    if (size.width === this.level.width && size.height === this.level.height) {
+      this.ui?.setSize(this.level.width, this.level.height);
+      return;
+    }
+    if (
+      hasContentOutside(this.level, size.width, size.height) &&
+      !window.confirm('Shrinking will cut off tiles or entities. Continue?')
+    ) {
+      this.ui?.setSize(this.level.width, this.level.height);
+      return;
+    }
+    this.commit(resizeLevel(this.level, size.width, size.height));
+    this.rebuildGrid();
+    this.refreshAll();
+    this.centerCamera();
+    this.ui?.setSize(this.level.width, this.level.height);
+    this.ui?.toast(`resized to ${this.level.width} × ${this.level.height}`);
   }
 
   private refreshTile(layerIndex: number, x: number, y: number): void {
@@ -463,16 +782,72 @@ export class EditorScene extends Scene {
     if (!def) {
       return;
     }
-    const actor = new Actor({
-      x: x * this.tileSize + this.tileSize / 2,
-      y: y * this.tileSize + this.tileSize / 2,
-      width: this.tileSize - 1,
-      height: this.tileSize - 1,
-      color: Color.fromHex(def.color),
-      collisionType: CollisionType.PreventCollision,
-      z: 1,
-    });
-    if (layerIndex !== this.activeLayer) {
+    const texture = def.image ? this.options.textures.tiles.get(def.image) : undefined;
+    let actor: Actor;
+    if (def.decor && texture) {
+      const scale = def.scale ?? 1;
+      const width = def.width ?? texture.width * scale;
+      const height = def.height ?? texture.height * scale;
+      actor = new Actor({
+        x: x * this.tileSize + this.tileSize / 2,
+        y:
+          def.anchor === 'top'
+            ? y * this.tileSize + height / 2
+            : (y + 1) * this.tileSize - height / 2,
+        width,
+        height,
+        color: Color.fromHex(def.color),
+        collisionType: CollisionType.PreventCollision,
+        z: 2,
+      });
+      actor.graphics.use(
+        new Sprite({
+          image: texture,
+          destSize: { width, height },
+        }),
+      );
+    } else if (def.half && texture) {
+      const displayHeight = this.tileSize / 2;
+      actor = new Actor({
+        x: x * this.tileSize + this.tileSize / 2,
+        y:
+          y * this.tileSize +
+          (def.half === 'bottom' ? this.tileSize / 2 : 0) +
+          displayHeight / 2,
+        width: this.tileSize - 1,
+        height: displayHeight,
+        color: Color.fromHex(def.color),
+        collisionType: CollisionType.PreventCollision,
+        z: 1,
+      });
+      actor.graphics.use(
+        new Sprite({
+          image: texture,
+          destSize: { width: this.tileSize - 1, height: displayHeight },
+        }),
+      );
+    } else {
+      actor = new Actor({
+        x: x * this.tileSize + this.tileSize / 2,
+        y: y * this.tileSize + this.tileSize / 2,
+        width: this.tileSize - 1,
+        height: this.tileSize - 1,
+        color: Color.fromHex(def.color),
+        collisionType: CollisionType.PreventCollision,
+        z: 1,
+      });
+      if (texture) {
+        actor.graphics.use(
+          new Sprite({
+            image: texture,
+            destSize: { width: this.tileSize - 1, height: this.tileSize - 1 },
+          }),
+        );
+      }
+    }
+    if (def.hidden) {
+      actor.graphics.opacity = layerIndex === this.activeLayer ? 0.25 : 0.12;
+    } else if (layerIndex !== this.activeLayer) {
       actor.graphics.opacity = 0.45;
     }
     this.add(actor);
@@ -511,28 +886,96 @@ export class EditorScene extends Scene {
         this.tool = tool;
         this.ui?.setTool(tool);
       },
+      onTab: (tab) => this.setTab(tab),
       onTile: (id) => {
         this.selectedTile = id;
+        this.tool = 'paint';
+        this.setTab('tiles');
+        this.ui?.setTool('paint');
         this.ui?.setTile(id);
       },
       onEntity: (type) => {
         this.selectedEntity = type;
+        this.tool = 'paint';
+        this.setTab('entities');
+        this.ui?.setTool('paint');
         this.ui?.setEntity(type);
       },
       onLayer: (index) => {
         this.activeLayer = index;
         this.refreshAll();
       },
-      onToggleGrid: () => {
-        this.showGrid = !this.showGrid;
-        for (const actor of this.gridActors) {
-          actor.graphics.visible = this.showGrid;
+      onResize: (width, height) => this.resizeTo(width, height),
+      onSkybox: (color) => {
+        const next = setSkybox(this.level, color);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshSkybox();
+          this.ui?.setSkybox(this.level.skybox);
         }
-        if (this.cursor) {
-          this.cursor.graphics.visible = this.showGrid;
-        }
-        this.ui?.setGrid(this.showGrid);
       },
+      onBackground: (id) => {
+        const next = setBackground(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshScenery();
+          this.ui?.setBackground(this.level.background);
+        }
+      },
+      onForeground: (id) => {
+        const next = setForeground(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshScenery();
+          this.ui?.setForeground(this.level.foreground);
+        }
+      },
+      onAnalogFx: (id) => {
+        const next = setAnalogFx(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setAnalogFx(this.level.analogFx);
+        }
+      },
+      onCharacterScale: (scale) => {
+        const next = setCharacterScale(this.level, scale);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
+        }
+      },
+      onCameraZoom: (zoom) => {
+        const next = setCameraZoom(this.level, zoom);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
+        }
+      },
+      onCameraFollow: (id) => {
+        const next = setCameraFollow(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setCameraFollow(this.level.cameraFollow);
+        }
+      },
+      onPlayArea: (margins) => {
+        const area: PlayArea = {
+          x: margins.left,
+          y: margins.top,
+          width: this.level.width - margins.left - margins.right,
+          height: this.level.height - margins.top - margins.bottom,
+        };
+        const next = setPlayArea(this.level, area);
+        if (next !== this.level) {
+          this.commit(next);
+          this.refreshPlayArea();
+          this.ui?.setPlayArea(this.level.playArea, this.level.width, this.level.height);
+          this.ui?.toast('updated playable area');
+        } else {
+          this.ui?.setPlayArea(this.level.playArea, this.level.width, this.level.height);
+        }
+      },
+      onToggleGrid: () => this.toggleGrid(),
       onUndo: () => this.undo(),
       onRedo: () => this.redo(),
       onNew: () => {
@@ -543,6 +986,8 @@ export class EditorScene extends Scene {
       onSave: () => this.save(),
       onSaveDraft: () => this.saveDraft(),
       onSaveToProject: () => void this.saveToProject(),
+      onNewLevel: (width, height) => this.newLevel(width, height),
+      onLoadShipped: (id) => void this.loadShipped(id),
       onLoadDraft: (id) => this.loadDraft(id),
       onDeleteDraft: (id) => this.deleteDraft(id),
       onLoadFile: (file) => void this.load(file),
@@ -554,6 +999,7 @@ export class EditorScene extends Scene {
       onRename: (name) => {
         this.commit(renameLevel(this.level, name));
         this.ui?.setName(this.level.name);
+        this.refreshLevelLists();
       },
     };
   }
@@ -574,10 +1020,12 @@ export class EditorScene extends Scene {
       const text = await file.text();
       const loaded = parseLevel(text);
       this.level = loaded;
+      this.tileSize = loaded.tileSize;
+      this.createCursor();
       this.history.reset(loaded);
       this.activeLayer = 0;
       this.ui?.setName(loaded.name);
-      this.ui?.setLayer(0);
+      this.ui?.setLayers(loaded.layers, 0);
       this.ui?.setHistory(false, false);
       this.refreshAll();
       this.centerCamera();

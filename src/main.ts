@@ -1,4 +1,5 @@
 import { Color, DisplayMode, Engine, SolverStrategy, Vector } from 'excalibur';
+import { createGameTextures } from './game/assets';
 import { COLORS, PHYSICS, VIEW } from './game/config';
 import { validateManifest } from './game/level/manifest';
 import type { LevelData } from './game/level/schema';
@@ -56,7 +57,8 @@ async function boot(): Promise<void> {
     height: VIEW.height,
     displayMode: DisplayMode.FitScreen,
     backgroundColor: Color.fromHex(COLORS.background),
-    // No external resources yet, so skip the "click to play" overlay.
+    // Images are preloaded before the engine starts; skip the "click to play"
+    // overlay so the game boots straight into the title screen.
     suppressPlayButton: true,
     // Fixed step is opt-in via config; variable step avoids judder on
     // high-refresh displays.
@@ -69,7 +71,9 @@ async function boot(): Promise<void> {
     antialiasing: true,
   });
 
-  const app = new GameApp(engine, manifest, library, drafts, settings);
+  const assets = createGameTextures(base, manifest);
+  await Promise.all(assets.resources.map((resource) => resource.load()));
+  const app = new GameApp(engine, manifest, library, drafts, settings, assets.textures);
   await app.start({ startInEditor, initialLevel });
 
   // Runtime handles for debugging in the console.

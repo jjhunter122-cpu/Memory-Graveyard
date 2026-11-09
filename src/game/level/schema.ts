@@ -6,6 +6,8 @@
  * validated and round-tripped in tests and reused by the editor (M3).
  */
 
+import { isCameraFollowId } from '../camera/cameraFollowSettings';
+
 export const LEVEL_VERSION = 1;
 
 /** Tile id used for "nothing here". */
@@ -26,6 +28,14 @@ export interface LevelEntity {
   y: number;
 }
 
+/** Playable rectangle in tile coordinates. The rest of the canvas is scenery. */
+export interface PlayArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface LevelData {
   version: number;
   name: string;
@@ -34,6 +44,25 @@ export interface LevelData {
   height: number;
   layers: TileLayer[];
   entities: LevelEntity[];
+  /** Optional playable rectangle. Missing means the whole canvas is playable. */
+  playArea?: PlayArea;
+  /** Optional solid skybox colour behind the level. */
+  skybox?: string;
+  /** Optional background scenery preset id. */
+  background?: string;
+  /** Optional foreground scenery preset id. */
+  foreground?: string;
+  /** Optional analog-horror screen FX preset id. */
+  analogFx?: string;
+  /**
+   * Character height multiplier for this level. 1 is the existing baseline;
+   * 1.5, 1.75 and 2 make both the player and the monster that tall in tiles.
+   */
+  characterScale?: number;
+  /** Optional world zoom. Lower pulls the camera back and shows more level. */
+  cameraZoom?: number;
+  /** Optional camera-follow preset id. */
+  cameraFollow?: string;
 }
 
 export class LevelValidationError extends Error {
@@ -126,11 +155,91 @@ export function validateLevel(raw: unknown): LevelData {
     return { type, x: entity.x, y: entity.y };
   });
 
-  return { version: LEVEL_VERSION, name, tileSize, width, height, layers, entities };
+  const result: LevelData = {
+    version: LEVEL_VERSION,
+    name,
+    tileSize,
+    width,
+    height,
+    layers,
+    entities,
+  };
+  if (obj.playArea !== undefined) {
+    const area = asRecord(obj.playArea, 'playArea');
+    if (
+      !isInteger(area.x) ||
+      !isInteger(area.y) ||
+      !isInteger(area.width) ||
+      !isInteger(area.height) ||
+      area.width <= 0 ||
+      area.height <= 0 ||
+      area.x < 0 ||
+      area.y < 0 ||
+      area.x + area.width > width ||
+      area.y + area.height > height
+    ) {
+      throw new LevelValidationError('playArea must fit inside the level canvas');
+    }
+    result.playArea = {
+      x: area.x,
+      y: area.y,
+      width: area.width,
+      height: area.height,
+    };
+  }
+  if (obj.skybox !== undefined) {
+    if (typeof obj.skybox !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(obj.skybox)) {
+      throw new LevelValidationError('skybox must be a six-digit hex colour');
+    }
+    result.skybox = obj.skybox;
+  }
+  for (const key of ['background', 'foreground', 'analogFx'] as const) {
+    const value = obj[key];
+    if (value !== undefined) {
+      if (typeof value !== 'string' || value.length === 0) {
+        throw new LevelValidationError(`${key} must be a non-empty string`);
+      }
+      result[key] = value;
+    }
+  }
+  if (obj.characterScale !== undefined) {
+    const scale = obj.characterScale;
+    if (scale !== 1 && scale !== 1.5 && scale !== 1.75 && scale !== 2) {
+      throw new LevelValidationError('characterScale must be 1, 1.5, 1.75 or 2');
+    }
+    result.characterScale = scale;
+  }
+  if (obj.cameraZoom !== undefined) {
+    const zoom = obj.cameraZoom;
+    if (typeof zoom !== 'number' || !Number.isFinite(zoom) || zoom < 0.5 || zoom > 2) {
+      throw new LevelValidationError('cameraZoom must be a number between 0.5 and 2');
+    }
+    result.cameraZoom = zoom;
+  }
+  if (obj.cameraFollow !== undefined) {
+    if (!isCameraFollowId(obj.cameraFollow)) {
+      throw new LevelValidationError(
+        'cameraFollow must be current, soft, momentum or impact',
+      );
+    }
+    result.cameraFollow = obj.cameraFollow;
+  }
+  return result;
 }
 
-export function parseLevel(text: string): LevelData {
-  let raw: unknown;
+/** Returns the level play rectangle, defaulting to the whole canvas. */
+export function resolvePlayArea(level: LevelData): PlayArea {
+  return (
+    level.playArea ?? {
+      x: 0,
+      y: 0,
+      width: level.width,
+      height: level.height,
+    }
+  );
+}
+
+export function parseLevel(text: string): LevelData {  let raw: unknown;
   try {
     raw = JSON.parse(text);
   } catch (error) {

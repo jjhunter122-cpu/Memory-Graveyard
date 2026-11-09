@@ -10,13 +10,893 @@
           "name": "stone",
           "collision": "solid",
           "color": "#2a2f45",
-          "cap": "#3b4162"
+          "cap": "#3b4162",
+          "image": "TEMP/softblurwhite.png"
         },
         {
           "id": 2,
           "name": "plank",
           "collision": "oneway",
           "color": "#8a754e"
+        }
+      ]
+    },
+    {
+      "name": "pixel-platformer-world",
+      "tiles": [
+        {
+          "id": 63,
+          "name": "pixel grass top A",
+          "collision": "solid",
+          "color": "#2e6b3f",
+          "image": "pixel-platformer-world/tiles/pixel-grass-top-a.png"
+        },
+        {
+          "id": 64,
+          "name": "pixel grass top B",
+          "collision": "solid",
+          "color": "#2e6b3f",
+          "image": "pixel-platformer-world/tiles/pixel-grass-top-b.png"
+        },
+        {
+          "id": 70,
+          "name": "pixel green top A",
+          "collision": "solid",
+          "color": "#3b5a3a",
+          "image": "pixel-platformer-world/tiles/pixel-green-top-a.png"
+        },
+        {
+          "id": 71,
+          "name": "pixel green fill B",
+          "collision": "solid",
+          "color": "#334d3b",
+          "image": "pixel-platformer-world/tiles/pixel-green-top-b.png"
+        },
+        {
+          "id": 75,
+          "name": "pixel stone top",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-stone-top.png"
+        },
+        {
+          "id": 65,
+          "name": "pixel stone wall A",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-stone-wall-a.png"
+        },
+        {
+          "id": 66,
+          "name": "pixel stone wall B",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-stone-wall-b.png"
+        },
+        {
+          "id": 67,
+          "name": "pixel stone fill",
+          "collision": "solid",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-stone-fill.png"
+        },
+        {
+          "id": 76,
+          "name": "pixel stone underside",
+          "collision": "solid",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-stone-underside.png"
+        },
+        {
+          "id": 68,
+          "name": "pixel brown platform A",
+          "collision": "solid",
+          "color": "#5a3a32",
+          "image": "pixel-platformer-world/tiles/pixel-brown-platform-a.png"
+        },
+        {
+          "id": 69,
+          "name": "pixel dark frame B",
+          "collision": "solid",
+          "color": "#2a2320",
+          "image": "pixel-platformer-world/tiles/pixel-brown-platform-b.png"
+        },
+        {
+          "id": 77,
+          "name": "pixel column",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-column.png"
+        },
+        {
+          "id": 79,
+          "name": "moss grass top",
+          "collision": "solid",
+          "color": "#6a8a48",
+          "image": "pixel-platformer-world/tiles/palette-moss-grass-top.png"
+        },
+        {
+          "id": 80,
+          "name": "moss grass fill",
+          "collision": "solid",
+          "color": "#4a5a38",
+          "image": "pixel-platformer-world/tiles/palette-moss-grass-fill.png"
+        },
+        {
+          "id": 81,
+          "name": "moss stone top",
+          "collision": "solid",
+          "color": "#6a8a48",
+          "image": "pixel-platformer-world/tiles/palette-moss-stone-top.png"
+        },
+        {
+          "id": 82,
+          "name": "moss stone fill",
+          "collision": "solid",
+          "color": "#4a5a38",
+          "image": "pixel-platformer-world/tiles/palette-moss-stone-fill.png"
+        },
+        {
+          "id": 84,
+          "name": "rose grass top",
+          "collision": "solid",
+          "color": "#a86a72",
+          "image": "pixel-platformer-world/tiles/palette-rose-grass-top.png"
+        },
+        {
+          "id": 85,
+          "name": "rose grass fill",
+          "collision": "solid",
+          "color": "#7a4a52",
+          "image": "pixel-platformer-world/tiles/palette-rose-grass-fill.png"
+        },
+        {
+          "id": 86,
+          "name": "rose stone top",
+          "collision": "solid",
+          "color": "#a86a72",
+          "image": "pixel-platformer-world/tiles/palette-rose-stone-top.png"
+        },
+        {
+          "id": 87,
+          "name": "rose stone fill",
+          "collision": "solid",
+          "color": "#7a4a52",
+          "image": "pixel-platformer-world/tiles/palette-rose-stone-fill.png"
+        },
+        {
+          "id": 89,
+          "name": "olive grass top",
+          "collision": "solid",
+          "color": "#7a7a48",
+          "image": "pixel-platformer-world/tiles/palette-olive-grass-top.png"
+        },
+        {
+          "id": 90,
+          "name": "olive grass fill",
+          "collision": "solid",
+          "color": "#5a5a32",
+          "image": "pixel-platformer-world/tiles/palette-olive-grass-fill.png"
+        },
+        {
+          "id": 91,
+          "name": "olive stone top",
+          "collision": "solid",
+          "color": "#7a7a48",
+          "image": "pixel-platformer-world/tiles/palette-olive-stone-top.png"
+        },
+        {
+          "id": 92,
+          "name": "olive stone fill",
+          "collision": "solid",
+          "color": "#5a5a32",
+          "image": "pixel-platformer-world/tiles/palette-olive-stone-fill.png"
+        },
+        {
+          "id": 94,
+          "name": "crimson grass top",
+          "collision": "solid",
+          "color": "#8a3a48",
+          "image": "pixel-platformer-world/tiles/palette-crimson-grass-top.png"
+        },
+        {
+          "id": 95,
+          "name": "crimson grass fill",
+          "collision": "solid",
+          "color": "#5a2a32",
+          "image": "pixel-platformer-world/tiles/palette-crimson-grass-fill.png"
+        },
+        {
+          "id": 96,
+          "name": "crimson stone top",
+          "collision": "solid",
+          "color": "#8a3a48",
+          "image": "pixel-platformer-world/tiles/palette-crimson-stone-top.png"
+        },
+        {
+          "id": 97,
+          "name": "crimson stone fill",
+          "collision": "solid",
+          "color": "#5a2a32",
+          "image": "pixel-platformer-world/tiles/palette-crimson-stone-fill.png"
+        },
+        {
+          "id": 99,
+          "name": "teal grass top",
+          "collision": "solid",
+          "color": "#4a8a8a",
+          "image": "pixel-platformer-world/tiles/palette-teal-grass-top.png"
+        },
+        {
+          "id": 100,
+          "name": "teal grass fill",
+          "collision": "solid",
+          "color": "#2f5a5a",
+          "image": "pixel-platformer-world/tiles/palette-teal-grass-fill.png"
+        },
+        {
+          "id": 101,
+          "name": "teal stone top",
+          "collision": "solid",
+          "color": "#4a8a8a",
+          "image": "pixel-platformer-world/tiles/palette-teal-stone-top.png"
+        },
+        {
+          "id": 102,
+          "name": "teal stone fill",
+          "collision": "solid",
+          "color": "#2f5a5a",
+          "image": "pixel-platformer-world/tiles/palette-teal-stone-fill.png"
+        },
+        {
+          "id": 104,
+          "name": "blood grass top",
+          "collision": "solid",
+          "color": "#9a3040",
+          "image": "pixel-platformer-world/tiles/palette-blood-grass-top.png"
+        },
+        {
+          "id": 105,
+          "name": "blood grass fill",
+          "collision": "solid",
+          "color": "#6a1f2a",
+          "image": "pixel-platformer-world/tiles/palette-blood-grass-fill.png"
+        },
+        {
+          "id": 106,
+          "name": "blood stone top",
+          "collision": "solid",
+          "color": "#9a3040",
+          "image": "pixel-platformer-world/tiles/palette-blood-stone-top.png"
+        },
+        {
+          "id": 107,
+          "name": "blood stone fill",
+          "collision": "solid",
+          "color": "#6a1f2a",
+          "image": "pixel-platformer-world/tiles/palette-blood-stone-fill.png"
+        },
+        {
+          "id": 109,
+          "name": "lime grass top",
+          "collision": "solid",
+          "color": "#82a858",
+          "image": "pixel-platformer-world/tiles/palette-lime-grass-top.png"
+        },
+        {
+          "id": 110,
+          "name": "lime grass fill",
+          "collision": "solid",
+          "color": "#5a7a3a",
+          "image": "pixel-platformer-world/tiles/palette-lime-grass-fill.png"
+        },
+        {
+          "id": 111,
+          "name": "lime stone top",
+          "collision": "solid",
+          "color": "#82a858",
+          "image": "pixel-platformer-world/tiles/palette-lime-stone-top.png"
+        },
+        {
+          "id": 112,
+          "name": "lime stone fill",
+          "collision": "solid",
+          "color": "#5a7a3a",
+          "image": "pixel-platformer-world/tiles/palette-lime-stone-fill.png"
+        },
+        {
+          "id": 114,
+          "name": "slate grass top",
+          "collision": "solid",
+          "color": "#6a7a88",
+          "image": "pixel-platformer-world/tiles/palette-slate-grass-top.png"
+        },
+        {
+          "id": 115,
+          "name": "slate grass fill",
+          "collision": "solid",
+          "color": "#4a5560",
+          "image": "pixel-platformer-world/tiles/palette-slate-grass-fill.png"
+        },
+        {
+          "id": 116,
+          "name": "slate stone top",
+          "collision": "solid",
+          "color": "#6a7a88",
+          "image": "pixel-platformer-world/tiles/palette-slate-stone-top.png"
+        },
+        {
+          "id": 117,
+          "name": "slate stone fill",
+          "collision": "solid",
+          "color": "#4a5560",
+          "image": "pixel-platformer-world/tiles/palette-slate-stone-fill.png"
+        },
+        {
+          "id": 119,
+          "name": "ocean grass top",
+          "collision": "solid",
+          "color": "#4a7090",
+          "image": "pixel-platformer-world/tiles/palette-ocean-grass-top.png"
+        },
+        {
+          "id": 120,
+          "name": "ocean grass fill",
+          "collision": "solid",
+          "color": "#2f4f6a",
+          "image": "pixel-platformer-world/tiles/palette-ocean-grass-fill.png"
+        },
+        {
+          "id": 121,
+          "name": "ocean stone top",
+          "collision": "solid",
+          "color": "#4a7090",
+          "image": "pixel-platformer-world/tiles/palette-ocean-stone-top.png"
+        },
+        {
+          "id": 122,
+          "name": "ocean stone fill",
+          "collision": "solid",
+          "color": "#2f4f6a",
+          "image": "pixel-platformer-world/tiles/palette-ocean-stone-fill.png"
+        },
+        {
+          "id": 124,
+          "name": "brown trim top A",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-trim-brown-top-a.png"
+        },
+        {
+          "id": 125,
+          "name": "brown trim top B",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-trim-brown-top-b.png"
+        },
+        {
+          "id": 126,
+          "name": "brown trim face",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-trim-brown-face.png"
+        },
+        {
+          "id": 127,
+          "name": "brown trim mid",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-trim-brown-mid.png"
+        },
+        {
+          "id": 128,
+          "name": "teal wall A",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-wall-teal-a.png"
+        },
+        {
+          "id": 129,
+          "name": "teal wall B",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-wall-teal-b.png"
+        },
+        {
+          "id": 130,
+          "name": "teal wall C",
+          "collision": "solid",
+          "color": "#4a3f3a",
+          "image": "pixel-platformer-world/tiles/pixel-wall-teal-c.png"
+        },
+        {
+          "id": 72,
+          "name": "pixel green slant A (visual)",
+          "collision": "none",
+          "color": "#3b5a3a",
+          "image": "pixel-platformer-world/tiles/pixel-green-slant-a.png"
+        },
+        {
+          "id": 73,
+          "name": "pixel green slant B (visual)",
+          "collision": "none",
+          "color": "#3b5a3a",
+          "image": "pixel-platformer-world/tiles/pixel-green-slant-b.png"
+        },
+        {
+          "id": 74,
+          "name": "pixel green edge (visual)",
+          "collision": "none",
+          "color": "#3b5a3a",
+          "image": "pixel-platformer-world/tiles/pixel-green-edge.png"
+        },
+        {
+          "id": 83,
+          "name": "moss slope (visual)",
+          "collision": "none",
+          "color": "#6a8a48",
+          "image": "pixel-platformer-world/tiles/palette-moss-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 88,
+          "name": "rose slope (visual)",
+          "collision": "none",
+          "color": "#a86a72",
+          "image": "pixel-platformer-world/tiles/palette-rose-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 93,
+          "name": "olive slope (visual)",
+          "collision": "none",
+          "color": "#7a7a48",
+          "image": "pixel-platformer-world/tiles/palette-olive-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 98,
+          "name": "crimson slope (visual)",
+          "collision": "none",
+          "color": "#8a3a48",
+          "image": "pixel-platformer-world/tiles/palette-crimson-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 103,
+          "name": "teal slope (visual)",
+          "collision": "none",
+          "color": "#4a8a8a",
+          "image": "pixel-platformer-world/tiles/palette-teal-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 108,
+          "name": "blood slope (visual)",
+          "collision": "none",
+          "color": "#9a3040",
+          "image": "pixel-platformer-world/tiles/palette-blood-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 113,
+          "name": "lime slope (visual)",
+          "collision": "none",
+          "color": "#82a858",
+          "image": "pixel-platformer-world/tiles/palette-lime-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 118,
+          "name": "slate slope (visual)",
+          "collision": "none",
+          "color": "#6a7a88",
+          "image": "pixel-platformer-world/tiles/palette-slate-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 123,
+          "name": "ocean slope (visual)",
+          "collision": "none",
+          "color": "#4a7090",
+          "image": "pixel-platformer-world/tiles/palette-ocean-slope.png",
+          "decor": true,
+          "width": 64,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 131,
+          "name": "dark slope up (visual)",
+          "collision": "none",
+          "color": "#4a5560",
+          "image": "pixel-platformer-world/tiles/pixel-slope-dark-up.png",
+          "decor": true,
+          "width": 48,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 132,
+          "name": "dark slope down (visual)",
+          "collision": "none",
+          "color": "#4a5560",
+          "image": "pixel-platformer-world/tiles/pixel-slope-dark-down.png",
+          "decor": true,
+          "width": 32,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 78,
+          "name": "pixel plant",
+          "collision": "none",
+          "color": "#2e6b3f",
+          "image": "pixel-platformer-world/tiles/pixel-plant.png",
+          "decor": true,
+          "width": 16,
+          "height": 16,
+          "anchor": "bottom"
+        },
+        {
+          "id": 133,
+          "name": "dark platform top",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-platform-dark-top.png",
+          "decor": true,
+          "width": 48,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 134,
+          "name": "dark platform step",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-platform-dark-step.png",
+          "decor": true,
+          "width": 16,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 135,
+          "name": "brown arch room",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-arch-brown.png",
+          "decor": true,
+          "width": 224,
+          "height": 208,
+          "anchor": "bottom"
+        },
+        {
+          "id": 136,
+          "name": "dark arch room",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-arch-dark.png",
+          "decor": true,
+          "width": 256,
+          "height": 208,
+          "anchor": "bottom"
+        },
+        {
+          "id": 137,
+          "name": "brown column",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-column-brown.png",
+          "decor": true,
+          "width": 64,
+          "height": 144,
+          "anchor": "bottom"
+        },
+        {
+          "id": 138,
+          "name": "dark column",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-column-dark.png",
+          "decor": true,
+          "width": 64,
+          "height": 144,
+          "anchor": "bottom"
+        },
+        {
+          "id": 139,
+          "name": "brown arch base",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-base-brown.png",
+          "decor": true,
+          "width": 112,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 140,
+          "name": "dark arch base",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-base-dark.png",
+          "decor": true,
+          "width": 112,
+          "height": 48,
+          "anchor": "bottom"
+        },
+        {
+          "id": 141,
+          "name": "teal wall panel tall",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-panel-teal-tall.png",
+          "decor": true,
+          "width": 32,
+          "height": 144,
+          "anchor": "bottom"
+        },
+        {
+          "id": 142,
+          "name": "teal wall panel wide",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-panel-teal-wide.png",
+          "decor": true,
+          "width": 128,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 143,
+          "name": "hanging sign post",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-sign-t.png",
+          "decor": true,
+          "width": 80,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 144,
+          "name": "brown rail A",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-rail-brown-a.png",
+          "decor": true,
+          "width": 128,
+          "height": 16,
+          "anchor": "bottom"
+        },
+        {
+          "id": 145,
+          "name": "brown rail B",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-rail-brown-b.png",
+          "decor": true,
+          "width": 80,
+          "height": 16,
+          "anchor": "bottom"
+        },
+        {
+          "id": 146,
+          "name": "dark rail A",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-rail-dark-a.png",
+          "decor": true,
+          "width": 128,
+          "height": 16,
+          "anchor": "bottom"
+        },
+        {
+          "id": 147,
+          "name": "dark rail B",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-rail-dark-b.png",
+          "decor": true,
+          "width": 80,
+          "height": 16,
+          "anchor": "bottom"
+        },
+        {
+          "id": 148,
+          "name": "brown step A",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-step-brown-a.png",
+          "decor": true,
+          "width": 96,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 149,
+          "name": "brown step B",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-step-brown-b.png",
+          "decor": true,
+          "width": 80,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 150,
+          "name": "dark step A",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-step-dark-a.png",
+          "decor": true,
+          "width": 96,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 151,
+          "name": "dark step B",
+          "collision": "none",
+          "color": "#3a302c",
+          "image": "pixel-platformer-world/tiles/pixel-step-dark-b.png",
+          "decor": true,
+          "width": 80,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 61,
+          "name": "torch",
+          "collision": "none",
+          "color": "#c77b3a",
+          "image": "pixel-platformer-world/Anim/torchA1.png",
+          "decor": true,
+          "width": 16,
+          "height": 32,
+          "anchor": "bottom"
+        },
+        {
+          "id": 62,
+          "name": "diamond",
+          "collision": "none",
+          "color": "#7ce7ff",
+          "image": "pixel-platformer-world/Anim/diamond1.png",
+          "decor": true,
+          "width": 8,
+          "height": 9,
+          "anchor": "bottom"
+        },
+        {
+          "id": 60,
+          "name": "collision",
+          "collision": "solid",
+          "color": "#2f6b4f",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "name": "grunge",
+      "tiles": [
+        {
+          "id": 152,
+          "name": "grunge floor A",
+          "collision": "solid",
+          "color": "#3a2a22",
+          "image": "grunge/tiles/grunge-floor-a.png"
+        },
+        {
+          "id": 153,
+          "name": "grunge floor B",
+          "collision": "solid",
+          "color": "#3a2a22",
+          "image": "grunge/tiles/grunge-floor-b.png"
+        },
+        {
+          "id": 154,
+          "name": "grunge brick A",
+          "collision": "solid",
+          "color": "#4a2e22",
+          "image": "grunge/tiles/grunge-brick-a.png"
+        },
+        {
+          "id": 155,
+          "name": "grunge brick B",
+          "collision": "solid",
+          "color": "#4a2e22",
+          "image": "grunge/tiles/grunge-brick-b.png"
+        },
+        {
+          "id": 156,
+          "name": "grunge wall top",
+          "collision": "solid",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-wall-top.png"
+        },
+        {
+          "id": 157,
+          "name": "grunge beam",
+          "collision": "solid",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-beam.png"
+        },
+        {
+          "id": 158,
+          "name": "grunge fence",
+          "collision": "solid",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-fence.png"
+        },
+        {
+          "id": 159,
+          "name": "grunge fence section",
+          "collision": "none",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-fence-section.png",
+          "decor": true,
+          "width": 48,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 160,
+          "name": "grunge post",
+          "collision": "none",
+          "color": "#2a1c16",
+          "image": "grunge/tiles/grunge-post.png",
+          "decor": true,
+          "width": 16,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 161,
+          "name": "grunge door",
+          "collision": "none",
+          "color": "#4a1e18",
+          "image": "grunge/tiles/grunge-door.png",
+          "decor": true,
+          "width": 32,
+          "height": 64,
+          "anchor": "bottom"
+        },
+        {
+          "id": 162,
+          "name": "grunge lamp",
+          "collision": "none",
+          "color": "#d8c890",
+          "image": "grunge/tiles/grunge-lamp.png",
+          "decor": true,
+          "width": 16,
+          "height": 32,
+          "anchor": "top"
         }
       ]
     }

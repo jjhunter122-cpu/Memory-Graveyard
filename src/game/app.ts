@@ -1,7 +1,8 @@
 import type { Engine, Scene } from 'excalibur';
+import type { GameTextures } from './assets';
 import type { AssetManifest } from './level/manifest';
 import type { LevelData } from './level/schema';
-import { PlayScene } from './scenes/PlayScene';
+import { PlayScene, type PlayOrigin } from './scenes/PlayScene';
 import { EditorScene } from '../editor/EditorScene';
 import { TitleScene } from './menus/TitleScene';
 import { LevelSelectScene } from './menus/LevelSelectScene';
@@ -9,6 +10,7 @@ import { OptionsScene } from './menus/OptionsScene';
 import { SequenceScene } from './menus/SequenceScene';
 import type { DraftStore, LevelLibrary } from './storage/levels';
 import type { SettingsStore } from './storage/settings';
+import { analogOverlay } from './ui/analogFx';
 
 export interface StartOptions {
   startInEditor: boolean;
@@ -16,9 +18,10 @@ export interface StartOptions {
 }
 
 interface PlayOptions {
+  origin?: PlayOrigin;
   fromEditor?: boolean;
   sequence?: { index: number; total: number };
-  onLevelComplete?: () => void;
+  onLevelComplete?: (level: LevelData) => void;
 }
 
 /**
@@ -36,6 +39,7 @@ export class GameApp {
     private readonly library: LevelLibrary,
     private readonly drafts: DraftStore,
     private readonly settings: SettingsStore,
+    private readonly textures: GameTextures,
   ) {}
 
   async start(options: StartOptions): Promise<void> {
@@ -81,7 +85,10 @@ export class GameApp {
     try {
       const level = await this.library.loadShipped(id);
       this.settings.update({ lastLevelId: id });
-      await this.play(level, {});
+      await this.play(level, {
+        origin: 'levelSelect',
+        onLevelComplete: () => void this.showLevelSelect(),
+      });
     } catch (error) {
       console.error('failed to load level', error);
       await this.showLevelSelect();
@@ -90,7 +97,10 @@ export class GameApp {
 
   playDraft(id: string): Promise<void> {
     try {
-      return this.play(this.library.loadDraft(id), {});
+      return this.play(this.library.loadDraft(id), {
+        origin: 'levelSelect',
+        onLevelComplete: () => void this.showLevelSelect(),
+      });
     } catch (error) {
       console.error('failed to load draft', error);
       return this.showLevelSelect();
@@ -98,7 +108,13 @@ export class GameApp {
   }
 
   play(level: LevelData, options: PlayOptions): Promise<void> {
-    return this.show('play', this.playScene(level, options));
+    const playOptions = options.fromEditor
+      ? {
+          ...options,
+          onLevelComplete: (tested: LevelData) => void this.edit(tested),
+        }
+      : options;
+    return this.show('play', this.playScene(level, playOptions));
   }
 
   edit(level: LevelData): Promise<void> {
@@ -166,11 +182,13 @@ export class GameApp {
   }
 
   private playScene(level: LevelData, options: PlayOptions): PlayScene {
-    return new PlayScene(level, this.manifest, {
+    return new PlayScene(level, this.manifest, this.textures, {
+      origin: options.origin,
       fromEditor: options.fromEditor,
       showHud: this.settings.load().showHud,
       sequence: options.sequence,
       onLevelComplete: options.onLevelComplete,
+      onSaveDraft: (level) => this.drafts.save(level),
       onOpenEditor: (edited) => void this.edit(edited),
       onLevelSelect: () => void this.showLevelSelect(),
       onTitle: () => void this.showTitle(),
@@ -179,10 +197,13 @@ export class GameApp {
 
   private editorScene(level: LevelData): EditorScene {
     return new EditorScene(level, this.manifest, {
-      onTestPlay: (tested) => void this.play(tested, { fromEditor: true }),
+      onTestPlay: (tested) =>
+        void this.play(tested, { fromEditor: true, origin: 'editor' }),
       onMenu: () => void this.showTitle(),
       drafts: this.drafts,
-      onProjectSaved: () => void this.library.reload(),
+      library: this.library,
+      textures: this.textures,
+      onProjectSaved: () => this.library.reload(),
     });
   }
 
@@ -205,6 +226,7 @@ export class GameApp {
       const level = await this.library.loadShipped(entry.id);
       this.settings.update({ lastLevelId: entry.id });
       await this.play(level, {
+        origin: 'campaign',
         sequence: { index, total: entries.length },
         onLevelComplete: () => void this.playCampaignAt(entries, index + 1),
       });
@@ -269,6 +291,7 @@ export class GameApp {
   }
 
   private async show(key: string, scene: Scene): Promise<void> {
+    analogOverlay.clear();
     const previous = this.lastKey;
     const unique = this.uniqueKey(key);
     this.engine.addScene(unique, scene);

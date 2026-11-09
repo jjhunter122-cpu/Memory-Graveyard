@@ -8,9 +8,33 @@
       "tier": "dev"
     },
     {
+      "id": "tutorial-longer-level-test",
+      "name": "Tutorial/longer level test",
+      "file": "levels/tutorial-longer-level-test.json",
+      "tier": "dev"
+    },
+    {
       "id": "first-test",
       "name": "First test",
       "file": "levels/first-test.json",
+      "tier": "dev"
+    },
+    {
+      "id": "length-test",
+      "name": "Length Test",
+      "file": "levels/length-test.json",
+      "tier": "dev"
+    },
+    {
+      "id": "default-test",
+      "name": "Default Test",
+      "file": "levels/default-test.json",
+      "tier": "dev"
+    },
+    {
+      "id": "blank-slab",
+      "name": "Blank Slab",
+      "file": "levels/blank-slab.json",
       "tier": "dev"
     }
   ]
