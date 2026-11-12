@@ -50,6 +50,9 @@ export class PlayScene extends Scene {
   private playableBottomPx = 0;
   private catchRadius: number = MONSTER.catchRadius;
   private footstepDistance = 0;
+  private wasGrounded = true;
+  private wasMoving = false;
+  private fallSpeed = 0;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -112,6 +115,9 @@ export class PlayScene extends Scene {
     this.playableBottomPx =
       this.built.playAreaPx.y + this.built.playAreaPx.height;
     this.footstepDistance = 0;
+    this.wasGrounded = true;
+    this.wasMoving = false;
+    this.fallSpeed = 0;
     const scale = normalizeCharacterScale(this.level.characterScale);
     const metrics = characterMetrics(scale, this.level.tileSize);
     this.catchRadius = metrics.catchRadius;
@@ -431,11 +437,42 @@ export class PlayScene extends Scene {
   }
 
   private updateFootsteps(dt: number): void {
+    const grounded = this.player.controller.isGrounded;
     const speed = Math.abs(this.player.vel.x);
-    if (!this.player.controller.isGrounded || speed < 30) {
+
+    if (!grounded) {
+      this.fallSpeed = Math.max(this.fallSpeed, Math.max(0, this.player.vel.y));
+      this.wasGrounded = false;
+      this.wasMoving = false;
       this.footstepDistance = 0;
       return;
     }
+
+    if (!this.wasGrounded) {
+      if (this.fallSpeed > 160) {
+        const volume = Math.min(0.9, 0.55 + this.fallSpeed / 1600);
+        footstepAudio.playLanding(volume);
+      }
+      this.fallSpeed = 0;
+      this.wasGrounded = true;
+      this.wasMoving = speed >= 30;
+      this.footstepDistance = 0;
+      return;
+    }
+
+    if (speed < 30) {
+      this.footstepDistance = 0;
+      this.wasMoving = false;
+      return;
+    }
+
+    if (!this.wasMoving) {
+      this.wasMoving = true;
+      this.footstepDistance = 0;
+      footstepAudio.playGrass();
+      return;
+    }
+
     this.footstepDistance += speed * dt;
     const stride = speed > 180 ? 58 : 68;
     if (this.footstepDistance >= stride) {
@@ -465,6 +502,9 @@ export class PlayScene extends Scene {
     this.graceRemaining = MONSTER.graceSeconds;
     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
     this.footstepDistance = 0;
+    this.wasGrounded = true;
+    this.wasMoving = false;
+    this.fallSpeed = 0;
     this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.totalMemories);
 

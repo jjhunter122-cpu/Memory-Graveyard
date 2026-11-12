@@ -1,4 +1,4 @@
-import { Color, DisplayMode, Engine, SolverStrategy, Vector } from 'excalibur';
+import { Color, DisplayMode, Engine, SolverStrategy, Vector, WebAudio } from 'excalibur';
 import { createGameTextures } from './game/assets';
 import { footstepAudio } from './game/audio/footsteps';
 import { COLORS, PHYSICS, VIEW } from './game/config';
@@ -77,6 +77,14 @@ async function boot(): Promise<void> {
     ...assets.resources.map((resource) => resource.load()),
     footstepAudio.load(base),
   ]);
+
+  // The game preloads directly instead of using Excalibur's Loader, so unlock
+  // the shared WebAudio context on the first real user gesture ourselves.
+  const unlockAudio = (): void => {
+    void WebAudio.unlock();
+  };
+  window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+  window.addEventListener('keydown', unlockAudio, { once: true, capture: true });
   const app = new GameApp(engine, manifest, library, drafts, settings, assets.textures);
   await app.start({ startInEditor, initialLevel });
 

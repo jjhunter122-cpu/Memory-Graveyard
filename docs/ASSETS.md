@@ -15,8 +15,8 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
   character sprites are imported but not wired yet.
 - The LESED Vignette is in `public/assets/analog-fx/` and is the default
   screen effect for new levels. Its custom licence is recorded in `CREDITS.md`.
-- Grass footstep samples from The Sound Guild are in `public/assets/audio/`
-  and are wired to grounded player movement.
+- Grass footstep and soft landing samples from The Sound Guild are in
+  `public/assets/audio/` and are wired to grounded movement and landing.
 
 ## Visual direction
 
