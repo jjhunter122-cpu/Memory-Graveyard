@@ -8,6 +8,7 @@ import type { GameTextures } from '../assets';
 import { CameraFollow } from '../camera/CameraFollow';
 import { findCameraFollowPreset } from '../camera/cameraFollowSettings';
 import { characterMetrics } from '../characterScale';
+import { TrailRecorder, trailYAt } from '../chase/trail';
 import { VIEW } from '../config';
 import type { AssetManifest } from '../level/manifest';
 import { Player } from '../player/Player';
@@ -47,6 +48,7 @@ const CAMERA_Y = ACT_HEIGHT * ACT_TILE_SIZE - VIEW.height / 2;
 export interface RunSceneOptions {
   seed: number;
   onRestart: () => void;
+  onHome: () => void;
 }
 
 /**
@@ -55,6 +57,7 @@ export interface RunSceneOptions {
  */
 export class RunScene extends Scene {
   private readonly hud = new Hud();
+  private readonly trail = new TrailRecorder(10);
   private stream!: ActStream;
   private player!: Player;
   private monster!: Monster;
@@ -62,7 +65,10 @@ export class RunScene extends Scene {
   private guardianAnimations?: GuardianAnimations;
   private guardianAnimationName: 'walk' | null = null;
   private dead = false;
+  private caught = false;
   private falling = false;
+  private attackTimer = 0;
+  private monsterYOffset = 0;
   private stamina = STAMINA_MAX;
   private footstepDistance = 0;
   private wasGrounded = true;
@@ -90,6 +96,7 @@ export class RunScene extends Scene {
 
     const metrics = characterMetrics(CHARACTER_SCALE, ACT_TILE_SIZE);
     const startY = FLOOR_TOP - metrics.playerHeight / 2;
+    this.monsterYOffset = (metrics.playerHeight - MONSTER_RENDER_HEIGHT) / 2;
 
     this.player = new Player(
       START_X,
@@ -115,6 +122,7 @@ export class RunScene extends Scene {
       { width: 67, height: MONSTER_RENDER_HEIGHT },
     );
     this.add(this.monster);
+    this.trail.reset({ x: this.player.pos.x, y: this.player.pos.y });
 
     const idle = this.textures.guardianIdleSheet;
     const walk = this.textures.guardianWalkSheet;
@@ -155,17 +163,31 @@ export class RunScene extends Scene {
       return;
     }
     const dt = elapsed / 1000;
+
+    if (this.caught) {
+      this.attackTimer = Math.max(0, this.attackTimer - dt);
+      if (this.attackTimer === 0) {
+        this.finishCaught();
+      }
+      return;
+    }
+
     const distancePx = Math.max(0, this.player.pos.x - START_X);
     const baseSpeed = speedAt(distancePx);
 
     this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
     this.player.setAutoRun(baseSpeed * staminaSpeedFactor(this.stamina));
     this.stream.update(this.player.pos.x);
+    this.trail.record(this.player.pos.x, this.player.pos.y);
+    this.trail.pruneBefore(this.monster.pos.x - 200);
     this.monster.pos.x += baseSpeed * dt;
+    const trailY =
+      trailYAt(this.trail.all, this.monster.pos.x) ?? this.player.pos.y;
+    this.monster.pos.y = trailY + this.monsterYOffset;
     this.updateStaminaUi();
 
     if (this.monster.pos.x >= this.player.pos.x - CATCH_RADIUS) {
-      this.die('caught');
+      this.beginCaught();
       return;
     }
 
@@ -208,15 +230,55 @@ export class RunScene extends Scene {
     }
     this.dead = true;
     this.player.setFrozen(true);
-    const title = cause === 'caught' ? 'CAUGHT' : 'YOU FELL';
-    const ui = document.getElementById('run-ui');
-    if (ui) {
-      ui.innerHTML = `<div class="run-death"><h2>${title}</h2><p><kbd>R</kbd> to run again</p></div>`;
+    this.showDeath(cause);
+  }
+
+  private beginCaught(): void {
+    if (this.dead || this.caught) {
+      return;
+    }
+    this.caught = true;
+    this.player.setFrozen(true);
+    this.attackTimer = 1;
+    if (this.guardianAnimations) {
+      this.monster.graphics.use(this.guardianAnimations.attack);
+    } else {
+      this.finishCaught();
     }
   }
 
-  private refillStamina(): void {
+  private finishCaught(): void {
     if (this.dead) {
+      return;
+    }
+    this.dead = true;
+    this.showDeath('caught');
+  }
+
+  private showDeath(cause: 'fell' | 'caught'): void {
+    const title = cause === 'caught' ? 'CAUGHT' : 'YOU FELL';
+    const ui = document.getElementById('run-ui');
+    if (!ui) {
+      return;
+    }
+    ui.innerHTML = `
+      <div class="run-death">
+        <h2>${title}</h2>
+        <div class="run-death-actions">
+          <button id="run-retry" class="menu-button primary">Retry</button>
+          <button id="run-home" class="menu-button">Back to Home Menu</button>
+        </div>
+      </div>`;
+    document
+      .getElementById('run-retry')
+      ?.addEventListener('click', () => this.options.onRestart());
+    document
+      .getElementById('run-home')
+      ?.addEventListener('click', () => this.options.onHome());
+  }
+
+  private refillStamina(): void {
+    if (this.dead || this.caught) {
       return;
     }
     this.stamina = Math.min(STAMINA_MAX, this.stamina + SHARD_REFILL);
@@ -306,6 +368,11 @@ export class RunScene extends Scene {
   }
 
   private updateMonsterFootsteps(): void {
+    if (Math.abs(this.monster.pos.y - MONSTER_Y) > 24) {
+      this.lastMonsterStepX = this.monster.pos.x;
+      this.monsterFootstepDistance = 0;
+      return;
+    }
     if (!this.monsterStepInitialized) {
       this.lastMonsterStepX = this.monster.pos.x;
       this.monsterStepInitialized = true;

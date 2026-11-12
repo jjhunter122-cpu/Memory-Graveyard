@@ -84,6 +84,7 @@ export class GameApp {
       new RunScene(this.manifest, this.textures, {
         seed,
         onRestart: () => void this.startRun(),
+        onHome: () => void this.showTitle(),
       }),
     );
   }

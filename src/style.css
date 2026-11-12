@@ -932,6 +932,18 @@ body.mode-playing .stamina-ui {
   border-radius: 10px;
   text-align: center;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  pointer-events: auto;
+}
+
+.run-death-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.run-death .menu-button {
+  width: 100%;
 }
 
 .run-death h2 {

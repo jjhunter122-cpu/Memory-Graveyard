@@ -11,6 +11,33 @@ export interface TrailPoint {
   y: number;
 }
 
+/** Interpolates the recorded path's y at a given x. */
+export function trailYAt(
+  points: readonly TrailPoint[],
+  x: number,
+): number | null {
+  if (points.length === 0) {
+    return null;
+  }
+  const first = points[0]!;
+  if (x <= first.x) {
+    return first.y;
+  }
+  for (let index = 1; index < points.length; index += 1) {
+    const previous = points[index - 1]!;
+    const next = points[index]!;
+    if (x <= next.x) {
+      const span = next.x - previous.x;
+      if (span <= 0) {
+        return next.y;
+      }
+      const t = (x - previous.x) / span;
+      return previous.y + (next.y - previous.y) * t;
+    }
+  }
+  return points[points.length - 1]!.y;
+}
+
 export class TrailRecorder {
   private readonly points: TrailPoint[] = [];
 
@@ -32,6 +59,20 @@ export class TrailRecorder {
     const dy = y - last.y;
     if (dx * dx + dy * dy >= this.spacing * this.spacing) {
       this.points.push({ x, y });
+    }
+  }
+
+  /** Drops old points while keeping a segment around the given x. */
+  pruneBefore(x: number): void {
+    let remove = 0;
+    while (
+      remove < this.points.length - 2 &&
+      (this.points[remove + 1]?.x ?? 0) < x
+    ) {
+      remove += 1;
+    }
+    if (remove > 0) {
+      this.points.splice(0, remove);
     }
   }
 
