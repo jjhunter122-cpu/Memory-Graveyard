@@ -1,4 +1,5 @@
 import { Scene, type Engine } from 'excalibur';
+import { Exit } from '../actors/Exit';
 import { Monster } from '../actors/Monster';
 import { ambienceAudio } from '../audio/ambience';
 import { footstepAudio } from '../audio/footsteps';
@@ -17,6 +18,13 @@ import {
   ACT_TILE_SIZE,
   speedAt,
 } from '../run/generator';
+import {
+  LOW_STAMINA_THRESHOLD,
+  SHARD_REFILL,
+  STAMINA_DRAIN,
+  STAMINA_MAX,
+  staminaSpeedFactor,
+} from '../run/stamina';
 import { analogOverlay } from '../ui/analogFx';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
@@ -29,6 +37,7 @@ const START_X = 200;
 const CHARACTER_SCALE = 1.75;
 const MONSTER_RENDER_HEIGHT = 80;
 const MONSTER_GAP = 160;
+const CATCH_RADIUS = 24;
 const FLOOR_TOP = ACT_FLOOR_ROW * ACT_TILE_SIZE;
 const MONSTER_Y = FLOOR_TOP - MONSTER_RENDER_HEIGHT / 2;
 const KILL_Y = FLOOR_TOP + 220;
@@ -41,8 +50,8 @@ export interface RunSceneOptions {
 }
 
 /**
- * Endless auto-run: random forest acts, falling pits, a straight-line Guardian
- * at a fixed gap and a fixed-height camera. Only pits kill in this pass.
+ * Endless auto-run: random forest acts, falling pits, stamina shards and a
+ * straight-line Guardian that closes in when stamina runs out.
  */
 export class RunScene extends Scene {
   private readonly hud = new Hud();
@@ -54,6 +63,7 @@ export class RunScene extends Scene {
   private guardianAnimationName: 'walk' | null = null;
   private dead = false;
   private falling = false;
+  private stamina = STAMINA_MAX;
   private footstepDistance = 0;
   private wasGrounded = true;
   private wasMoving = false;
@@ -91,6 +101,13 @@ export class RunScene extends Scene {
     );
     this.player.setAutoRun(speedAt(0));
     this.add(this.player);
+    this.player.on('collisionstart', (event) => {
+      const owner = event.other.owner;
+      if (owner instanceof Exit) {
+        this.refillStamina();
+        owner.kill();
+      }
+    });
 
     this.monster = new Monster(
       START_X - MONSTER_GAP,
@@ -119,7 +136,9 @@ export class RunScene extends Scene {
     analogOverlay.setPreset('vignette');
     ambienceAudio.play('spooky-forest');
     this.hud.setVisible(false);
-    this.hud.toast('W / SPACE JUMP · R RESTART', 3200);
+    this.hud.toast('W / SPACE JUMP · GREEN SHARDS REFILL STAMINA', 3600);
+    this.stamina = STAMINA_MAX;
+    this.updateStaminaUi();
     this.clearDeath();
     document.addEventListener('keydown', this.onKeyDown);
   }
@@ -137,11 +156,18 @@ export class RunScene extends Scene {
     }
     const dt = elapsed / 1000;
     const distancePx = Math.max(0, this.player.pos.x - START_X);
-    const speed = speedAt(distancePx);
+    const baseSpeed = speedAt(distancePx);
 
-    this.player.setAutoRun(speed);
+    this.stamina = Math.max(0, this.stamina - STAMINA_DRAIN * dt);
+    this.player.setAutoRun(baseSpeed * staminaSpeedFactor(this.stamina));
     this.stream.update(this.player.pos.x);
-    this.monster.pos.setTo(this.player.pos.x - MONSTER_GAP, MONSTER_Y);
+    this.monster.pos.x += baseSpeed * dt;
+    this.updateStaminaUi();
+
+    if (this.monster.pos.x >= this.player.pos.x - CATCH_RADIUS) {
+      this.die('caught');
+      return;
+    }
 
     if (
       !this.falling &&
@@ -172,21 +198,44 @@ export class RunScene extends Scene {
 
   private checkFall(): void {
     if (this.player.pos.y > KILL_Y) {
-      this.die();
+      this.die('fell');
     }
   }
 
-  private die(): void {
+  private die(cause: 'fell' | 'caught'): void {
     if (this.dead) {
       return;
     }
     this.dead = true;
     this.player.setFrozen(true);
+    const title = cause === 'caught' ? 'CAUGHT' : 'YOU FELL';
     const ui = document.getElementById('run-ui');
     if (ui) {
-      ui.innerHTML =
-        '<div class="run-death"><h2>YOU FELL</h2><p><kbd>R</kbd> to run again</p></div>';
+      ui.innerHTML = `<div class="run-death"><h2>${title}</h2><p><kbd>R</kbd> to run again</p></div>`;
     }
+  }
+
+  private refillStamina(): void {
+    if (this.dead) {
+      return;
+    }
+    this.stamina = Math.min(STAMINA_MAX, this.stamina + SHARD_REFILL);
+    this.updateStaminaUi();
+  }
+
+  private updateStaminaUi(): void {
+    const fill = document.getElementById('stamina-fill');
+    if (!fill) {
+      return;
+    }
+    const percent = Math.max(0, Math.min(100, this.stamina));
+    fill.style.width = `${percent}%`;
+    fill.dataset.level =
+      percent <= LOW_STAMINA_THRESHOLD
+        ? 'low'
+        : percent <= 50
+          ? 'mid'
+          : 'high';
   }
 
   private clearDeath(): void {
@@ -269,7 +318,8 @@ export class RunScene extends Scene {
       return;
     }
     this.monsterFootstepDistance = 0;
-    const volume = metalFootstepVolume(MONSTER_GAP);
+    const gap = Math.abs(this.player.pos.x - this.monster.pos.x);
+    const volume = metalFootstepVolume(gap);
     if (volume > 0) {
       footstepAudio.playMetal(volume);
     }

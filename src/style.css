@@ -866,6 +866,65 @@ body.mode-playing .run-ui:not(:empty) {
   display: flex;
 }
 
+.stamina-ui {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+  z-index: 6;
+}
+
+body.mode-playing .stamina-ui {
+  display: flex;
+}
+
+.stamina-label {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8b8fae;
+}
+
+.stamina-track {
+  width: 260px;
+  height: 10px;
+  border: 1px solid rgba(143, 123, 255, 0.4);
+  border-radius: 5px;
+  background: rgba(10, 11, 16, 0.72);
+  overflow: hidden;
+}
+
+.stamina-fill {
+  height: 100%;
+  width: 100%;
+  background: #7ce7ff;
+  transition:
+    width 0.08s linear,
+    background 0.2s ease;
+}
+
+.stamina-fill[data-level='mid'] {
+  background: #ffd166;
+}
+
+.stamina-fill[data-level='low'] {
+  background: #ff6b6b;
+  animation: stamina-pulse 0.55s ease-in-out infinite alternate;
+}
+
+@keyframes stamina-pulse {
+  from {
+    box-shadow: 0 0 0 rgba(255, 107, 107, 0);
+  }
+  to {
+    box-shadow: 0 0 12px rgba(255, 107, 107, 0.85);
+  }
+}
+
 .run-death {
   padding: 26px 36px;
   background: rgba(10, 11, 16, 0.94);

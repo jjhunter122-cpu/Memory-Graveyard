@@ -15,6 +15,11 @@ import {
   isOverPit,
   type Pit,
 } from './generator';
+import {
+  SHARD_START_X,
+  shardHeightAt,
+  shardSpacingAt,
+} from './stamina';
 
 interface WorldPit {
   startX: number;
@@ -37,6 +42,8 @@ export class ActStream {
   private readonly acts: Act[] = [];
   private nextIndex = 0;
   private seed = 0;
+  private nextShardX = SHARD_START_X;
+  private shardIndex = 0;
 
   constructor(
     private readonly scene: Scene,
@@ -56,6 +63,8 @@ export class ActStream {
     this.acts.length = 0;
     this.nextIndex = 0;
     this.seed = seed;
+    this.nextShardX = SHARD_START_X;
+    this.shardIndex = 0;
     this.update(0);
   }
 
@@ -141,6 +150,27 @@ export class ActStream {
     }
     level.skybox = '#0a0b10';
     level.background = 'pixel-platformer-world-layers';
+
+    const actEndX = startX + ACT_WIDTH * ACT_TILE_SIZE;
+    while (this.nextShardX < actEndX) {
+      let tile = Math.max(
+        0,
+        Math.floor((this.nextShardX - startX) / ACT_TILE_SIZE),
+      );
+      while (tile < ACT_WIDTH && isOverPit(pits, tile)) {
+        tile += 1;
+      }
+      if (tile >= ACT_WIDTH) {
+        break;
+      }
+      level.entities.push({
+        type: 'exit',
+        x: tile,
+        y: shardHeightAt(this.shardIndex),
+      });
+      this.shardIndex += 1;
+      this.nextShardX += shardSpacingAt(this.nextShardX);
+    }
 
     const before = new Set(this.scene.actors);
     buildLevel(this.scene, level, this.manifest, this.textures, {
