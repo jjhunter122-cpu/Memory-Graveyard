@@ -5,14 +5,16 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 ## Current state
 
 - **Pixel Platformer World** is imported in `public/assets/pixel-platformer-world/`
-  and is the current tile and background set.
-- **Grunge** is imported in `public/assets/grunge/` as a test set and corridor
-  background.
+  and is the current tile, background and player-character set.
+- **Grunge** remains in `public/assets/grunge/` as an unused test import for the
+  old editor; it is not used by the endless run and is not in the shipped
+  credits. The `__MACOSX` folder from the original zip is a macOS artifact, not
+  an asset.
 - New levels use a 32px grid with 16px Pixel art scaled into each cell.
 - `public/assets/TEMP/` still contains **unlicensed** stand-ins gated by
   `TEMP_ASSETS` in `src/game/assets.ts`. They must not ship.
-- Player and monster visuals are still placeholder rectangles; the Pixel
-  character sprites are imported but not wired yet.
+- The player now uses the Pixel Platformer World idle, run, jump, landing and
+  death frames. The monster remains the placeholder Old Guardian.
 - The LESED Vignette is in `public/assets/analog-fx/` and is the default
   screen effect for new levels. Its custom licence is recorded in `CREDITS.md`.
 - The Old Guardian sprite strips in `public/assets/enemies/old-guardian/` are a
@@ -20,8 +22,8 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 - Grass footstep, soft landing and metal monster footsteps from The Sound Guild
   are in `public/assets/audio/` and are wired to movement and landing.
 - The title screen loops `public/assets/audio/music/8-bit-haunting.mp3`.
-- The Spooky Forest ambience loops in levels that select it, starting with
-  Blank Slab. It is CC BY 3.0, credited to marchon11 in `CREDITS.md`.
+- The Spooky Forest Ambience loops during the endless run. It is CC BY 3.0,
+  credited to marchon11 in `CREDITS.md`.
 
 ## Visual direction
 

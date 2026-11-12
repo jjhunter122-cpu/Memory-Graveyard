@@ -13,6 +13,7 @@ import {
   createGuardianDeathAnimations,
   type GuardianDeathAnimations,
 } from '../visuals/guardian';
+import { createHeroAnimations } from '../visuals/hero';
 import { VIEW } from '../config';
 
 const TITLE_WIDTH = 40;
@@ -92,6 +93,13 @@ export class TitleScene extends MenuScene {
       undefined,
       { width: metrics.playerWidth, height: metrics.playerHeight },
     );
+    const hero = createHeroAnimations(
+      this.callbacks.textures,
+      metrics.playerHeight,
+    );
+    if (hero) {
+      player.setAnimations(hero);
+    }
     player.setFrozen(true);
     this.add(player);
 

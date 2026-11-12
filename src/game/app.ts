@@ -77,7 +77,14 @@ export class GameApp {
   showCredits(): Promise<void> {
     return this.show(
       'credits',
-      new CreditsScene({ onBack: () => void this.showTitle() }),
+      new CreditsScene(
+        { onBack: () => void this.showTitle() },
+        {
+          manifest: this.manifest,
+          textures: this.textures,
+          seed: Math.floor(Math.random() * 0xffffffff),
+        },
+      ),
     );
   }
 
@@ -188,24 +195,34 @@ export class GameApp {
 
   private optionsScene(): OptionsScene {
     const settings = this.settings.load();
-    return new OptionsScene({
-      showHud: settings.showHud,
-      masterVolume: settings.masterVolume,
-      musicVolume: settings.musicVolume,
-      sfxVolume: settings.sfxVolume,
-      draftCount: this.library.draftsList().length,
-      onChangeShowHud: (value) => this.settings.update({ showHud: value }),
-      onChangeMasterVolume: (value) => this.setVolumeSetting({ masterVolume: value }),
-      onChangeMusicVolume: (value) => this.setVolumeSetting({ musicVolume: value }),
-      onChangeSfxVolume: (value) => this.setVolumeSetting({ sfxVolume: value }),
-      onClearDrafts: () => {
-        for (const draft of this.library.draftsList()) {
-          this.drafts.remove(draft.id);
-        }
-        void this.showOptions();
+    return new OptionsScene(
+      {
+        showHud: settings.showHud,
+        masterVolume: settings.masterVolume,
+        musicVolume: settings.musicVolume,
+        sfxVolume: settings.sfxVolume,
+        draftCount: this.library.draftsList().length,
+        onChangeShowHud: (value) => this.settings.update({ showHud: value }),
+        onChangeMasterVolume: (value) =>
+          this.setVolumeSetting({ masterVolume: value }),
+        onChangeMusicVolume: (value) =>
+          this.setVolumeSetting({ musicVolume: value }),
+        onChangeSfxVolume: (value) =>
+          this.setVolumeSetting({ sfxVolume: value }),
+        onClearDrafts: () => {
+          for (const draft of this.library.draftsList()) {
+            this.drafts.remove(draft.id);
+          }
+          void this.showOptions();
+        },
+        onBack: () => void this.showTitle(),
       },
-      onBack: () => void this.showTitle(),
-    });
+      {
+        manifest: this.manifest,
+        textures: this.textures,
+        seed: Math.floor(Math.random() * 0xffffffff),
+      },
+    );
   }
 
   private sequenceScene(): SequenceScene {

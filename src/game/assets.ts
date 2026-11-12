@@ -40,6 +40,12 @@ export interface GameTextures {
   guardianWalkSheet?: ImageSource;
   guardianAttackSheet?: ImageSource;
   guardianDeathSheet?: ImageSource;
+  /** Pixel Platformer World character frames. */
+  heroIdle: ImageSource[];
+  heroRun: ImageSource[];
+  heroJump: ImageSource[];
+  heroLanding: ImageSource[];
+  heroDead: ImageSource[];
   /** Scene-dressing art, keyed by path relative to `public/assets`. */
   scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
@@ -88,6 +94,26 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   const guardianAttackSheet = new ImageSource(`${base}${GUARDIAN_ATTACK_SHEET}`);
   const guardianDeathSheet = new ImageSource(`${base}${GUARDIAN_DEATH_SHEET}`);
 
+  const heroFrame = (file: string): ImageSource =>
+    new ImageSource(
+      `${base}assets/pixel-platformer-world/Character/Sprite/${file}`,
+    );
+  const heroIdle = Array.from({ length: 6 }, (_, index) =>
+    heroFrame(`idle-${String(index + 1).padStart(2, '0')}.png`),
+  );
+  const heroRun = Array.from({ length: 7 }, (_, index) =>
+    heroFrame(`run-${String(index + 1).padStart(2, '0')}.png`),
+  );
+  const heroJump = Array.from({ length: 2 }, (_, index) =>
+    heroFrame(`jump-${String(index + 1).padStart(2, '0')}.png`),
+  );
+  const heroLanding = Array.from({ length: 3 }, (_, index) =>
+    heroFrame(`jump-landing-${String(index + 1).padStart(2, '0')}.png`),
+  );
+  const heroDead = Array.from({ length: 4 }, (_, index) =>
+    heroFrame(`dead-${String(index + 1).padStart(2, '0')}.png`),
+  );
+
   const resources = [...tiles.values(), ...scenery.values()];
   if (background) {
     resources.push(background);
@@ -97,6 +123,11 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     guardianWalkSheet,
     guardianAttackSheet,
     guardianDeathSheet,
+    ...heroIdle,
+    ...heroRun,
+    ...heroJump,
+    ...heroLanding,
+    ...heroDead,
   );
 
   return {
@@ -106,6 +137,11 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
       guardianWalkSheet,
       guardianAttackSheet,
       guardianDeathSheet,
+      heroIdle,
+      heroRun,
+      heroJump,
+      heroLanding,
+      heroDead,
       scenery,
       tiles,
     },

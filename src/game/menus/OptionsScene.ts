@@ -1,4 +1,7 @@
-import { MenuScene } from './MenuScene';
+import {
+  PreviewMenuScene,
+  type PreviewStageOptions,
+} from './PreviewMenuScene';
 
 export interface OptionsCallbacks {
   showHud: boolean;
@@ -14,15 +17,19 @@ export interface OptionsCallbacks {
   onBack: () => void;
 }
 
-export class OptionsScene extends MenuScene {
-  constructor(private readonly callbacks: OptionsCallbacks) {
-    super();
+export class OptionsScene extends PreviewMenuScene {
+  constructor(
+    private readonly callbacks: OptionsCallbacks,
+    preview: PreviewStageOptions,
+  ) {
+    super(preview);
   }
 
   protected render(): string {
     return `
       <div class="menu-panel">
-        <h2 class="menu-heading">Options</h2>
+        <h1 class="menu-title">MEMORY GRAVEYARD</h1>
+        <p class="menu-subtitle">options</p>
         <label class="option-row">
           <span>Show HUD</span>
           <input id="option-hud" type="checkbox" ${this.callbacks.showHud ? 'checked' : ''} />

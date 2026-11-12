@@ -20,29 +20,30 @@ and any processing notes here when the voice pass is complete.
   - Licence: free / public domain for personal and commercial use; may edit,
     but may not sell the asset pack. Credit appreciated, not required.
   - Source: `https://szadiart.itch.io/`
-  - Intended use: tiles, platforms, rooms and backgrounds
+  - Intended use: tiles, platforms, backgrounds and the player character sprites
   - Date added: 2026-11-08
   - Licence text: `public/assets/pixel-platformer-world/LICENSE.txt`
 
-- **Analog Horror Screen FX — Free Sampler** — LESED
-  - Licence: custom free-use licence. Use in games, videos, streams, trailers
-    and apps is allowed; modification is allowed. The overlay files themselves
-    may not be sold or shared alone or as part of another asset pack/template.
-  - Use confirmed for this project.
+- **Analog Horror Screen FX Free Sampler** — LESED
+  - Licence: Analog Horror Screen FX Free Sampler — License
+    Copyright (c) 2026 LESED (lesed.itch.io)
+    1. You may use these overlays in personal and commercial projects: games,
+       videos, streams, trailers and apps.
+    2. You may modify them (recolour, crop, retime, combine) for use in your
+       projects.
+    3. You may not sell or share the overlay files themselves, alone or
+       modified, including in other asset packs or templates.
+    4. You may not use them to train or fine-tune generative AI models, or claim
+       them as your own original work.
+    5. Credit is appreciated but not required.
+    6. The overlays are provided "as is", without warranty of any kind.
+  - Use confirmed for this project; the course allows this licence.
   - Asset page: `https://lesed.itch.io/analog-horror-screen-fx-free`
   - Creator page: `https://lesed.itch.io/`
   - Intended use: in-game Vignette
   - Modifications: none
   - Date added: 2026-11-08
   - Licence text: `licenses/LESED-Analog-Horror-Screen-FX-Free.txt`
-
-- **Grunge tileset** — Luis Zuno (@ansimuz)
-  - Licence: CC0 1.0
-  - Source: `https://ansimuz.com`
-  - Intended use: Grunge tiles and corridor test background
-  - Modifications: cropped into individual tile and prop pieces
-  - Date added: 2026-11-08
-  - Licence text: `public/assets/grunge/license.txt`
 
 - **Old Guardian** — placeholder
   - Source: itch.io free asset pack; author and source URL not recorded.
@@ -64,6 +65,7 @@ URL, intended use and modifications.
 - **Footsteps Sounds — Volume 02** — The Sound Guild
   - Licence: free for commercial use, unlimited projects, royalty-free.
     The raw pack may not be resold or redistributed outside the game.
+  - Status: final course approval pending; the pack licence permits this use.
   - Source: `https://the-sound-guild.itch.io/footsteps-sounds-02`
   - Intended use: grass footsteps, soft landings and metal monster footsteps
   - Modifications: selected and renamed the grass, soft-surface and metal samples
@@ -77,9 +79,9 @@ URL, intended use and modifications.
   - Date added: 2026-11-11
   - File: `public/assets/audio/music/8-bit-haunting.mp3`
 
-- **Spooky Forest ambience** — marchon11
+- **Spooky Forest Ambience** — marchon11
+  - Licence: Attribution 3.0 (CC BY 3.0)
   - Credit line: "ambience spooky forest.mp3" by marchon11 -- https://freesound.org/s/493720/ -- License: Attribution 3.0
-  - Licence: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
   - Source: `https://freesound.org/s/493720/`
   - Intended use: looping mid-game forest ambience
   - Modifications: none

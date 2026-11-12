@@ -33,6 +33,7 @@ import {
   createGuardianAnimations,
   type GuardianAnimations,
 } from '../visuals/guardian';
+import { createHeroAnimations } from '../visuals/hero';
 
 const START_X = 200;
 const CHARACTER_SCALE = 1.75;
@@ -113,6 +114,10 @@ export class RunScene extends Scene {
       { width: metrics.playerWidth, height: metrics.playerHeight },
     );
     this.player.setAutoRun(speedAt(0));
+    const hero = createHeroAnimations(this.textures, metrics.playerHeight);
+    if (hero) {
+      this.player.setAnimations(hero);
+    }
     this.add(this.player);
 
     this.monster = new Monster(
@@ -260,6 +265,7 @@ export class RunScene extends Scene {
     }
     this.dead = true;
     this.player.setFrozen(true);
+    this.player.playDeath();
     this.showDeath(cause);
   }
 
@@ -269,6 +275,7 @@ export class RunScene extends Scene {
     }
     this.caught = true;
     this.player.setFrozen(true);
+    this.player.playDeath();
     this.attackTimer = 1;
     if (this.guardianAnimations) {
       this.monster.graphics.use(this.guardianAnimations.attack);
