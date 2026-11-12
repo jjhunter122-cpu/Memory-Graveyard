@@ -264,6 +264,7 @@ export class ActStream {
       const shard = new StaminaShard(
         startX + spec.tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
         surface - spec.rowOffset * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+        this.textures.staminaBolt,
       );
       this.scene.add(shard);
       shards.push(shard);

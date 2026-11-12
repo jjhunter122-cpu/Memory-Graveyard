@@ -16,6 +16,6 @@
 - pix3lcat (<https://pix3lcat.github.io/>)
 - Licence: CC0 1.0
 - Licence notice: `bolt-license.txt`
-- Modifications: scaled for the stamina HUD
+- Modifications: scaled for the stamina pickup and HUD
 
 Full CC0 text: `licenses/CC0-1.0.txt`.

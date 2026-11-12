@@ -48,6 +48,8 @@ export interface GameTextures {
   heroDead: ImageSource[];
   /** CC0 silver coin used for the score pickup and HUD icon. */
   scoreCoin: ImageSource;
+  /** CC0 green bolt used for stamina pickups and the HUD icon. */
+  staminaBolt: ImageSource;
   /** Scene-dressing art, keyed by path relative to `public/assets`. */
   scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
@@ -116,6 +118,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     heroFrame(`dead-${String(index + 1).padStart(2, '0')}.png`),
   );
   const scoreCoin = new ImageSource(`${base}assets/ui/coin.png`);
+  const staminaBolt = new ImageSource(`${base}assets/ui/bolt-green.png`);
 
   const resources = [...tiles.values(), ...scenery.values()];
   if (background) {
@@ -132,6 +135,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     ...heroLanding,
     ...heroDead,
     scoreCoin,
+    staminaBolt,
   );
 
   return {
@@ -147,6 +151,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
       heroLanding,
       heroDead,
       scoreCoin,
+      staminaBolt,
       scenery,
       tiles,
     },

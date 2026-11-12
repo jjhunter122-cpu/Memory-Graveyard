@@ -38,7 +38,7 @@ and any processing notes here when the voice pass is complete.
 - **Lightning Bolt Icons/Buttons Collection (green bolt)** — pix3lcat
   - Licence: CC0 1.0
   - Source: pack licence/readme; `https://pix3lcat.github.io/`
-  - Intended use: stamina icon
+  - Intended use: stamina pickup and HUD icon
   - Modifications: scaled down for the HUD
   - Date added: 2026-11-13
   - Licence notice: `public/assets/ui/bolt-license.txt`
