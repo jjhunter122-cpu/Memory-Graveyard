@@ -1,4 +1,5 @@
 import { MenuScene } from './MenuScene';
+import { titleMusic } from '../audio/titleMusic';
 
 export interface TitleCallbacks {
   dev: boolean;
@@ -12,6 +13,16 @@ export interface TitleCallbacks {
 export class TitleScene extends MenuScene {
   constructor(private readonly callbacks: TitleCallbacks) {
     super();
+  }
+
+  override onActivate(): void {
+    super.onActivate();
+    titleMusic.playTitle();
+  }
+
+  override onDeactivate(): void {
+    titleMusic.stop();
+    super.onDeactivate();
   }
 
   protected render(): string {

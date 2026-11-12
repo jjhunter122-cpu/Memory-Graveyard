@@ -19,6 +19,7 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
   **placeholder monster** with licence pending approval.
 - Grass footstep, soft landing and metal monster footsteps from The Sound Guild
   are in `public/assets/audio/` and are wired to movement and landing.
+- The title screen loops `public/assets/audio/music/8-bit-haunting.mp3`.
 
 ## Visual direction
 

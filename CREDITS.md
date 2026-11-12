@@ -70,6 +70,13 @@ URL, intended use and modifications.
   - Date added: 2026-11-11
   - Licence text: `public/assets/audio/sound-guild/The-Sound-Guild-Footsteps-Volume-02.pdf`
 
+- **8-bit Haunting** — project team, generated with Suno
+  - Licence: project-created track; confirm the Suno plan permits the intended
+    distribution before a public release.
+  - Intended use: title-screen music
+  - Date added: 2026-11-11
+  - File: `public/assets/audio/music/8-bit-haunting.mp3`
+
 The audio director and voice playback are still pinned for a later pass.
 
 ## Fonts & tools

@@ -1,6 +1,7 @@
 import { Color, DisplayMode, Engine, SolverStrategy, Vector, WebAudio } from 'excalibur';
 import { createGameTextures } from './game/assets';
 import { footstepAudio } from './game/audio/footsteps';
+import { titleMusic } from './game/audio/titleMusic';
 import { COLORS, PHYSICS, VIEW } from './game/config';
 import { validateManifest } from './game/level/manifest';
 import type { LevelData } from './game/level/schema';
@@ -76,6 +77,7 @@ async function boot(): Promise<void> {
   await Promise.all([
     ...assets.resources.map((resource) => resource.load()),
     footstepAudio.load(base),
+    titleMusic.load(base),
   ]);
 
   // The game preloads directly instead of using Excalibur's Loader, so unlock

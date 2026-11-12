@@ -1,5 +1,11 @@
 # Audio
 
+## Title music
+
+- **8-bit Haunting** — project team, generated with Suno.
+- Used as the looping title-screen track.
+- Confirm the Suno plan allows the intended distribution before public release.
+
 ## The Sound Guild — Footsteps Sounds Volume 02
 
 - Source: <https://the-sound-guild.itch.io/footsteps-sounds-02>
