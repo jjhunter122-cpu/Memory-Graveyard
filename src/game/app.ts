@@ -3,6 +3,7 @@ import type { GameTextures } from './assets';
 import type { AssetManifest } from './level/manifest';
 import type { LevelData } from './level/schema';
 import { PlayScene, type PlayOrigin } from './scenes/PlayScene';
+import { RunScene } from './scenes/RunScene';
 import { EditorScene } from '../editor/EditorScene';
 import { TitleScene } from './menus/TitleScene';
 import { LevelSelectScene } from './menus/LevelSelectScene';
@@ -76,6 +77,10 @@ export class GameApp {
     return this.show('sequence', this.sequenceScene());
   }
 
+  startRun(): Promise<void> {
+    return this.show('run', new RunScene(this.manifest, this.textures));
+  }
+
   async playCampaign(): Promise<void> {
     const entries = this.library.campaignEntries();
     if (entries.length === 0) {
@@ -132,7 +137,7 @@ export class GameApp {
       highScore: this.settings.load().highScore,
       manifest: this.manifest,
       textures: this.textures,
-      onPlay: () => void this.playShipped('blank-slab'),
+      onPlay: () => void this.startRun(),
       onOptions: () => void this.showOptions(),
     });
   }

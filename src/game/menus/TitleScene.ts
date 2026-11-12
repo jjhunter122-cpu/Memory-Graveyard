@@ -1,6 +1,7 @@
 import type { Engine } from 'excalibur';
 import { MenuScene } from './MenuScene';
 import { titleMusic } from '../audio/titleMusic';
+import { analogOverlay } from '../ui/analogFx';
 import type { GameTextures } from '../assets';
 import { characterMetrics } from '../characterScale';
 import { buildLevel } from '../level/loader';
@@ -21,8 +22,8 @@ const TITLE_TILE_SIZE = 32;
 const TITLE_FLOOR_TOP_TILE = 79;
 const TITLE_FLOOR_FILL_TILE = 80;
 const TITLE_FLOOR_ROW = 16;
-const TITLE_PLAYER_X = 140;
-const TITLE_MONSTER_X = 300;
+const TITLE_PLAYER_X = 300;
+const TITLE_MONSTER_X = 140;
 const TITLE_CHARACTER_SCALE = 1.75;
 
 export interface TitleCallbacks {
@@ -49,10 +50,12 @@ export class TitleScene extends MenuScene {
   override onActivate(): void {
     super.onActivate();
     this.root?.classList.add('title-stage');
+    analogOverlay.setPreset('vignette');
     titleMusic.playTitle();
   }
 
   override onDeactivate(): void {
+    analogOverlay.clear();
     this.root?.classList.remove('title-stage', 'title-playing');
     super.onDeactivate();
   }

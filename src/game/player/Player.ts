@@ -22,6 +22,7 @@ export class Player extends Actor {
   private groundTimer = 0;
   private dropTimer = 0;
   private frozen = false;
+  private autoRunSpeed = 0;
 
   constructor(
     x: number,
@@ -91,7 +92,8 @@ export class Player extends Actor {
 
     const input = readPlayerInput(engine.input.keyboard);
     const step = this.controller.update({ vx: this.vel.x, vy: this.vel.y }, input, dt);
-    this.vel.setTo(step.vx, step.vy);
+    const vx = this.autoRunSpeed !== 0 ? this.autoRunSpeed : step.vx;
+    this.vel.setTo(vx, step.vy);
 
     // A jump clears the latch immediately so it cannot re-ground while rising.
     this.groundTimer = step.jumped ? 0 : Math.max(0, this.groundTimer - dt);
@@ -124,5 +126,10 @@ export class Player extends Actor {
       this.vel.setTo(0, 0);
       this.controller.reset();
     }
+  }
+
+  /** Forces forward motion while leaving jump, gravity and collision intact. */
+  setAutoRun(speed: number): void {
+    this.autoRunSpeed = speed;
   }
 }

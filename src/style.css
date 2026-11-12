@@ -106,6 +106,10 @@ body.mode-playing #hud {
   gap: 8px;
 }
 
+#hud-panel[hidden] {
+  display: none;
+}
+
 .row {
   display: flex;
   align-items: baseline;
