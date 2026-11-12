@@ -61,6 +61,7 @@ export class PlayScene extends Scene {
   private guardianAnimationName: 'idle' | 'walk' | null = null;
   private lastMonsterX = 0;
   private monsterFacingRight = true;
+  private monsterYOffset = 0;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -150,10 +151,16 @@ export class PlayScene extends Scene {
     this.add(this.player);
 
     if (this.built.monsterSpawn) {
-      this.monster = new Monster(this.built.monsterSpawn.x, this.built.monsterSpawn.y, {
-        width: metrics.monsterWidth,
-        height: metrics.monsterHeight,
-      });
+      const guardian = this.built.monsterVariant === 'guardian';
+      const monsterHeight = guardian ? 80 : metrics.monsterHeight;
+      this.monsterYOffset = (metrics.playerHeight - monsterHeight) / 2;
+      this.monster = new Monster(
+        this.built.monsterSpawn.x,
+        this.built.monsterSpawn.y + this.monsterYOffset,
+        guardian
+          ? { width: 67, height: 80 }
+          : { width: metrics.monsterWidth, height: metrics.monsterHeight },
+      );
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
@@ -211,7 +218,7 @@ export class PlayScene extends Scene {
             ? MONSTER.catchUpSpeed
             : MONSTER.speed;
         follower.update(this.trail.all, speed, dt);
-        monster.pos.setTo(follower.pos.x, follower.pos.y);
+        monster.pos.setTo(follower.pos.x, follower.pos.y + this.monsterYOffset);
         threatDistance = this.distanceBetweenMonsterAndPlayer();
         this.updateThreat(threatDistance);
         if (threatDistance <= this.catchRadius) {
@@ -471,8 +478,8 @@ export class PlayScene extends Scene {
     this.setGuardianAnimation(this.graceRemaining > 0 ? 'idle' : 'walk');
     const graphic = this.monster.graphics.current;
     if (graphic) {
-      // The Guardian art faces left, so flip it when moving right.
-      graphic.flipHorizontal = this.monsterFacingRight;
+      // The Guardian art faces right, so flip it when moving left.
+      graphic.flipHorizontal = !this.monsterFacingRight;
     }
   }
 
@@ -567,7 +574,7 @@ export class PlayScene extends Scene {
       this.follower?.reset(this.built.monsterSpawn);
       this.monster?.pos.setTo(
         this.built.monsterSpawn.x,
-        this.built.monsterSpawn.y,
+        this.built.monsterSpawn.y + this.monsterYOffset,
       );
       this.lastMonsterX = this.built.monsterSpawn.x;
       this.hud.setThreat('DORMANT', 'dormant');

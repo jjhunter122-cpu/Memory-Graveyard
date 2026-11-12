@@ -1,7 +1,7 @@
 import { Animation, AnimationStrategy, SpriteSheet, type ImageSource } from 'excalibur';
 
 const FRAME_SIZE = 120;
-const FRAME_DISPLAY = 112;
+const FRAME_DISPLAY = 160;
 
 export interface GuardianAnimations {
   idle: Animation;
@@ -37,8 +37,8 @@ function createAnimation(
 
 /**
  * The placeholder Old Guardian strips are vertical 120x120 frames. The frame is
- * displayed at 112px so the roughly 60px creature inside it renders at about
- * the same height as the 56px player.
+ * displayed at 160px so the roughly 60px creature inside it renders at about
+ * 80px, clearly taller than the 56px player.
  */
 export function createGuardianAnimations(
   idleImage: ImageSource,
