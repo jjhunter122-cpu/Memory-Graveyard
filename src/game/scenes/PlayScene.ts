@@ -58,10 +58,16 @@ export class PlayScene extends Scene {
   private wasMoving = false;
   private fallSpeed = 0;
   private guardianAnimations?: GuardianAnimations;
-  private guardianAnimationName: 'idle' | 'walk' | null = null;
+  private guardianAnimationName: 'idle' | 'walk' | 'attack' | null = null;
   private lastMonsterX = 0;
   private monsterFacingRight = true;
   private monsterYOffset = 0;
+  private caught = false;
+  private attackTimer = 0;
+  private monsterFootstepDistance = 0;
+  private lastMonsterStepX = 0;
+  private lastMonsterStepY = 0;
+  private monsterStepInitialized = false;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -127,6 +133,10 @@ export class PlayScene extends Scene {
     this.wasGrounded = true;
     this.wasMoving = false;
     this.fallSpeed = 0;
+    this.caught = false;
+    this.attackTimer = 0;
+    this.monsterFootstepDistance = 0;
+    this.monsterStepInitialized = false;
     const scale = normalizeCharacterScale(this.level.characterScale);
     const metrics = characterMetrics(scale, this.level.tileSize);
     this.catchRadius = metrics.catchRadius;
@@ -168,11 +178,13 @@ export class PlayScene extends Scene {
       if (
         this.built.monsterVariant === 'guardian' &&
         this.textures.guardianIdleSheet &&
-        this.textures.guardianWalkSheet
+        this.textures.guardianWalkSheet &&
+        this.textures.guardianAttackSheet
       ) {
         this.guardianAnimations = createGuardianAnimations(
           this.textures.guardianIdleSheet,
           this.textures.guardianWalkSheet,
+          this.textures.guardianAttackSheet,
         );
         this.guardianAnimationName = 'idle';
         this.monster.graphics.use(this.guardianAnimations.idle);
@@ -198,6 +210,15 @@ export class PlayScene extends Scene {
     }
 
     const dt = elapsed / 1000;
+    if (this.caught) {
+      this.attackTimer -= dt;
+      if (this.attackTimer <= 0) {
+        this.caught = false;
+        this.player.setFrozen(false);
+        this.die('caught');
+      }
+      return;
+    }
     const monster = this.monster;
     const follower = this.follower;
     let threatDistance: number | null = null;
@@ -222,7 +243,7 @@ export class PlayScene extends Scene {
         threatDistance = this.distanceBetweenMonsterAndPlayer();
         this.updateThreat(threatDistance);
         if (threatDistance <= this.catchRadius) {
-          this.die();
+          this.beginMonsterAttack();
           return;
         }
       }
@@ -231,6 +252,7 @@ export class PlayScene extends Scene {
     }
 
     this.updateMonsterVisual();
+    this.updateMonsterFootsteps();
     this.cameraFollow.update(this.player.pos, dt, {
       vy: this.player.vel.y,
       grounded: this.player.controller.isGrounded,
@@ -422,7 +444,7 @@ export class PlayScene extends Scene {
     }
     return Math.hypot(
       this.player.pos.x - this.monster.pos.x,
-      this.player.pos.y - this.monster.pos.y,
+      this.player.pos.y - (this.monster.pos.y - this.monsterYOffset),
     );
   }
 
@@ -483,7 +505,58 @@ export class PlayScene extends Scene {
     }
   }
 
-  private setGuardianAnimation(name: 'idle' | 'walk'): void {
+  private beginMonsterAttack(): void {
+    if (this.caught || this.dead) {
+      return;
+    }
+    this.caught = true;
+    this.attackTimer = this.guardianAnimations ? 0.95 : 0.3;
+    this.player.setFrozen(true);
+    this.monsterFootstepDistance = 0;
+    this.monsterStepInitialized = false;
+    this.monsterFacingRight = this.player.pos.x > (this.monster?.pos.x ?? 0);
+    if (this.monster && this.guardianAnimations) {
+      this.guardianAnimationName = 'attack';
+      this.monster.graphics.use(this.guardianAnimations.attack);
+      const graphic = this.monster.graphics.current;
+      if (graphic) {
+        graphic.flipHorizontal = !this.monsterFacingRight;
+      }
+    }
+  }
+
+  private updateMonsterFootsteps(): void {
+    if (
+      !this.monster ||
+      this.graceRemaining > 0 ||
+      this.caught ||
+      this.dead
+    ) {
+      this.monsterFootstepDistance = 0;
+      this.monsterStepInitialized = false;
+      return;
+    }
+    if (!this.monsterStepInitialized) {
+      this.lastMonsterStepX = this.monster.pos.x;
+      this.lastMonsterStepY = this.monster.pos.y;
+      this.monsterStepInitialized = true;
+      return;
+    }
+    const dx = this.monster.pos.x - this.lastMonsterStepX;
+    const dy = this.monster.pos.y - this.lastMonsterStepY;
+    this.lastMonsterStepX = this.monster.pos.x;
+    this.lastMonsterStepY = this.monster.pos.y;
+    this.monsterFootstepDistance += Math.hypot(dx, dy);
+    if (this.monsterFootstepDistance < 46) {
+      return;
+    }
+    this.monsterFootstepDistance = 0;
+    const distance = this.distanceBetweenMonsterAndPlayer();
+    const volume = Math.max(0.16, Math.min(0.6, 0.6 - distance / 1500));
+    footstepAudio.playMetal(volume);
+  }
+
+  private setGuardianAnimation(name: 'idle' | 'walk' | 'attack'): void {
     if (!this.guardianAnimations || this.guardianAnimationName === name) {
       return;
     }
@@ -560,6 +633,10 @@ export class PlayScene extends Scene {
     this.wasGrounded = true;
     this.wasMoving = false;
     this.fallSpeed = 0;
+    this.caught = false;
+    this.attackTimer = 0;
+    this.monsterFootstepDistance = 0;
+    this.monsterStepInitialized = false;
     this.guardianAnimationName = null;
     this.monsterFacingRight = true;
     this.setGuardianAnimation('idle');

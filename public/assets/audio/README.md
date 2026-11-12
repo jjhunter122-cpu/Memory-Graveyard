@@ -7,5 +7,6 @@
 - The raw pack may not be resold or redistributed outside the game.
 - Full licence/guide: `The-Sound-Guild-Footsteps-Volume-02.pdf`
 - Imported set: seven grass footstep WAVs, renamed as
-  `grass-01.wav` … `grass-07.wav`, plus four soft-surface landing WAVs,
-  renamed as `soft-01.wav` … `soft-04.wav`.
+  `grass-01.wav` … `grass-07.wav`, four soft-surface landing WAVs,
+  renamed as `soft-01.wav` … `soft-04.wav`, and seven metal footsteps,
+  renamed as `metal-01.wav` … `metal-07.wav`.

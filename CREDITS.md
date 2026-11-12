@@ -65,8 +65,8 @@ URL, intended use and modifications.
   - Licence: free for commercial use, unlimited projects, royalty-free.
     The raw pack may not be resold or redistributed outside the game.
   - Source: `https://the-sound-guild.itch.io/footsteps-sounds-02`
-  - Intended use: grass footstep and soft landing SFX for the player
-  - Modifications: selected and renamed the grass and soft-surface samples
+  - Intended use: grass footsteps, soft landings and metal monster footsteps
+  - Modifications: selected and renamed the grass, soft-surface and metal samples
   - Date added: 2026-11-11
   - Licence text: `public/assets/audio/sound-guild/The-Sound-Guild-Footsteps-Volume-02.pdf`
 

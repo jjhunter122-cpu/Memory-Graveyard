@@ -6,12 +6,14 @@ const FRAME_DISPLAY = 160;
 export interface GuardianAnimations {
   idle: Animation;
   walk: Animation;
+  attack: Animation;
 }
 
 function createAnimation(
   image: ImageSource,
   frames: number,
   frameDuration: number,
+  freeze = false,
 ): Animation {
   const sheet = SpriteSheet.fromImageSource({
     image,
@@ -32,7 +34,10 @@ function createAnimation(
     sprite.height = FRAME_DISPLAY;
     sprites.push({ graphic: sprite, duration: frameDuration });
   }
-  return new Animation({ frames: sprites, strategy: AnimationStrategy.Loop });
+  return new Animation({
+    frames: sprites,
+    strategy: freeze ? AnimationStrategy.Freeze : AnimationStrategy.Loop,
+  });
 }
 
 /**
@@ -43,11 +48,14 @@ function createAnimation(
 export function createGuardianAnimations(
   idleImage: ImageSource,
   walkImage: ImageSource,
+  attackImage: ImageSource,
 ): GuardianAnimations {
   const idleFrames = Math.max(1, Math.floor(idleImage.height / FRAME_SIZE));
   const walkFrames = Math.max(1, Math.floor(walkImage.height / FRAME_SIZE));
+  const attackFrames = Math.max(1, Math.floor(attackImage.height / FRAME_SIZE));
   return {
     idle: createAnimation(idleImage, idleFrames, 160),
     walk: createAnimation(walkImage, walkFrames, 100),
+    attack: createAnimation(attackImage, attackFrames, 100, true),
   };
 }

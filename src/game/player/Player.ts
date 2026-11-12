@@ -21,6 +21,7 @@ export class Player extends Actor {
 
   private groundTimer = 0;
   private dropTimer = 0;
+  private frozen = false;
 
   constructor(
     x: number,
@@ -52,6 +53,11 @@ export class Player extends Actor {
   }
 
   override onPreUpdate(engine: Engine, elapsed: number): void {
+    if (this.frozen) {
+      this.vel.setTo(0, 0);
+      this.controller.reset();
+      return;
+    }
     const dt = elapsed / 1000;
     const height = this.height;
     const halfWidth = this.width / 2;
@@ -108,6 +114,15 @@ export class Player extends Actor {
     this.vel.setTo(0, 0);
     this.groundTimer = 0;
     this.dropTimer = 0;
+    this.frozen = false;
     this.controller.reset();
+  }
+
+  setFrozen(frozen: boolean): void {
+    this.frozen = frozen;
+    if (frozen) {
+      this.vel.setTo(0, 0);
+      this.controller.reset();
+    }
   }
 }

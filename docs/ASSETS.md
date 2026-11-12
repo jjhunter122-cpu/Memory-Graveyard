@@ -17,8 +17,8 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
   screen effect for new levels. Its custom licence is recorded in `CREDITS.md`.
 - The Old Guardian sprite strips in `public/assets/enemies/old-guardian/` are a
   **placeholder monster** with licence pending approval.
-- Grass footstep and soft landing samples from The Sound Guild are in
-  `public/assets/audio/` and are wired to grounded movement and landing.
+- Grass footstep, soft landing and metal monster footsteps from The Sound Guild
+  are in `public/assets/audio/` and are wired to movement and landing.
 
 ## Visual direction
 
