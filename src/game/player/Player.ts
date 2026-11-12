@@ -43,6 +43,9 @@ export class Player extends Actor {
     });
     this.body.useGravity = false;
     this.body.canSleep = false;
+    // The featureless rectangle reads as hovering on the tile line. Sink the
+    // graphics only; the collision body stays exactly on the floor.
+    this.graphics.offset = new Vector(0, 3);
 
     const markGround = (side: Side): void => {
       if (side === Side.Bottom) {

@@ -1,4 +1,5 @@
 import type { Actor, Scene } from 'excalibur';
+import { StaminaShard } from '../actors/StaminaShard';
 import type { GameTextures } from '../assets';
 import { VIEW } from '../config';
 import { buildLevel } from '../level/loader';
@@ -32,6 +33,7 @@ interface Act {
   endX: number;
   actors: Actor[];
   pits: WorldPit[];
+  shards: StaminaShard[];
 }
 
 /**
@@ -95,7 +97,7 @@ export class ActStream {
   /** Ground probe used by the player while streaming acts exist ahead. */
   hasFloorAt(worldX: number, feetY: number, halfWidth: number): boolean {
     const floorTop = ACT_FLOOR_ROW * ACT_TILE_SIZE;
-    if (feetY < floorTop - 8 || feetY > floorTop + 14) {
+    if (feetY < floorTop - 2 || feetY > floorTop + 14) {
       return false;
     }
 
@@ -152,6 +154,7 @@ export class ActStream {
     level.background = 'pixel-platformer-world-layers';
 
     const actEndX = startX + ACT_WIDTH * ACT_TILE_SIZE;
+    const shardSpecs: { tile: number; y: number }[] = [];
     while (this.nextShardX < actEndX) {
       let tile = Math.max(
         0,
@@ -163,11 +166,7 @@ export class ActStream {
       if (tile >= ACT_WIDTH) {
         break;
       }
-      level.entities.push({
-        type: 'exit',
-        x: tile,
-        y: shardHeightAt(this.shardIndex),
-      });
+      shardSpecs.push({ tile, y: shardHeightAt(this.shardIndex) });
       this.shardIndex += 1;
       this.nextShardX += shardSpacingAt(this.nextShardX);
     }
@@ -182,15 +181,52 @@ export class ActStream {
       actor.pos.x += startX;
     }
 
+    const shards = shardSpecs.map((spec) => {
+      const shard = new StaminaShard(
+        startX + spec.tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+        spec.y * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+      );
+      this.scene.add(shard);
+      return shard;
+    });
+
     this.acts.push({
       index,
       startX,
       endX: startX + ACT_WIDTH * ACT_TILE_SIZE,
-      actors,
+      actors: [...actors, ...shards],
       pits: pits.map((pit: Pit) => ({
         startX: startX + pit.start * ACT_TILE_SIZE,
         endX: startX + (pit.start + pit.width) * ACT_TILE_SIZE,
       })),
+      shards,
     });
+  }
+
+  /**
+   * Collects any shard whose square overlaps the player's body. Shards are
+   * sensors, so this replaces collision events entirely.
+   */
+  collectShards(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number {
+    let collected = 0;
+    for (const act of this.acts) {
+      for (let index = act.shards.length - 1; index >= 0; index -= 1) {
+        const shard = act.shards[index]!;
+        if (
+          Math.abs(x - shard.pos.x) < width / 2 + shard.width / 2 &&
+          Math.abs(y - shard.pos.y) < height / 2 + shard.height / 2
+        ) {
+          shard.kill();
+          act.shards.splice(index, 1);
+          collected += 1;
+        }
+      }
+    }
+    return collected;
   }
 }

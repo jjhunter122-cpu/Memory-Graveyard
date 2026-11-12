@@ -1,5 +1,4 @@
 import { Scene, type Engine } from 'excalibur';
-import { Exit } from '../actors/Exit';
 import { Monster } from '../actors/Monster';
 import { ambienceAudio } from '../audio/ambience';
 import { footstepAudio } from '../audio/footsteps';
@@ -108,13 +107,6 @@ export class RunScene extends Scene {
     );
     this.player.setAutoRun(speedAt(0));
     this.add(this.player);
-    this.player.on('collisionstart', (event) => {
-      const owner = event.other.owner;
-      if (owner instanceof Exit) {
-        this.refillStamina();
-        owner.kill();
-      }
-    });
 
     this.monster = new Monster(
       START_X - MONSTER_GAP,
@@ -185,6 +177,16 @@ export class RunScene extends Scene {
       trailYAt(this.trail.all, this.monster.pos.x) ?? this.player.pos.y;
     this.monster.pos.y = trailY + this.monsterYOffset;
     this.updateStaminaUi();
+
+    const collected = this.stream.collectShards(
+      this.player.pos.x,
+      this.player.pos.y,
+      this.player.width,
+      this.player.height,
+    );
+    if (collected > 0) {
+      this.refillStamina(SHARD_REFILL * collected);
+    }
 
     if (this.monster.pos.x >= this.player.pos.x - CATCH_RADIUS) {
       this.beginCaught();
@@ -277,11 +279,11 @@ export class RunScene extends Scene {
       ?.addEventListener('click', () => this.options.onHome());
   }
 
-  private refillStamina(): void {
+  private refillStamina(amount = SHARD_REFILL): void {
     if (this.dead || this.caught) {
       return;
     }
-    this.stamina = Math.min(STAMINA_MAX, this.stamina + SHARD_REFILL);
+    this.stamina = Math.min(STAMINA_MAX, this.stamina + amount);
     this.updateStaminaUi();
   }
 
