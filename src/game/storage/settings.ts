@@ -1,8 +1,6 @@
 import type { StorageLike } from './storage';
 
 export interface Settings {
-  showHud: boolean;
-  lastLevelId: string | null;
   highScore: number;
   masterVolume: number;
   musicVolume: number;
@@ -15,8 +13,6 @@ export const SETTINGS_KEY = 'memory-graveyard:settings:v1';
 export const DEFAULT_MUSIC_VOLUME = 0.32;
 
 const DEFAULTS: Settings = {
-  showHud: true,
-  lastLevelId: null,
   highScore: 0,
   masterVolume: 1,
   musicVolume: DEFAULT_MUSIC_VOLUME,
@@ -49,9 +45,6 @@ export class SettingsStore {
       }
       const parsed = JSON.parse(raw) as Partial<Settings>;
       return {
-        showHud: typeof parsed.showHud === 'boolean' ? parsed.showHud : DEFAULTS.showHud,
-        lastLevelId:
-          typeof parsed.lastLevelId === 'string' ? parsed.lastLevelId : DEFAULTS.lastLevelId,
         highScore: readScore(parsed.highScore, DEFAULTS.highScore),
         masterVolume: readVolume(parsed.masterVolume, DEFAULTS.masterVolume),
         musicVolume: readVolume(parsed.musicVolume, DEFAULTS.musicVolume),

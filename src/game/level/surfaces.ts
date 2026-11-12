@@ -1,4 +1,4 @@
-/** Collision-surface helpers shared by the loader, editor and tests. */
+/** Collision-surface helpers shared by the loader and tests. */
 
 export type TileHalf = 'top' | 'bottom';
 

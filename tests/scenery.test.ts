@@ -2,45 +2,27 @@ import { describe, expect, it } from 'vitest';
 import {
   BACKGROUND_PRESETS,
   findBackgroundPreset,
-  findForegroundPreset,
+  sceneryImagePaths,
 } from '../src/game/scenery';
 
-describe('Pixel Platformer World scenery presets', () => {
-  it('offers flat, layered and room variants', () => {
-    const flat = findBackgroundPreset('pixel-platformer-world-flat');
-    const layers = findBackgroundPreset('pixel-platformer-world-layers');
-    const room = findBackgroundPreset('pixel-platformer-world-room-1');
-    expect(flat?.layers).toHaveLength(1);
-    expect(layers?.layers).toHaveLength(6);
-    expect(room?.layers).toHaveLength(7);
-    expect(room?.layers.some((layer) => layer.image.endsWith('rooms/room-1.png'))).toBe(true);
-  });
-
-  it('adds every pre-built room palette as a background option', () => {
-    for (let index = 1; index <= 9; index += 1) {
-      const preset = findBackgroundPreset(`pixel-platformer-world-room-${index}`);
-      expect(preset, `missing room ${index}`).toBeDefined();
-      expect(preset?.layers).toHaveLength(7);
-      expect(
-        preset?.layers.some((layer) => layer.image.endsWith(`rooms/room-${index}.png`)),
-      ).toBe(true);
-    }
-  });
-
-  it('adds the Grunge corridor test background', () => {
-    const grunge = findBackgroundPreset('grunge-corridor');
-    expect(grunge).toBeDefined();
-    expect(grunge?.layers[0]?.image).toBe('grunge/grunge-tileset.png');
+describe('forest scenery presets', () => {
+  it('offers one layered Pixel Platformer World backdrop', () => {
+    const preset = findBackgroundPreset('pixel-platformer-world-layers');
+    expect(BACKGROUND_PRESETS).toHaveLength(1);
+    expect(preset?.layers).toHaveLength(6);
+    expect(preset?.layers[0]?.image).toBe(
+      'pixel-platformer-world/Background/background1.png',
+    );
   });
 
   it('keeps blank/none as the solid-sky option', () => {
     expect(findBackgroundPreset(undefined)).toBeUndefined();
     expect(findBackgroundPreset('none')).toBeUndefined();
-    expect(findForegroundPreset(undefined)).toBeUndefined();
   });
 
-  it('does not duplicate the flat and layered presets', () => {
-    const ids = BACKGROUND_PRESETS.map((preset) => preset.id);
-    expect(new Set(ids).size).toBe(ids.length);
+  it('lists every backdrop image once', () => {
+    const paths = sceneryImagePaths();
+    expect(paths).toHaveLength(6);
+    expect(new Set(paths).size).toBe(paths.length);
   });
 });

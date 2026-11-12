@@ -1,6 +1,6 @@
 import type { Actor, Scene } from 'excalibur';
-import { MemoryPickup } from '../actors/MemoryPickup';
-import { StaminaShard } from '../actors/StaminaShard';
+import { CoinPickup } from '../actors/CoinPickup';
+import { StaminaBolt } from '../actors/StaminaBolt';
 import type { GameTextures } from '../assets';
 import { VIEW } from '../config';
 import { buildLevel } from '../level/loader';
@@ -19,14 +19,14 @@ import {
   type Pit,
 } from './generator';
 import {
-  SHARD_START_X,
-  shardRowOffset,
-  shardSpacingAt,
+  BOLT_START_X,
+  boltRowOffset,
+  boltSpacingAt,
 } from './stamina';
 import {
-  MEMORY_CLUSTER_SIZE,
-  MEMORY_SPACING,
-  MEMORY_START_X,
+  COIN_CLUSTER_SIZE,
+  COIN_SPACING,
+  COIN_START_X,
 } from './score';
 
 interface WorldPit {
@@ -40,8 +40,8 @@ interface Act {
   endX: number;
   actors: Actor[];
   pits: WorldPit[];
-  shards: StaminaShard[];
-  memories: MemoryPickup[];
+  bolts: StaminaBolt[];
+  coins: CoinPickup[];
   /** World-space top surface per local tile column; -1 means a pit. */
   surfaceTops: number[];
 }
@@ -54,9 +54,9 @@ export class ActStream {
   private readonly acts: Act[] = [];
   private nextIndex = 0;
   private seed = 0;
-  private nextShardX = SHARD_START_X;
-  private shardIndex = 0;
-  private nextMemoryX = MEMORY_START_X;
+  private nextBoltX = BOLT_START_X;
+  private boltIndex = 0;
+  private nextCoinX = COIN_START_X;
 
   constructor(
     private readonly scene: Scene,
@@ -76,9 +76,9 @@ export class ActStream {
     this.acts.length = 0;
     this.nextIndex = 0;
     this.seed = seed;
-    this.nextShardX = SHARD_START_X;
-    this.shardIndex = 0;
-    this.nextMemoryX = MEMORY_START_X;
+    this.nextBoltX = BOLT_START_X;
+    this.boltIndex = 0;
+    this.nextCoinX = COIN_START_X;
     this.update(0);
   }
 
@@ -202,15 +202,15 @@ export class ActStream {
     level.background = 'pixel-platformer-world-layers';
 
     const actEndX = startX + ACT_WIDTH * ACT_TILE_SIZE;
-    const memorySpecs: { tile: number }[] = [];
-    while (this.nextMemoryX < actEndX) {
+    const coinSpecs: { tile: number }[] = [];
+    while (this.nextCoinX < actEndX) {
       let tile = Math.max(
         0,
-        Math.floor((this.nextMemoryX - startX) / ACT_TILE_SIZE),
+        Math.floor((this.nextCoinX - startX) / ACT_TILE_SIZE),
       );
-      while (tile + MEMORY_CLUSTER_SIZE <= ACT_WIDTH) {
+      while (tile + COIN_CLUSTER_SIZE <= ACT_WIDTH) {
         let blocked = false;
-        for (let i = 0; i < MEMORY_CLUSTER_SIZE; i += 1) {
+        for (let i = 0; i < COIN_CLUSTER_SIZE; i += 1) {
           if (isOverPit(pits, tile + i)) {
             blocked = true;
             break;
@@ -221,18 +221,18 @@ export class ActStream {
         }
         tile += 1;
       }
-      if (tile + MEMORY_CLUSTER_SIZE > ACT_WIDTH) {
+      if (tile + COIN_CLUSTER_SIZE > ACT_WIDTH) {
         break;
       }
-      memorySpecs.push({ tile });
-      this.nextMemoryX += MEMORY_SPACING;
+      coinSpecs.push({ tile });
+      this.nextCoinX += COIN_SPACING;
     }
 
-    const shardSpecs: { tile: number; rowOffset: number }[] = [];
-    while (this.nextShardX < actEndX) {
+    const boltSpecs: { tile: number; rowOffset: number }[] = [];
+    while (this.nextBoltX < actEndX) {
       let tile = Math.max(
         0,
-        Math.floor((this.nextShardX - startX) / ACT_TILE_SIZE),
+        Math.floor((this.nextBoltX - startX) / ACT_TILE_SIZE),
       );
       while (tile < ACT_WIDTH && isOverPit(pits, tile)) {
         tile += 1;
@@ -240,51 +240,48 @@ export class ActStream {
       if (tile >= ACT_WIDTH) {
         break;
       }
-      shardSpecs.push({ tile, rowOffset: shardRowOffset(this.shardIndex) });
-      this.shardIndex += 1;
-      this.nextShardX += shardSpacingAt(this.nextShardX);
+      boltSpecs.push({ tile, rowOffset: boltRowOffset(this.boltIndex) });
+      this.boltIndex += 1;
+      this.nextBoltX += boltSpacingAt(this.nextBoltX);
     }
 
-    const before = new Set(this.scene.actors);
-    buildLevel(this.scene, level, this.manifest, this.textures, {
-      foreground: false,
-      worldBounds: false,
+    const actors = buildLevel(this.scene, level, this.manifest, this.textures, {
+      background: true,
     });
-    const actors = this.scene.actors.filter((actor) => !before.has(actor));
     for (const actor of actors) {
       actor.pos.x += startX;
     }
 
-    const shards: StaminaShard[] = [];
-    for (const spec of shardSpecs) {
+    const bolts: StaminaBolt[] = [];
+    for (const spec of boltSpecs) {
       const surface = surfaceTops[spec.tile];
       if (surface === undefined || surface < 0) {
         continue;
       }
-      const shard = new StaminaShard(
+      const bolt = new StaminaBolt(
         startX + spec.tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
         surface - spec.rowOffset * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
         this.textures.staminaBolt,
       );
-      this.scene.add(shard);
-      shards.push(shard);
+      this.scene.add(bolt);
+      bolts.push(bolt);
     }
 
-    const memories: MemoryPickup[] = [];
-    for (const spec of memorySpecs) {
-      for (let i = 0; i < MEMORY_CLUSTER_SIZE; i += 1) {
+    const coins: CoinPickup[] = [];
+    for (const spec of coinSpecs) {
+      for (let i = 0; i < COIN_CLUSTER_SIZE; i += 1) {
         const tile = spec.tile + i;
         const surface = surfaceTops[tile];
         if (surface === undefined || surface < 0) {
           continue;
         }
-        const memory = new MemoryPickup(
+        const coin = new CoinPickup(
           startX + tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
           surface - ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
           this.textures.scoreCoin,
         );
-        this.scene.add(memory);
-        memories.push(memory);
+        this.scene.add(coin);
+        coins.push(coin);
       }
     }
 
@@ -292,22 +289,22 @@ export class ActStream {
       index,
       startX,
       endX: actEndX,
-      actors: [...actors, ...shards, ...memories],
+      actors: [...actors, ...bolts, ...coins],
       pits: pits.map((pit: Pit) => ({
         startX: startX + pit.start * ACT_TILE_SIZE,
         endX: startX + (pit.start + pit.width) * ACT_TILE_SIZE,
       })),
-      shards,
-      memories,
+      bolts,
+      coins,
       surfaceTops,
     });
   }
 
   /**
-   * Collects any shard whose square overlaps the player's body. Shards are
+   * Collects any bolt whose square overlaps the player's body. Bolts are
    * sensors, so this replaces collision events entirely.
    */
-  collectShards(
+  collectBolts(
     x: number,
     y: number,
     width: number,
@@ -315,14 +312,14 @@ export class ActStream {
   ): number {
     let collected = 0;
     for (const act of this.acts) {
-      for (let index = act.shards.length - 1; index >= 0; index -= 1) {
-        const shard = act.shards[index]!;
+      for (let index = act.bolts.length - 1; index >= 0; index -= 1) {
+        const bolt = act.bolts[index]!;
         if (
-          Math.abs(x - shard.pos.x) < width / 2 + shard.width / 2 &&
-          Math.abs(y - shard.pos.y) < height / 2 + shard.height / 2
+          Math.abs(x - bolt.pos.x) < width / 2 + bolt.width / 2 &&
+          Math.abs(y - bolt.pos.y) < height / 2 + bolt.height / 2
         ) {
-          shard.kill();
-          act.shards.splice(index, 1);
+          bolt.kill();
+          act.bolts.splice(index, 1);
           collected += 1;
         }
       }
@@ -330,8 +327,8 @@ export class ActStream {
     return collected;
   }
 
-  /** Collects memory orbs by body overlap, like the stamina shards. */
-  collectMemories(
+  /** Collects coins by body overlap, like the stamina bolts. */
+  collectCoins(
     x: number,
     y: number,
     width: number,
@@ -339,14 +336,14 @@ export class ActStream {
   ): number {
     let collected = 0;
     for (const act of this.acts) {
-      for (let index = act.memories.length - 1; index >= 0; index -= 1) {
-        const memory = act.memories[index]!;
+      for (let index = act.coins.length - 1; index >= 0; index -= 1) {
+        const coin = act.coins[index]!;
         if (
-          Math.abs(x - memory.pos.x) < width / 2 + memory.width / 2 &&
-          Math.abs(y - memory.pos.y) < height / 2 + memory.height / 2
+          Math.abs(x - coin.pos.x) < width / 2 + coin.width / 2 &&
+          Math.abs(y - coin.pos.y) < height / 2 + coin.height / 2
         ) {
-          memory.kill();
-          act.memories.splice(index, 1);
+          coin.kill();
+          act.coins.splice(index, 1);
           collected += 1;
         }
       }

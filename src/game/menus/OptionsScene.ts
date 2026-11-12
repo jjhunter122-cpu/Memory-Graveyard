@@ -4,16 +4,12 @@ import {
 } from './PreviewMenuScene';
 
 export interface OptionsCallbacks {
-  showHud: boolean;
   masterVolume: number;
   musicVolume: number;
   sfxVolume: number;
-  draftCount: number;
-  onChangeShowHud: (value: boolean) => void;
   onChangeMasterVolume: (value: number) => void;
   onChangeMusicVolume: (value: number) => void;
   onChangeSfxVolume: (value: number) => void;
-  onClearDrafts: () => void;
   onBack: () => void;
 }
 
@@ -30,10 +26,6 @@ export class OptionsScene extends PreviewMenuScene {
       <div class="menu-panel">
         <h1 class="menu-title">MEMORY GRAVEYARD</h1>
         <p class="menu-subtitle">options</p>
-        <label class="option-row">
-          <span>Show HUD</span>
-          <input id="option-hud" type="checkbox" ${this.callbacks.showHud ? 'checked' : ''} />
-        </label>
         <div class="menu-section">Audio</div>
         <label class="option-row option-slider">
           <span>Master volume <em id="option-master-value">${Math.round(this.callbacks.masterVolume * 100)}%</em></span>
@@ -47,12 +39,6 @@ export class OptionsScene extends PreviewMenuScene {
           <span>SFX volume <em id="option-sfx-value">${Math.round(this.callbacks.sfxVolume * 100)}%</em></span>
           <input id="option-sfx" type="range" min="0" max="100" step="1" value="${Math.round(this.callbacks.sfxVolume * 100)}" />
         </label>
-        <div class="option-row">
-          <span>Saved drafts</span>
-          <button id="option-clear" class="menu-button small" ${this.callbacks.draftCount === 0 ? 'disabled' : ''}>
-            Clear ${this.callbacks.draftCount}
-          </button>
-        </div>
         <div class="menu-buttons">
           <button id="menu-back" class="menu-button">Back</button>
         </div>
@@ -60,14 +46,21 @@ export class OptionsScene extends PreviewMenuScene {
   }
 
   protected bind(): void {
-    const checkbox = document.getElementById('option-hud');
-    checkbox?.addEventListener('change', () => {
-      this.callbacks.onChangeShowHud(checkbox instanceof HTMLInputElement ? checkbox.checked : true);
-    });
-    this.bindVolume('option-master', 'option-master-value', this.callbacks.onChangeMasterVolume);
-    this.bindVolume('option-music', 'option-music-value', this.callbacks.onChangeMusicVolume);
-    this.bindVolume('option-sfx', 'option-sfx-value', this.callbacks.onChangeSfxVolume);
-    this.click('option-clear', () => this.callbacks.onClearDrafts());
+    this.bindVolume(
+      'option-master',
+      'option-master-value',
+      this.callbacks.onChangeMasterVolume,
+    );
+    this.bindVolume(
+      'option-music',
+      'option-music-value',
+      this.callbacks.onChangeMusicVolume,
+    );
+    this.bindVolume(
+      'option-sfx',
+      'option-sfx-value',
+      this.callbacks.onChangeSfxVolume,
+    );
     this.click('menu-back', () => this.close(() => this.callbacks.onBack()));
   }
 

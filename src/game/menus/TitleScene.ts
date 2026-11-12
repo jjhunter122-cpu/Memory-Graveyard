@@ -90,7 +90,6 @@ export class TitleScene extends MenuScene {
       TITLE_PLAYER_X,
       floorTop - metrics.playerHeight / 2,
       undefined,
-      undefined,
       { width: metrics.playerWidth, height: metrics.playerHeight },
     );
     const hero = createHeroAnimations(

@@ -1,9 +1,10 @@
 # Memory Graveyard
 
-A 2D chase-platformer set inside the Backrooms' memory. The halls are the
-graveyard now, and something made of its forgotten scraps is following the
-route you already ran. Reach the exit before it catches you. Built on the same
-stack as [drunk-panda](https://github.com/NatTuck/drunk-panda):
+An endless side-scrolling forest run. The forest remembers you, and something
+made of its discarded memories is always just behind. Coins feed the score,
+green bolts feed your stamina, and a missed jump is the end.
+
+Built with:
 
 - **Excalibur.js** 0.32 (Arcade physics solver)
 - **TypeScript** 7
@@ -13,8 +14,10 @@ stack as [drunk-panda](https://github.com/NatTuck/drunk-panda):
 
 Everything is client-side; there is no backend.
 
-> **Branch:** this work lives on `develop`. `main` is the original top-down
-> scaffold kept as a snapshot.
+> **Branch:** the final product lives on the local `new-direction` branch. It is
+> not pushed or merged yet. The previous editor/campaign build is preserved in
+> [`archive/old-system`](archive/old-system/) and tagged
+> `archive/old-system-2026-11-12`.
 
 ## Run it
 
@@ -23,259 +26,134 @@ pnpm install
 pnpm dev
 ```
 
-Then open the printed local URL — the app boots to the **title screen**. The
-level editor is a dev tool: open it from the title (dev builds only) or with
-`?editor`.
+The app boots straight to the **title screen**.
 
 ```bash
-pnpm test       # headless logic / level-format tests
+pnpm test       # headless logic tests
 pnpm typecheck
 pnpm build      # static production build in dist/
 pnpm preview
-pnpm smoke      # headless Firefox end-to-end check (see below)
 ```
 
 ## Controls
 
 | Action | Keyboard |
 | --- | --- |
-| Move | `A` `D` |
 | Jump | `Space` or `W` |
-| Drop through a plank | `S` + `Space` |
-| Reset | `R` |
-| Pause | `Esc` |
+| Restart run | `R` |
 
-Gameplay is WASD-only; arrow keys are intentionally unbound. Reserved for later
-(not active yet): `Shift` sprint, `Ctrl` slide, `E` interact/hide, `F` hold
-breath.
+The player auto-runs. Arrow keys are intentionally unbound.
 
-Every level is a chase. The pursuer wakes after a three-second grace period
-and follows the trail you leave behind — including your jumps and drops.
-Memories are optional fragments; the green exit is always open. Falling off the
-course, or letting the trail catch up, ends the run with **A NEW MEMORY FOR THE
-GRAVEYARD** and a Retry option.
+## How a run works
+
+- **Play** starts an endless, seeded forest made of streamed acts.
+- Each act adds pits, raised ground and floating platforms.
+- **Coins** are worth 100 points each, on top of 1 point per 10 px travelled.
+- **Green bolts** refill 25 stamina. Stamina drains continuously; at zero the
+  player slows to a crawl and the Guardian closes the gap.
+- The **Guardian** follows the trail the player has already run, including every
+  jump and drop.
+- Falling into a pit shows **YOU FELL**; being caught shows **CAUGHT**. Both offer
+  Retry or Back to Home Menu.
+- The best score is saved in `localStorage` and shown on the title and run HUD.
 
 ## Architecture
 
-```
+```text
 src/
-  main.ts                     boot: index + sequences + manifest, engine
+  main.ts                     boot: manifest + settings + engine
   game/
-    config.ts                 gameplay tunables + palette + tile size
-    physics/collisionGroups.ts bitmask groups (solid / one-way / player / trigger)
+    app.ts                    title / options / credits / run scene graph
+    assets.ts                 Pixel pack, hero frames, Guardian, coin, bolt
+    config.ts                 gameplay tunables + palette
+    physics/collisionGroups.ts bitmask collision groups
     player/
       PlayerController.ts     pure run/jump/coyote/buffer decisions (testable)
       Player.ts               Excalibur actor: input, body, tile ground probe
-    input/actions.ts          WASD action map + reserved future keys
+    input/actions.ts          jump action map
     chase/trail.ts            pure trail recorder + follower (testable)
-    actors/{Monster,Memory,Exit}.ts  pursuer, optional fragment, level exit
+    actors/
+      Monster.ts              trail-following pursuer
+      CoinPickup.ts           score coin sprite + bob
+      StaminaBolt.ts          stamina bolt sprite + bob
     level/
-      schema.ts               level JSON format (v1) + validator + round-trip
-      sizes.ts                editor size presets + dev caps
+      schema.ts               level grid format + validator
       manifest.ts             asset manifest: tile id -> art + collision
       tiles.ts                grid reshaping + horizontal run merging
-      loader.ts               level + manifest -> live actors + world bounds
-    camera/CameraFollow.ts    deadzone follow, clamped to level bounds
-    scenes/PlayScene.ts       chase loop, grace, death/retry, completion
-    systems/graveyard.ts      pure clamp helper
-    app.ts                    menu graph + scene navigation + campaign
-    menus/                    Title / LevelSelect / Options / Sequence (DOM)
-    storage/                  index + tiers, drafts, sequences, settings
-    ui/                       Hud, mode helpers, F3 debug overlay
-  editor/
-    history.ts                snapshot undo/redo stack
-    ops.ts                    immutable level-document operations
-    EditorUi.ts               DOM toolbar / palette / status bar
-    EditorScene.ts            painting, pan/zoom, save/load, drafts, test-play
-  util/slug.ts
+      loader.ts               level grid + manifest -> live actors
+      scenery.ts              scenery preset painter
+    scenery.ts                the Pixel forest backdrop preset
+    run/
+      generator.ts            seeded acts, pits, raised sections, speed curve
+      actStream.ts            builds/recycles acts and pickups
+      score.ts                distance + coin score
+      stamina.ts              drain, refill and spacing tuning
+    camera/CameraFollow.ts    deadzone follow
+    scenes/RunScene.ts        run loop, pickups, stamina, score, death UI
+    menus/                    Title / Options / Credits / Preview (DOM)
+    storage/                  settings + safe localStorage
+    ui/                       analog FX, toast HUD, mode helpers
+    visuals/                  Guardian and hero animation builders
 public/
-  levels/index.json           registry of shipped levels (+ tier)
-  levels/sequences.json       the main campaign order
-  levels/*.json               authored levels
-  assets/manifest.json        placeholder tile manifest
-  assets/TEMP/                unlicensed stand-ins (gated, never ship)
-plugins/devLevels.ts          dev-only write-back (levels + sequences)
-scripts/smoke.mjs             headless Firefox end-to-end smoke test
+  assets/manifest.json        the two used moss tiles
+  assets/pixel-platformer-world/  moss tiles, forest backgrounds, hero frames
+  assets/enemies/old-guardian/    placeholder Guardian (licence pending)
+  assets/audio/               music, ambience, footsteps
+  assets/analog-fx/           LESED Vignette
+  assets/ui/                  coin, bolt and licence notices
 tests/                        headless vitest suite
-CREDITS.md                    asset, voice and tool attribution
-docs/ASSETS.md                art/audio targets, licence rules, review flow
+archive/old-system/           read-only snapshot of the editor/campaign build
+CREDITS.md                    asset attribution
+docs/ASSETS.md                art/audio licence rules
 docs/KNOWN_ISSUES.md          deliberately deferred quirks
 licenses/                     full licence texts (CC0, CC-BY)
 ```
 
 ### Key decisions
 
-- **Excalibur's built-in Arcade solver**, not the Realistic (matter.js) solver.
-  Arcade is Excalibur's simple AABB solver, designed for platforming. It runs on
-  the engine's **variable timestep** (smoother on high-refresh displays); a fixed
-  step is opt-in via `PHYSICS.fixedFps`.
+- **Excalibur's Arcade solver**, not the Realistic (matter.js) solver. It runs on
+  the engine's variable timestep; a fixed step is opt-in via `PHYSICS.fixedFps`.
 - **Pure movement decisions.** Gravity, acceleration, variable-height jump,
   coyote time and jump buffering live in `PlayerController`, which has no
-  Excalibur imports and is replayed deterministically in tests. The engine only
-  resolves collisions.
-- **Optional pursuer.** A level with no `monster` entity has no chase at all;
-  the HUD shows `SAFE`. This lets tutorial and exploration levels exist without
-  faking a monster.
-- **Automatic side bounds.** Invisible solid walls close the left and right
-  edges of every level. The top stays open for vertical routes; falling below the
-  level is the kill plane.
-- **Trail-following pursuer.** The player's position is sampled into a
-  distance-spaced polyline; the monster walks that line. It therefore follows
-  every jump, drop and vertical shaft the player used without pathfinding. The
-  chase controller is deliberately separate from the monster's presentation so a
-  future hunter AI can replace the trail without touching levels or win/lose
-  flow.
-- **Collision owner pattern.** Actor collision events carry the geometry
-  `Collider`, not the actor — memory fragments test
-  `event.other.owner instanceof Memory`.
+  Excalibur imports and is replayed deterministically in tests.
+- **Streamed acts, not authored levels.** `ActStream` keeps roughly two screens
+  of terrain ahead of the player and recycles what falls behind, so the run never
+  ends and memory use stays flat.
+- **Seeded generation.** `generator.ts` contains the pure act layout rules, so a
+  run can be reproduced from its seed in tests.
+- **Pickups are sensors.** Coins and bolts use `PreventCollision` bodies and are
+  collected by AABB overlap, so they can never block a jump.
 - **Deterministic ground probe.** Arcade does not report a resting ground contact
-  on every step, so the player also probes the level's collision grid directly.
-  A short event latch bridges gaps; coyote time keeps jumps forgiving.
-- **One-way platforms via collision groups.** Arcade has no native one-way
-  platforms, so the player swaps to a group that ignores one-way planks while
-  rising or while dropping through (`S` + `Space`).
-- **Levels and art are data.** A level is versioned JSON; a manifest maps tile
-  ids to collision behaviour and (eventually) real art. See `docs/LEVELS.md`.
-- **Dev Made vs community, and one campaign.** Levels are tagged `dev` or
-  `community`; a shipped `sequences.json` orders the dev levels into the main
-  campaign that **Play** runs.
-- **DOM menus, gated editor.** Title / level select / options / sequence / pause
-  are HTML overlays over the canvas. The editor ships in the bundle but is only
-  revealed from the title in dev builds (and via `?editor`).
-- **`F3` debug overlay** shows FPS, frame time, velocity and grounded state.
-- **DOM HUD over engine text** keeps labels crisp at any resolution.
-
-## Level format
-
-A level is a small JSON document (`public/levels/*.json`): a grid of tile ids
-per layer plus a list of entities (`spawn`, `monster`, `exit`, optional
-`memory` fragments, ...). An optional `skybox` colour overrides the shared
-backdrop. Collision comes from each tile's definition in the manifest, not from
-the level, so painting a tile automatically gives it the right physics. Full
-details are in [`docs/LEVELS.md`](docs/LEVELS.md).
-
-## Menus & flow
-
-```
-Boot ─► Title ─► Play campaign ─► Level 1 ─► Level 2 ─► …
-             ├► Level select ─► Courses / Community / My levels / Play campaign
-             ├► Options
-             └► Edit campaign (dev)   Level editor (dev)
-Play:  Esc ─► Pause  (Resume / Restart / Level select / Title)
-       Caught/fall ─► You Died  (Retry / Level select / Title)
-```
-
-The title's **Play campaign** runs the shipped **main campaign** — the ordered
-list of **Dev Made** levels from `public/levels/sequences.json`. Touching the
-exit completes the level and advances; memories are optional. The last level
-returns to Level select.
-
-Playing a single level from **Level select** does not advance: a win returns to
-Level select, and a death offers Retry or Level select. Being caught, or falling
-off the level, ends the run.
-
-**Level select** is split into **Courses** (dev-made), **Community**, and
-**My levels** (browser drafts), with a **Play campaign** button when a campaign
-exists. In dev builds each course/draft also has an **edit** action.
-
-In dev builds the title additionally shows **Edit campaign** (drag levels into
-order and save to project) and **Level editor**.
-
-## Level editor
-
-The editor is a development tool — open it from the title (dev builds) or go
-straight to it with `?editor`:
-
-```
-http://localhost:5173/?editor
-```
-
-| Action | Control |
-| --- | --- |
-| Pan | `W` `A` `S` `D` / arrow keys |
-| Zoom | mouse wheel |
-| Paint / erase tile | Paint / Erase tool in **Tiles** mode |
-| Place / remove entity | Paint / Erase tool in **Entities** mode |
-| Swap paint / erase | `B` |
-| Swap tiles / entities | `Q` or the Tiles/Entities button |
-| Undo / redo | `Ctrl+Z` / `Ctrl+Y` (or the buttons) |
-| Toggle grid | `G` or the Grid button |
-| Save draft | `V` |
-
-The toolbar has Paint, Erase, the Tiles/Entities mode toggle, **New**,
-**Export**, **Import**, the **Dev Made** tier toggle, **Save draft**, **Save to
-project**, **Test play** and **Menu**.
-
-The left panel has **Tiles**, **Entities**, **Levels**, **My drafts**,
-**Level settings** and **Layer**. **Levels** lists shipped levels and provides a
-**New level** button; loading a shipped level creates an editable working copy.
-Level settings includes the size presets (40×18 up to 80×36), dev-only custom
-sizes up to 120×60, and a skybox colour. Selecting a tile or entity switches
-mode automatically. Editing operates on immutable snapshots, so undo/redo is
-exact.
-
-Completing a **Test play** returns to the editor. Dying in test play shows the
-editor-specific **You Ded :(** overlay with Retry, Save and Exit to Title, and
-Back to Editor.
-
-## Levels: tiers, drafts & shipping
-
-| Kind | Lives in | Shows up in |
-| --- | --- | --- |
-| **Dev Made** | `index.json` (`tier: "dev"`) | Play campaign + Level select → Courses |
-| **Community** | `index.json` (`tier: "community"`) | Level select → Community |
-| **Draft** | `localStorage` | Level select → My levels |
-
-**Save to project** (dev only) POSTs to the `devLevels` Vite plugin, which writes
-`public/levels/<id>.json`, records the tier in `index.json`, and (from the
-sequence screen) writes `sequences.json`. A production build still edits and
-exports/imports files, but has no server to write to.
-
-The **campaign** is a `sequences.json` entry:
-
-```jsonc
-{ "version": 1, "sequences": [ { "id": "main", "name": "Main Campaign", "levels": ["test-course", "first-test"] } ] }
-```
+  on every step, so the player probes the act surface directly. A short event
+  latch bridges gaps; coyote time keeps jumps forgiving.
+- **Pit detection uses the front edge.** The player starts falling as soon as
+  either their centre or leading edge leaves the floor, which avoids wedging on
+  the pit wall.
+- **DOM menus and HUD over the canvas** keep labels crisp at any resolution.
 
 ## Assets & credits
 
-- [`CREDITS.md`](CREDITS.md) records every shipped asset and the voice
-  performer.
-- [`docs/ASSETS.md`](docs/ASSETS.md) defines the side-view, 32px pixel-art
-  targets, accepted licences, sprite sizes and candidate review process.
+- [`CREDITS.md`](CREDITS.md) records every shipped asset.
+- [`docs/ASSETS.md`](docs/ASSETS.md) defines the 32px pixel-art targets, accepted
+  licences and review flow.
 - [`licenses/`](licenses/) holds the full licence texts (CC0 and CC-BY).
-- Unlicensed stand-ins live only in `public/assets/TEMP/` behind `TEMP_ASSETS`;
-  they must be replaced before release.
+- The forest uses the Pixel Platformer World moss tiles and six backdrop layers.
+- The Old Guardian and the Sound Guild footsteps are still placeholders pending
+  course approval; they are credited but not redistributed as standalone packs.
 
 ## Known issues
 
-See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md). The current note covers the
-occasional wall-top corner clip.
+See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md). The main open item is the
+Guardian/footstep licence confirmation.
 
 ## Testing
 
-- `pnpm test` — pure logic, level/manifest formats, tiers and sequences in Vitest.
-- `pnpm smoke` — boots the real app in headless Firefox via WebDriver and checks
-  that the scene builds and the character moves and jumps. Requires a running
-  server (`pnpm dev`) and `geckodriver --port 4444`.
+- `pnpm test` — pure generator, score, stamina, schema, manifest, scenery and
+  controller logic in Vitest.
+- `pnpm typecheck` and `pnpm build` — strict TypeScript and production bundle.
 
-Press **`F3`** in-game for the debug overlay (FPS, frame time, velocity).
+## Archive
 
-## Roadmap
-
-- [x] **M1 — Platformer core:** Arcade physics, player controller, camera,
-  one-way planks, test course.
-- [x] **M2 — Level pipeline:** JSON level schema, asset manifest, placeholder
-  tiles, `LevelLoader`.
-- [x] **M3 — Level designer:** in-browser editor (paint tiles, place entities,
-  undo/redo, save/load, test-play).
-- [x] **M4 — Title screen & general UI:** Boot → Title → Level select → Play →
-  Pause → Options, level registry, drafts library, dev write-back.
-- [x] **M4.5 — Polish & authoring:** collectable/exit collision fix, variable
-  timestep + `F3` overlay, Dev Made / community tiers, main campaign sequences.
-- [~] **M5 — Asset integration:** temporary wallpaper/stone textures wired in
-  through `TEMP_ASSETS`; real licensed tilesets still pending.
-- [x] **M6 — Chase identity:** optional memories, always-open exit, trail-following
-  monster with grace period, threat HUD, death/retry overlay.
-- [ ] **M6.5 — Chase polish:** longer/vertical chase levels, sprint/stamina,
-  slide/vault, monster AI upgrade, atmosphere pass.
+The old editor, campaign, level select, sequences and authored levels are kept
+for comparison in [`archive/old-system`](archive/old-system/). They are a
+read-only snapshot and are not compiled, bundled or served by the final build.

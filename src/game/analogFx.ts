@@ -1,4 +1,4 @@
-/** Plain data shared by the editor dropdown and the in-game overlay. */
+/** Plain data shared by the Vignette overlay and the menu scenes. */
 
 export type AnalogFxPreset = 'vignette';
 

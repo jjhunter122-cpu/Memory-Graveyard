@@ -14,8 +14,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "smoke": "node scripts/smoke.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "excalibur": "0.32.0"

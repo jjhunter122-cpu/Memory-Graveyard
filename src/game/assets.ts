@@ -2,39 +2,17 @@ import { ImageSource } from 'excalibur';
 import type { AssetManifest } from './level/manifest';
 import { sceneryImagePaths } from './scenery';
 
-/**
- * TEMP: unlicensed teammate stand-ins live in `public/assets/TEMP`.
- *
- * Flip this to `false` (and delete that folder) before publishing. Tile art is
- * then ignored and the backdrop falls back to the original fog colour, so the
- * game keeps working with placeholder rectangles.
- */
-export const TEMP_ASSETS = true;
-
-/**
- * Temporary wallpaper used by the existing OG levels when they have no skybox
- * or scenery preset.
- */
-export const LEVEL_BACKGROUND = 'assets/TEMP/wallpaper_color.png';
-
 /** Placeholder Guardian monster sheets, pending licence approval. */
-export const GUARDIAN_IDLE_SHEET = 'assets/enemies/old-guardian/Old_Guardian_idle.png';
-export const GUARDIAN_WALK_SHEET = 'assets/enemies/old-guardian/Old_Guardian_walk.png';
+export const GUARDIAN_IDLE_SHEET =
+  'assets/enemies/old-guardian/Old_Guardian_idle.png';
+export const GUARDIAN_WALK_SHEET =
+  'assets/enemies/old-guardian/Old_Guardian_walk.png';
 export const GUARDIAN_ATTACK_SHEET =
   'assets/enemies/old-guardian/Old_Guardian_attack_1.png';
 export const GUARDIAN_DEATH_SHEET =
   'assets/enemies/old-guardian/Old_Guardian_death.png';
 
 export interface GameTextures {
-  /** Fallback wallpaper for levels without a skybox or scenery preset. */
-  background?: ImageSource;
-  /**
-   * Reserved for character sheets. The current main game uses placeholder
-   * player/monster rectangles, so these stay undefined until real art arrives.
-   */
-  heroSheet?: ImageSource;
-  ghostSheet?: ImageSource;
-  skeletonSheet?: ImageSource;
   /** Placeholder Guardian idle/walk/attack strips. */
   guardianIdleSheet?: ImageSource;
   guardianWalkSheet?: ImageSource;
@@ -67,14 +45,15 @@ export interface GameAssets {
  * presets. Missing images simply do not appear in the map, so every tile keeps
  * its placeholder colour as a fallback.
  */
-export function createGameTextures(base: string, manifest: AssetManifest): GameAssets {
+export function createGameTextures(
+  base: string,
+  manifest: AssetManifest,
+): GameAssets {
   const tilePaths = new Set<string>();
-  if (TEMP_ASSETS) {
-    for (const tileset of manifest.tilesets) {
-      for (const tile of tileset.tiles) {
-        if (tile.image) {
-          tilePaths.add(tile.image);
-        }
+  for (const tileset of manifest.tilesets) {
+    for (const tile of tileset.tiles) {
+      if (tile.image) {
+        tilePaths.add(tile.image);
       }
     }
   }
@@ -88,10 +67,6 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   for (const path of sceneryImagePaths()) {
     scenery.set(path, new ImageSource(`${base}assets/${path}`));
   }
-
-  const background = TEMP_ASSETS
-    ? new ImageSource(`${base}${LEVEL_BACKGROUND}`)
-    : undefined;
 
   const guardianIdleSheet = new ImageSource(`${base}${GUARDIAN_IDLE_SHEET}`);
   const guardianWalkSheet = new ImageSource(`${base}${GUARDIAN_WALK_SHEET}`);
@@ -121,9 +96,6 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   const staminaBolt = new ImageSource(`${base}assets/ui/bolt-green.png`);
 
   const resources = [...tiles.values(), ...scenery.values()];
-  if (background) {
-    resources.push(background);
-  }
   resources.push(
     guardianIdleSheet,
     guardianWalkSheet,
@@ -140,7 +112,6 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
 
   return {
     textures: {
-      background,
       guardianIdleSheet,
       guardianWalkSheet,
       guardianAttackSheet,

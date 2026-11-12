@@ -11,28 +11,21 @@ describe('asset manifest', () => {
     const manifest = validateManifest(manifestJson);
     expect(manifest.tileSize).toBe(32);
     const index = tileIndex(manifest);
-    expect(index.get(1)?.collision).toBe('solid');
-    expect(index.get(2)?.collision).toBe('oneway');
+    expect(index.get(79)?.image).toContain('palette-moss-grass-top.png');
+    expect(index.get(80)?.image).toContain('palette-moss-grass-fill.png');
   });
 
-  it('ships the Pixel set from tracked assets, not DRYFIT', () => {
+  it('ships only the used Pixel moss tiles', () => {
     const manifest = validateManifest(manifestJson);
-    const pixel = manifest.tilesets.find((tileset) => tileset.name === 'pixel-platformer-world');
-    expect(pixel?.tiles.length).toBeGreaterThanOrEqual(90);
+    const pixel = manifest.tilesets.find(
+      (tileset) => tileset.name === 'pixel-platformer-world',
+    );
+    expect(pixel?.tiles).toHaveLength(2);
     for (const tileset of manifest.tilesets) {
       for (const tile of tileset.tiles) {
-        if (tile.image) {
-          expect(tile.image.startsWith('DRYFIT/')).toBe(false);
-        }
+        expect(tile.image?.startsWith('pixel-platformer-world/')).toBe(true);
       }
     }
-  });
-
-  it('adds the Grunge test tileset', () => {
-    const manifest = validateManifest(manifestJson);
-    const grunge = manifest.tilesets.find((tileset) => tileset.name === 'grunge');
-    expect(grunge?.tiles).toHaveLength(11);
-    expect(grunge?.tiles.some((tile) => tile.name === 'grunge door' && tile.decor)).toBe(true);
   });
 
   it('rejects duplicate tile ids', () => {
@@ -61,54 +54,6 @@ describe('asset manifest', () => {
       ],
     });
     expect(tileIndex(manifest).get(1)?.hidden).toBe(true);
-  });
-
-  it('accepts half blocks and slope surfaces', () => {
-    const manifest = validateManifest({
-      version: 1,
-      tileSize: 32,
-      tilesets: [
-        {
-          name: 'test',
-          tiles: [
-            { id: 1, name: 'half', collision: 'solid', color: '#000', half: 'bottom' },
-            {
-              id: 2,
-              name: 'ramp',
-              collision: 'none',
-              color: '#000',
-              slope: 'up',
-              slopeOffset: 16,
-              slopeRise: 12,
-            },
-          ],
-        },
-      ],
-    });
-    const index = tileIndex(manifest);
-    expect(index.get(1)?.half).toBe('bottom');
-    expect(index.get(2)?.slope).toBe('up');
-    expect(index.get(2)?.slopeRise).toBe(12);
-  });
-
-  it('rejects invalid half and slope values', () => {
-    const base = { version: 1, tileSize: 32 };
-    expect(() =>
-      validateManifest({
-        ...base,
-        tilesets: [
-          { name: 'x', tiles: [{ id: 1, name: 'x', collision: 'solid', color: '#000', half: 'middle' }] },
-        ],
-      }),
-    ).toThrow(/half/);
-    expect(() =>
-      validateManifest({
-        ...base,
-        tilesets: [
-          { name: 'x', tiles: [{ id: 1, name: 'x', collision: 'none', color: '#000', slope: 'sideways' }] },
-        ],
-      }),
-    ).toThrow(/slope/);
   });
 
   it('rejects an unknown collision kind', () => {

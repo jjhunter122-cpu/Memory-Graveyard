@@ -20,7 +20,7 @@ import {
 } from '../run/generator';
 import {
   LOW_STAMINA_THRESHOLD,
-  SHARD_REFILL,
+  BOLT_REFILL,
   STAMINA_DRAIN,
   STAMINA_MAX,
   staminaSpeedFactor,
@@ -55,7 +55,7 @@ export interface RunSceneOptions {
 }
 
 /**
- * Endless auto-run: random forest acts, falling pits, stamina shards and a
+ * Endless auto-run: random forest acts, falling pits, stamina bolts and a
  * straight-line Guardian that closes in when stamina runs out.
  */
 export class RunScene extends Scene {
@@ -73,7 +73,7 @@ export class RunScene extends Scene {
   private attackTimer = 0;
   private monsterYOffset = 0;
   private stamina = STAMINA_MAX;
-  private memories = 0;
+  private coins = 0;
   private score = 0;
   private bestScore = 0;
   private scoreSaved = false;
@@ -110,7 +110,6 @@ export class RunScene extends Scene {
       startY,
       (centerX, feetY, halfWidth) =>
         this.stream.hasFloorAt(centerX, feetY, halfWidth),
-      undefined,
       { width: metrics.playerWidth, height: metrics.playerHeight },
     );
     this.player.setAutoRun(speedAt(0));
@@ -147,10 +146,9 @@ export class RunScene extends Scene {
     setMode('playing');
     analogOverlay.setPreset('vignette');
     ambienceAudio.play('spooky-forest');
-    this.hud.setVisible(false);
-    this.hud.toast('W / SPACE JUMP · GREEN SHARDS REFILL STAMINA', 3600);
+    this.hud.toast('W / SPACE JUMP · GREEN BOLTS REFILL STAMINA', 3600);
     this.stamina = STAMINA_MAX;
-    this.memories = 0;
+    this.coins = 0;
     this.score = 0;
     this.bestScore = this.options.bestScore;
     this.scoreSaved = false;
@@ -195,26 +193,26 @@ export class RunScene extends Scene {
     this.monster.pos.y = trailY + this.monsterYOffset;
     this.updateStaminaUi();
 
-    const collected = this.stream.collectShards(
+    const collected = this.stream.collectBolts(
       this.player.pos.x,
       this.player.pos.y,
       this.player.width,
       this.player.height,
     );
     if (collected > 0) {
-      this.refillStamina(SHARD_REFILL * collected);
+      this.refillStamina(BOLT_REFILL * collected);
     }
 
-    const collectedMemories = this.stream.collectMemories(
+    const collectedCoins = this.stream.collectCoins(
       this.player.pos.x,
       this.player.pos.y,
       this.player.width,
       this.player.height,
     );
-    if (collectedMemories > 0) {
-      this.memories += collectedMemories;
+    if (collectedCoins > 0) {
+      this.coins += collectedCoins;
     }
-    this.score = runScore(distancePx, this.memories);
+    this.score = runScore(distancePx, this.coins);
     if (this.score > this.bestScore) {
       this.bestScore = this.score;
     }
@@ -316,7 +314,7 @@ export class RunScene extends Scene {
       ?.addEventListener('click', () => this.options.onHome());
   }
 
-  private refillStamina(amount = SHARD_REFILL): void {
+  private refillStamina(amount = BOLT_REFILL): void {
     if (this.dead || this.caught) {
       return;
     }

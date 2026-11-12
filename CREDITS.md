@@ -6,21 +6,13 @@
 
 - Memory Graveyard project team
 
-## Voice
-
-- **JJ** — monster voice, breathing and spoken lines *(proposed; pending course
-  approval)*
-
-Recorded specifically for this project. Add the final line list, recording date
-and any processing notes here when the voice pass is complete.
-
 ## Art
 
 - **Pixel Platformer World** — Szadi art
   - Licence: free / public domain for personal and commercial use; may edit,
     but may not sell the asset pack. Credit appreciated, not required.
   - Source: `https://szadiart.itch.io/`
-  - Intended use: tiles, platforms, backgrounds and the player character sprites
+  - Intended use: moss tiles, forest backgrounds and the player character frames
   - Date added: 2026-11-08
   - Licence text: `public/assets/pixel-platformer-world/LICENSE.txt`
 
@@ -31,7 +23,7 @@ and any processing notes here when the voice pass is complete.
   - Original file: `https://openclipart.org/detail/283728`
   - Intended use: score pickup and score icon
   - Modifications: scaled down for the pickup and HUD
-  - Date added: 2026-11-13
+  - Date added: 2026-11-12
   - Source list: `public/assets/ui/coin-sources.txt`
   - Licence text: `licenses/CC0-1.0.txt`
 
@@ -39,8 +31,8 @@ and any processing notes here when the voice pass is complete.
   - Licence: CC0 1.0
   - Source: pack licence/readme; `https://pix3lcat.github.io/`
   - Intended use: stamina pickup and HUD icon
-  - Modifications: scaled down for the HUD
-  - Date added: 2026-11-13
+  - Modifications: scaled for the pickup and HUD
+  - Date added: 2026-11-12
   - Licence notice: `public/assets/ui/bolt-license.txt`
   - Licence text: `licenses/CC0-1.0.txt`
 
@@ -74,9 +66,6 @@ and any processing notes here when the voice pass is complete.
   - Date added: 2026-11-11
   - Do not publish or redistribute until the licence is confirmed.
 
-Temporary, unlicensed stand-ins live in `public/assets/TEMP/` and are **not for
-release**. See `public/assets/TEMP/README.md` for removal instructions.
-
 When licensed art is added, record each pack here with author, licence, source
 URL, intended use and modifications.
 
@@ -109,7 +98,7 @@ URL, intended use and modifications.
   - File: `public/assets/audio/ambience/spooky-forest.mp3`
   - Licence text: `licenses/CC-BY-3.0.txt`
 
-The audio director and voice playback are still pinned for a later pass.
+The audio director pass is still pinned for later.
 
 ## Fonts & tools
 

@@ -18,28 +18,11 @@
           <p>the forest remembers you</p>
         </header>
 
-        <section id="hud-panel" class="panel" aria-label="Progress">
-          <div class="row">
-            <span class="label">LEVEL</span>
-            <span id="level-name" class="value">—</span>
-          </div>
-          <div class="row">
-            <span class="label">MEMORIES</span>
-            <span id="collected" class="value">0 / 0</span>
-          </div>
-          <div class="row">
-            <span class="label">THREAT</span>
-            <span id="threat" class="value threat dormant">DORMANT</span>
-          </div>
-        </section>
-
         <div id="toast" class="toast" role="status"></div>
         <aside class="controls" aria-label="Controls">
           <div><kbd>W</kbd><kbd>SPACE</kbd> jump</div>
-          <div><kbd>R</kbd> reset</div>
+          <div><kbd>R</kbd> restart run</div>
         </aside>
-
-        <button id="open-editor" class="mode-button" hidden>Open editor</button>
       </div>
 
       <div id="stamina-ui" class="stamina-ui" aria-hidden="true">
@@ -63,11 +46,7 @@
         </div>
       </div>
 
-      <div id="editor-ui" class="editor-ui"></div>
-
       <div id="menu-ui" class="menu-ui"></div>
-      <div id="pause-ui" class="pause-ui"></div>
-      <div id="death-ui" class="death-ui"></div>
       <div id="run-ui" class="run-ui"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>

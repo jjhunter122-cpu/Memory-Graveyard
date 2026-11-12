@@ -8,7 +8,7 @@ export const VIEW = {
 /** Logical tile size in pixels. Levels are authored on this grid. */
 export const TILE = 32;
 
-/** Gameplay camera feel. The editor keeps its own camera settings. */
+/** Gameplay camera feel. */
 export const CAMERA = {
   /** World zoom. 1.35 shows roughly 22 x 12.5 tiles. */
   zoom: 1.35,

@@ -1,6 +1,7 @@
 /**
- * Scene-dressing presets. These are deliberately plain data so the editor can
- * list them without pulling in Excalibur. Paths are relative to `public/assets`.
+ * Scene-dressing presets for the endless forest. These are deliberately plain
+ * data so the loader can paint them without knowing where they came from.
+ * Paths are relative to `public/assets`.
  */
 
 export type SceneryAnchor = 'top' | 'center' | 'bottom';
@@ -28,74 +29,20 @@ export interface SceneryPreset {
   layers: SceneryLayer[];
 }
 
-/** The nine pre-built room palettes in `main_lev_buildA.png`. */
-const PIXEL_ROOM_PALETTES = [
-  'moss',
-  'rose',
-  'olive',
-  'crimson',
-  'teal',
-  'blood',
-  'lime',
-  'slate',
-  'ocean',
-] as const;
-
+/** The six Pixel Platformer World forest backdrops, drawn back to front. */
 const PIXEL_BACKGROUNDS = ['1', '2', '3', '4', '5', '6'] as const;
-
-function pixelBackgroundLayers(): SceneryLayer[] {
-  return PIXEL_BACKGROUNDS.map((index) => ({
-    image: `pixel-platformer-world/Background/background${index}.png`,
-    height: 1,
-    anchor: 'center' as const,
-  }));
-}
 
 export const BACKGROUND_PRESETS: readonly SceneryPreset[] = [
   {
-    id: 'pixel-platformer-world-flat',
-    name: 'Pixel Platformer World — Flat',
-    layers: [
-      {
-        image: 'pixel-platformer-world/Background/background1.png',
-        height: 1,
-        anchor: 'center',
-      },
-    ],
-  },
-  {
     id: 'pixel-platformer-world-layers',
-    name: 'Pixel Platformer World — Layers',
-    layers: pixelBackgroundLayers(),
-  },
-  ...PIXEL_ROOM_PALETTES.map((palette, index) => ({
-    id: `pixel-platformer-world-room-${index + 1}`,
-    name: `Pixel Platformer World — Room ${index + 1} (${palette})`,
-    layers: [
-      ...pixelBackgroundLayers(),
-      {
-        image: `pixel-platformer-world/rooms/room-${index + 1}.png`,
-        height: 1,
-        anchor: 'center' as const,
-        repeat: false,
-      },
-    ],
-  })),
-  {
-    id: 'grunge-corridor',
-    name: 'Grunge — Corridor',
-    layers: [
-      {
-        image: 'grunge/grunge-tileset.png',
-        height: 0.28,
-        anchor: 'bottom',
-        repeat: false,
-      },
-    ],
+    name: 'Pixel Platformer World — Forest Layers',
+    layers: PIXEL_BACKGROUNDS.map((index) => ({
+      image: `pixel-platformer-world/Background/background${index}.png`,
+      height: 1,
+      anchor: 'center' as const,
+    })),
   },
 ];
-
-export const FOREGROUND_PRESETS: readonly SceneryPreset[] = [];
 
 export function findBackgroundPreset(id: string | undefined): SceneryPreset | undefined {
   if (!id || id === 'none') {
@@ -104,17 +51,10 @@ export function findBackgroundPreset(id: string | undefined): SceneryPreset | un
   return BACKGROUND_PRESETS.find((preset) => preset.id === id);
 }
 
-export function findForegroundPreset(id: string | undefined): SceneryPreset | undefined {
-  if (!id || id === 'none') {
-    return undefined;
-  }
-  return FOREGROUND_PRESETS.find((preset) => preset.id === id);
-}
-
-/** Every image path referenced by a preset, for preloading. */
+/** Every image path referenced by the scenery presets, de-duplicated. */
 export function sceneryImagePaths(): string[] {
   const paths = new Set<string>();
-  for (const preset of [...BACKGROUND_PRESETS, ...FOREGROUND_PRESETS]) {
+  for (const preset of BACKGROUND_PRESETS) {
     for (const layer of preset.layers) {
       paths.add(layer.image);
     }

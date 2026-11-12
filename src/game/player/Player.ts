@@ -6,7 +6,7 @@ import {
   PLAYER_IGNORE_ONEWAY_GROUP,
 } from '../physics/collisionGroups';
 import { PlayerController } from './PlayerController';
-import type { GroundProbe, SlopeProbe } from '../level/loader';
+import type { GroundProbe } from '../level/loader';
 import type { HeroAnimations } from '../visuals/hero';
 
 /**
@@ -34,7 +34,6 @@ export class Player extends Actor {
     x: number,
     y: number,
     private readonly groundProbe?: GroundProbe,
-    private readonly slopeProbe?: SlopeProbe,
     size: { width: number; height: number } = { width: PLAYER.width, height: PLAYER.height },
   ) {
     super({
@@ -76,28 +75,12 @@ export class Player extends Actor {
     const risen = this.vel.y < -1;
     const ignoreOneWay = risen || this.dropTimer > 0;
 
-    let onSlope = false;
-    if (!risen && this.slopeProbe) {
-      const feetY = this.pos.y + height / 2;
-      const surfaceY = this.slopeProbe(this.pos.x, feetY, halfWidth);
-      if (surfaceY !== null) {
-        const delta = surfaceY - feetY;
-        if (delta >= -14 && delta <= 22) {
-          this.pos.y = surfaceY - height / 2;
-          if (this.vel.y > 0) {
-            this.vel.y = 0;
-          }
-          onSlope = true;
-        }
-      }
-    }
-
     const feetY = this.pos.y + height / 2;
     const probeGrounded =
       !risen && this.groundProbe
         ? this.groundProbe(this.pos.x, feetY, halfWidth, ignoreOneWay)
         : false;
-    this.controller.setGrounded(probeGrounded || onSlope || this.groundTimer > 0);
+    this.controller.setGrounded(probeGrounded || this.groundTimer > 0);
 
     const input = readPlayerInput(engine.input.keyboard);
     const step = this.controller.update({ vx: this.vel.x, vy: this.vel.y }, input, dt);

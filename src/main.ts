@@ -1,19 +1,18 @@
-import { Color, DisplayMode, Engine, SolverStrategy, Vector, WebAudio } from 'excalibur';
+import {
+  Color,
+  DisplayMode,
+  Engine,
+  SolverStrategy,
+  Vector,
+  WebAudio,
+} from 'excalibur';
 import { createGameTextures } from './game/assets';
 import { footstepAudio } from './game/audio/footsteps';
 import { ambienceAudio } from './game/audio/ambience';
 import { titleMusic } from './game/audio/titleMusic';
 import { COLORS, PHYSICS, VIEW } from './game/config';
 import { validateManifest } from './game/level/manifest';
-import type { LevelData } from './game/level/schema';
 import { GameApp } from './game/app';
-import {
-  DraftStore,
-  EMPTY_SEQUENCES,
-  LevelLibrary,
-  validateLevelIndex,
-  validateSequences,
-} from './game/storage/levels';
 import { SettingsStore } from './game/storage/settings';
 import { safeLocalStorage } from './game/storage/storage';
 import './style.css';
@@ -28,31 +27,11 @@ async function fetchJson(url: string): Promise<unknown> {
 
 async function boot(): Promise<void> {
   const base = import.meta.env.BASE_URL;
-  const [manifestRaw, indexRaw, sequencesRaw] = await Promise.all([
-    fetchJson(`${base}assets/manifest.json`),
-    fetchJson(`${base}levels/index.json`),
-    fetchJson(`${base}levels/sequences.json`).catch(() => undefined),
-  ]);
+  const manifest = validateManifest(
+    await fetchJson(`${base}assets/manifest.json`),
+  );
 
-  const manifest = validateManifest(manifestRaw);
-  const index = validateLevelIndex(indexRaw);
-  const sequences = sequencesRaw === undefined ? EMPTY_SEQUENCES : validateSequences(sequencesRaw);
-
-  const storage = safeLocalStorage();
-  const drafts = new DraftStore(storage);
-  const settings = new SettingsStore(storage);
-  const library = new LevelLibrary(base, index, drafts, sequences);
-
-  const params = new URLSearchParams(window.location.search);
-  let startInEditor = params.has('editor');
-  let initialLevel: LevelData | undefined;
-  if (startInEditor) {
-    const first = index.levels[0];
-    initialLevel = first ? await library.loadShipped(first.id).catch(() => undefined) : undefined;
-    if (!initialLevel) {
-      startInEditor = false;
-    }
-  }
+  const settings = new SettingsStore(safeLocalStorage());
 
   const engine = new Engine({
     canvasElementId: 'game',
@@ -87,10 +66,14 @@ async function boot(): Promise<void> {
   const unlockAudio = (): void => {
     void WebAudio.unlock();
   };
-  window.addEventListener('pointerdown', unlockAudio, { once: true, capture: true });
+  window.addEventListener('pointerdown', unlockAudio, {
+    once: true,
+    capture: true,
+  });
   window.addEventListener('keydown', unlockAudio, { once: true, capture: true });
-  const app = new GameApp(engine, manifest, library, drafts, settings, assets.textures);
-  await app.start({ startInEditor, initialLevel });
+
+  const app = new GameApp(engine, manifest, settings, assets.textures);
+  await app.start();
 
   // Runtime handles for debugging in the console.
   (window as unknown as { graveyard: Engine }).graveyard = engine;

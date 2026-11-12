@@ -1,6 +1,6 @@
 /**
- * Ambience track metadata. Kept free of Excalibur imports so the editor and
- * schema-side code can list tracks without loading the audio engine.
+ * Ambience track metadata. Kept free of Excalibur imports so the run scenes can
+ * list tracks without loading the audio engine.
  */
 export interface AmbienceTrack {
   id: string;

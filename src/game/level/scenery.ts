@@ -8,9 +8,7 @@ export interface SceneryTextures {
 /**
  * Paints one scenery preset as a set of world-space actors. Layers are scaled
  * to a fraction of the level height and repeated horizontally, which is enough
- * to make a tiny 384x224 backdrop cover a long test level.
- *
- * Returns the actors it created so the editor can tear them down again.
+ * to cover a long run of acts.
  */
 export function addSceneryPreset(
   scene: Scene,
