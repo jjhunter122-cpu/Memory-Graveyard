@@ -9,11 +9,19 @@ export interface GuardianAnimations {
   attack: Animation;
 }
 
+export interface GuardianDeathAnimations {
+  /** Holds the final frame of the death strip, suitable for a corpse pose. */
+  still: Animation;
+  /** Plays the death strip backwards and freezes on the standing frame. */
+  revive: Animation;
+}
+
 function createAnimation(
   image: ImageSource,
   frames: number,
   frameDuration: number,
   freeze = false,
+  reverse = false,
 ): Animation {
   const sheet = SpriteSheet.fromImageSource({
     image,
@@ -37,6 +45,7 @@ function createAnimation(
   return new Animation({
     frames: sprites,
     strategy: freeze ? AnimationStrategy.Freeze : AnimationStrategy.Loop,
+    reverse,
   });
 }
 
@@ -57,5 +66,23 @@ export function createGuardianAnimations(
     idle: createAnimation(idleImage, idleFrames, 160),
     walk: createAnimation(walkImage, walkFrames, 100),
     attack: createAnimation(attackImage, attackFrames, 100, true),
+  };
+}
+
+/**
+ * The death strip is used by the title screen: the last frame is held as the
+ * corpse, and the same strip reversed plays the Guardian standing back up.
+ */
+export function createGuardianDeathAnimations(
+  deathImage: ImageSource,
+  frameDuration = 100,
+): GuardianDeathAnimations {
+  const frames = Math.max(1, Math.floor(deathImage.height / FRAME_SIZE));
+  const still = createAnimation(deathImage, frames, frameDuration, true);
+  still.goToFrame(frames - 1);
+  still.pause();
+  return {
+    still,
+    revive: createAnimation(deathImage, frames, frameDuration, true, true),
   };
 }

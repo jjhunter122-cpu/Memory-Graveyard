@@ -129,12 +129,11 @@ export class GameApp {
 
   private titleScene(): TitleScene {
     return new TitleScene({
-      dev: this.dev,
-      onPlay: () => void this.playCampaign(),
-      onLevelSelect: () => void this.showLevelSelect(),
+      highScore: this.settings.load().highScore,
+      manifest: this.manifest,
+      textures: this.textures,
+      onPlay: () => void this.playShipped('blank-slab'),
       onOptions: () => void this.showOptions(),
-      onEditor: () => void this.editInitial(),
-      onSequence: () => void this.showSequence(),
     });
   }
 
@@ -264,17 +263,6 @@ export class GameApp {
     } catch (error) {
       return { ok: false, message: `save failed: ${(error as Error).message}` };
     }
-  }
-
-  private async editInitial(): Promise<void> {
-    const shipped = this.library.devLevels();
-    const last = this.settings.load().lastLevelId;
-    const entry = shipped.find((level) => level.id === last) ?? shipped[0];
-    if (!entry) {
-      await this.showLevelSelect();
-      return;
-    }
-    await this.editShipped(entry.id);
   }
 
   private async editShipped(id: string): Promise<void> {

@@ -22,6 +22,8 @@ export const GUARDIAN_IDLE_SHEET = 'assets/enemies/old-guardian/Old_Guardian_idl
 export const GUARDIAN_WALK_SHEET = 'assets/enemies/old-guardian/Old_Guardian_walk.png';
 export const GUARDIAN_ATTACK_SHEET =
   'assets/enemies/old-guardian/Old_Guardian_attack_1.png';
+export const GUARDIAN_DEATH_SHEET =
+  'assets/enemies/old-guardian/Old_Guardian_death.png';
 
 export interface GameTextures {
   /** Fallback wallpaper for levels without a skybox or scenery preset. */
@@ -37,6 +39,7 @@ export interface GameTextures {
   guardianIdleSheet?: ImageSource;
   guardianWalkSheet?: ImageSource;
   guardianAttackSheet?: ImageSource;
+  guardianDeathSheet?: ImageSource;
   /** Scene-dressing art, keyed by path relative to `public/assets`. */
   scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
@@ -83,12 +86,18 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   const guardianIdleSheet = new ImageSource(`${base}${GUARDIAN_IDLE_SHEET}`);
   const guardianWalkSheet = new ImageSource(`${base}${GUARDIAN_WALK_SHEET}`);
   const guardianAttackSheet = new ImageSource(`${base}${GUARDIAN_ATTACK_SHEET}`);
+  const guardianDeathSheet = new ImageSource(`${base}${GUARDIAN_DEATH_SHEET}`);
 
   const resources = [...tiles.values(), ...scenery.values()];
   if (background) {
     resources.push(background);
   }
-  resources.push(guardianIdleSheet, guardianWalkSheet, guardianAttackSheet);
+  resources.push(
+    guardianIdleSheet,
+    guardianWalkSheet,
+    guardianAttackSheet,
+    guardianDeathSheet,
+  );
 
   return {
     textures: {
@@ -96,6 +105,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
       guardianIdleSheet,
       guardianWalkSheet,
       guardianAttackSheet,
+      guardianDeathSheet,
       scenery,
       tiles,
     },

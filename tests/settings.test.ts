@@ -21,6 +21,7 @@ describe('SettingsStore', () => {
     expect(settings.load()).toEqual({
       showHud: true,
       lastLevelId: null,
+      highScore: 0,
       masterVolume: 1,
       musicVolume: 0.32,
       sfxVolume: 1,
@@ -37,6 +38,21 @@ describe('SettingsStore', () => {
     expect(settings.masterVolume).toBe(1);
     expect(settings.musicVolume).toBe(0);
     expect(settings.sfxVolume).toBe(0.4);
+  });
+
+  it('keeps the high score a non-negative integer', () => {
+    const storage = new FakeStorage();
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ highScore: 1234.9 }),
+    );
+    expect(new SettingsStore(storage).load().highScore).toBe(1234);
+
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ highScore: -50 }),
+    );
+    expect(new SettingsStore(storage).load().highScore).toBe(0);
   });
 
   it('updates and persists a single field', () => {
