@@ -1,5 +1,6 @@
 import { Color, DisplayMode, Engine, SolverStrategy, Vector } from 'excalibur';
 import { createGameTextures } from './game/assets';
+import { footstepAudio } from './game/audio/footsteps';
 import { COLORS, PHYSICS, VIEW } from './game/config';
 import { validateManifest } from './game/level/manifest';
 import type { LevelData } from './game/level/schema';
@@ -72,7 +73,10 @@ async function boot(): Promise<void> {
   });
 
   const assets = createGameTextures(base, manifest);
-  await Promise.all(assets.resources.map((resource) => resource.load()));
+  await Promise.all([
+    ...assets.resources.map((resource) => resource.load()),
+    footstepAudio.load(base),
+  ]);
   const app = new GameApp(engine, manifest, library, drafts, settings, assets.textures);
   await app.start({ startInEditor, initialLevel });
 

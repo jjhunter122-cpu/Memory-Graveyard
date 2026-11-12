@@ -17,6 +17,7 @@ import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
 import { analogOverlay } from '../ui/analogFx';
+import { footstepAudio } from '../audio/footsteps';
 
 export type PlayOrigin = 'campaign' | 'levelSelect' | 'editor';
 
@@ -48,6 +49,7 @@ export class PlayScene extends Scene {
   private graceRemaining: number = MONSTER.graceSeconds;
   private playableBottomPx = 0;
   private catchRadius: number = MONSTER.catchRadius;
+  private footstepDistance = 0;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -109,6 +111,7 @@ export class PlayScene extends Scene {
     this.built = buildLevel(this, this.level, this.manifest, this.textures);
     this.playableBottomPx =
       this.built.playAreaPx.y + this.built.playAreaPx.height;
+    this.footstepDistance = 0;
     const scale = normalizeCharacterScale(this.level.characterScale);
     const metrics = characterMetrics(scale, this.level.tileSize);
     this.catchRadius = metrics.catchRadius;
@@ -197,6 +200,7 @@ export class PlayScene extends Scene {
       vy: this.player.vel.y,
       grounded: this.player.controller.isGrounded,
     });
+    this.updateFootsteps(dt);
     this.checkFall();
     if (this.dead) {
       return;
@@ -426,6 +430,20 @@ export class PlayScene extends Scene {
     }
   }
 
+  private updateFootsteps(dt: number): void {
+    const speed = Math.abs(this.player.vel.x);
+    if (!this.player.controller.isGrounded || speed < 30) {
+      this.footstepDistance = 0;
+      return;
+    }
+    this.footstepDistance += speed * dt;
+    const stride = speed > 180 ? 58 : 68;
+    if (this.footstepDistance >= stride) {
+      this.footstepDistance = 0;
+      footstepAudio.playGrass();
+    }
+  }
+
   private checkFall(): void {
     if (this.player.pos.y > this.playableBottomPx + LEVEL.killMargin) {
       this.die('fell');
@@ -446,6 +464,7 @@ export class PlayScene extends Scene {
     this.completed = false;
     this.graceRemaining = MONSTER.graceSeconds;
     this.player.respawn(this.built.spawn.x, this.built.spawn.y);
+    this.footstepDistance = 0;
     this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.totalMemories);
 
