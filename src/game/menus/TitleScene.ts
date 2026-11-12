@@ -124,7 +124,7 @@ export class TitleScene extends MenuScene {
       <div class="menu-panel title-panel">
         <h1 class="menu-title">MEMORY GRAVEYARD</h1>
         <p class="menu-subtitle">the forest remembers you</p>
-        <p class="title-high-score">High score <strong>${formatScore(this.callbacks.highScore)}</strong></p>
+        <p class="title-high-score"><img class="score-icon" src="assets/ui/coin.png" alt="" /> High score <strong>${formatScore(this.callbacks.highScore)}</strong></p>
         <div class="menu-buttons">
           <button id="menu-play" class="menu-button primary">Play</button>
           <button id="menu-options" class="menu-button">Options</button>

@@ -2,7 +2,7 @@ import type { Actor, Scene } from 'excalibur';
 import { MemoryPickup } from '../actors/MemoryPickup';
 import { StaminaShard } from '../actors/StaminaShard';
 import type { GameTextures } from '../assets';
-import { MEMORY, VIEW } from '../config';
+import { VIEW } from '../config';
 import { buildLevel } from '../level/loader';
 import type { AssetManifest } from '../level/manifest';
 import { createLevel, EMPTY_TILE } from '../level/schema';
@@ -280,6 +280,7 @@ export class ActStream {
         const memory = new MemoryPickup(
           startX + tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
           surface - ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+          this.textures.scoreCoin,
         );
         this.scene.add(memory);
         memories.push(memory);
@@ -340,8 +341,8 @@ export class ActStream {
       for (let index = act.memories.length - 1; index >= 0; index -= 1) {
         const memory = act.memories[index]!;
         if (
-          Math.abs(x - memory.pos.x) < width / 2 + MEMORY.radius &&
-          Math.abs(y - memory.pos.y) < height / 2 + MEMORY.radius
+          Math.abs(x - memory.pos.x) < width / 2 + memory.width / 2 &&
+          Math.abs(y - memory.pos.y) < height / 2 + memory.height / 2
         ) {
           memory.kill();
           act.memories.splice(index, 1);

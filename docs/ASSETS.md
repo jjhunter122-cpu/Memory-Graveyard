@@ -24,6 +24,9 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 - The title screen loops `public/assets/audio/music/8-bit-haunting.mp3`.
 - The Spooky Forest Ambience loops during the endless run. It is CC BY 3.0,
   credited to marchon11 in `CREDITS.md`.
+- The score pickup and score icon use the CC0 silver coin from `CC0 Currency
+  Icons` (AntumDeluge / OpenClipart). The stamina HUD uses the CC0 green bolt
+  from pix3lcat. Both are CC0 1.0 and credited in `CREDITS.md`.
 
 ## Visual direction
 

@@ -68,7 +68,7 @@ export class OptionsScene extends PreviewMenuScene {
     this.bindVolume('option-music', 'option-music-value', this.callbacks.onChangeMusicVolume);
     this.bindVolume('option-sfx', 'option-sfx-value', this.callbacks.onChangeSfxVolume);
     this.click('option-clear', () => this.callbacks.onClearDrafts());
-    this.click('menu-back', () => this.callbacks.onBack());
+    this.click('menu-back', () => this.close(() => this.callbacks.onBack()));
   }
 
   private bindVolume(

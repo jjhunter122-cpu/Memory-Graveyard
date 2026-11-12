@@ -24,6 +24,26 @@ and any processing notes here when the voice pass is complete.
   - Date added: 2026-11-08
   - Licence text: `public/assets/pixel-platformer-world/LICENSE.txt`
 
+- **CC0 Currency Icons (silver coin)** — AntumDeluge, OpenGameArt compilation
+  - Original set: OpenClipart Library, `coin_01_silver`
+  - Licence: CC0 1.0
+  - Source: `https://opengameart.org/node/121237`
+  - Original file: `https://openclipart.org/detail/283728`
+  - Intended use: score pickup and score icon
+  - Modifications: scaled down for the pickup and HUD
+  - Date added: 2026-11-13
+  - Source list: `public/assets/ui/coin-sources.txt`
+  - Licence text: `licenses/CC0-1.0.txt`
+
+- **Lightning Bolt Icons/Buttons Collection (green bolt)** — pix3lcat
+  - Licence: CC0 1.0
+  - Source: pack licence/readme; `https://pix3lcat.github.io/`
+  - Intended use: stamina icon
+  - Modifications: scaled down for the HUD
+  - Date added: 2026-11-13
+  - Licence notice: `public/assets/ui/bolt-license.txt`
+  - Licence text: `licenses/CC0-1.0.txt`
+
 - **Analog Horror Screen FX Free Sampler** — LESED
   - Licence: Analog Horror Screen FX Free Sampler — License
     Copyright (c) 2026 LESED (lesed.itch.io)

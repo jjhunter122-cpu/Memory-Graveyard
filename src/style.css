@@ -694,6 +694,11 @@ body.mode-menu .menu-ui {
   background: rgba(143, 123, 255, 0.2);
 }
 
+.menu-button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .menu-button.primary {
   color: #05060a;
   background: #7ce7ff;
@@ -889,6 +894,19 @@ body.mode-playing .stamina-ui {
   color: #8b8fae;
 }
 
+.stamina-icon {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.score-icon {
+  width: 14px;
+  height: 14px;
+  image-rendering: pixelated;
+  vertical-align: middle;
+}
+
 .stamina-track {
   width: 260px;
   height: 10px;
@@ -901,7 +919,7 @@ body.mode-playing .stamina-ui {
 .stamina-fill {
   height: 100%;
   width: 100%;
-  background: #7ce7ff;
+  background: #b6ff7c;
   transition:
     width 0.08s linear,
     background 0.2s ease;
@@ -1043,6 +1061,10 @@ body.mode-menu .menu-ui.title-playing .menu-panel {
 
 .title-high-score {
   margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 10px;
   letter-spacing: 0.22em;
   text-transform: uppercase;

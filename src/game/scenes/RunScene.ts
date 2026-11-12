@@ -225,11 +225,12 @@ export class RunScene extends Scene {
       return;
     }
 
-    if (
-      !this.falling &&
-      this.stream.isOverPitAt(this.player.pos.x) &&
-      this.player.pos.y + this.player.height / 2 > FLOOR_TOP + 2
-    ) {
+    const frontX = this.player.pos.x + this.player.width / 2;
+    const feetY = this.player.pos.y + this.player.height / 2;
+    const overPit =
+      this.stream.isOverPitAt(this.player.pos.x) ||
+      this.stream.isOverPitAt(frontX);
+    if (!this.falling && overPit && feetY >= FLOOR_TOP - 1) {
       this.falling = true;
       this.player.setGhost(true);
     }

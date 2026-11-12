@@ -30,6 +30,10 @@ export class CreditsScene extends PreviewMenuScene {
           <h3>Art</h3>
           <p>Pixel Platformer World — Szadi art. Free for personal and commercial use; credit appreciated.</p>
           <p class="credit-line">https://szadiart.itch.io/</p>
+          <p>CC0 Currency Icons (silver coin) — AntumDeluge, OpenGameArt compilation; original OpenClipart Library. CC0 1.0.</p>
+          <p class="credit-line">https://opengameart.org/node/121237</p>
+          <p>Lightning Bolt Icons/Buttons Collection (green bolt) — pix3lcat (pix3lcat.github.io). CC0 1.0.</p>
+          <p class="credit-line">https://pix3lcat.github.io/</p>
           <div class="credits-license">
             <p class="license-heading">Analog Horror Screen FX Free Sampler — License</p>
             <p class="license-copyright">Copyright (c) 2026 LESED (lesed.itch.io)</p>
@@ -63,6 +67,6 @@ export class CreditsScene extends PreviewMenuScene {
   }
 
   protected bind(): void {
-    this.click('menu-back', () => this.callbacks.onBack());
+    this.click('menu-back', () => this.close(() => this.callbacks.onBack()));
   }
 }

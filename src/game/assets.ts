@@ -46,6 +46,8 @@ export interface GameTextures {
   heroJump: ImageSource[];
   heroLanding: ImageSource[];
   heroDead: ImageSource[];
+  /** CC0 silver coin used for the score pickup and HUD icon. */
+  scoreCoin: ImageSource;
   /** Scene-dressing art, keyed by path relative to `public/assets`. */
   scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
@@ -113,6 +115,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
   const heroDead = Array.from({ length: 4 }, (_, index) =>
     heroFrame(`dead-${String(index + 1).padStart(2, '0')}.png`),
   );
+  const scoreCoin = new ImageSource(`${base}assets/ui/coin.png`);
 
   const resources = [...tiles.values(), ...scenery.values()];
   if (background) {
@@ -128,6 +131,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     ...heroJump,
     ...heroLanding,
     ...heroDead,
+    scoreCoin,
   );
 
   return {
@@ -142,6 +146,7 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
       heroJump,
       heroLanding,
       heroDead,
+      scoreCoin,
       scenery,
       tiles,
     },
