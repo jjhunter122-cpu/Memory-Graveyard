@@ -54,6 +54,7 @@ export function createDefaultLevel(
   level.skybox = '#0a0b10';
   level.background = 'pixel-platformer-world-layers';
   level.analogFx = 'vignette';
+  level.ambience = 'spooky-forest';
   level.characterScale = 1.75;
   level.cameraZoom = 1;
   level.cameraFollow = 'momentum';

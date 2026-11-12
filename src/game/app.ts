@@ -12,6 +12,7 @@ import type { DraftStore, LevelLibrary } from './storage/levels';
 import type { Settings, SettingsStore } from './storage/settings';
 import { titleMusic } from './audio/titleMusic';
 import { footstepAudio } from './audio/footsteps';
+import { ambienceAudio } from './audio/ambience';
 import { analogOverlay } from './ui/analogFx';
 
 export interface StartOptions {
@@ -302,6 +303,7 @@ export class GameApp {
   private applyAudioSettings(): Settings {
     const settings = this.settings.load();
     titleMusic.setVolume(settings.masterVolume * settings.musicVolume);
+    ambienceAudio.setVolume(settings.masterVolume * settings.musicVolume * 0.8);
     footstepAudio.setVolumeScale(settings.masterVolume * settings.sfxVolume);
     return settings;
   }

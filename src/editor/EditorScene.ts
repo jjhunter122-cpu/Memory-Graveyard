@@ -32,6 +32,7 @@ import {
   renameLevel,
   resizeLevel,
   setAnalogFx,
+  setAmbience,
   setBackground,
   setCameraFollow,
   setCameraZoom,
@@ -170,6 +171,7 @@ export class EditorScene extends Scene {
       this.ui.setBackground(this.level.background);
       this.ui.setForeground(this.level.foreground);
       this.ui.setAnalogFx(this.level.analogFx);
+      this.ui.setAmbience(this.level.ambience);
       this.ui.setCharacterScale(this.level.characterScale, this.level.tileSize);
       this.ui.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
       this.ui.setCameraFollow(this.level.cameraFollow);
@@ -608,6 +610,7 @@ export class EditorScene extends Scene {
     this.ui?.setBackground(this.level.background);
     this.ui?.setForeground(this.level.foreground);
     this.ui?.setAnalogFx(this.level.analogFx);
+    this.ui?.setAmbience(this.level.ambience);
     this.ui?.setCharacterScale(this.level.characterScale, this.level.tileSize);
     this.ui?.setCameraZoom(this.level.cameraZoom, this.level.tileSize);
     this.ui?.setCameraFollow(this.level.cameraFollow);
@@ -935,6 +938,13 @@ export class EditorScene extends Scene {
         if (next !== this.level) {
           this.commit(next);
           this.ui?.setAnalogFx(this.level.analogFx);
+        }
+      },
+      onAmbience: (id) => {
+        const next = setAmbience(this.level, id);
+        if (next !== this.level) {
+          this.commit(next);
+          this.ui?.setAmbience(this.level.ambience);
         }
       },
       onCharacterScale: (scale) => {

@@ -30,6 +30,7 @@ describe('level schema', () => {
     level.background = 'pixel-platformer-world-flat';
     level.foreground = 'pixel-platformer-world-room-1';
     level.analogFx = 'vignette';
+    level.ambience = 'spooky-forest';
     expect(parseLevel(serializeLevel(level))).toEqual(level);
   });
 
@@ -44,6 +45,9 @@ describe('level schema', () => {
     expect(() =>
       validateLevel({ ...level, analogFx: '' }),
     ).toThrow(/analogFx/);
+    expect(() =>
+      validateLevel({ ...level, ambience: '' }),
+    ).toThrow(/ambience/);
   });
 
   it('round-trips a playable area', () => {

@@ -13,6 +13,7 @@
   "skybox": "#0a0b10",
   "background": "pixel-platformer-world-layers",
   "analogFx": "vignette",
+  "ambience": "spooky-forest",
   "characterScale": 1.75,
   "cameraZoom": 1,
   "cameraFollow": "momentum",

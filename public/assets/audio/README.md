@@ -6,6 +6,15 @@
 - Used as the looping title-screen track.
 - Confirm the Suno plan allows the intended distribution before public release.
 
+## Mid-game ambience
+
+- **Spooky Forest ambience** by marchon11.
+- Credit line: "ambience spooky forest.mp3" by marchon11 -- https://freesound.org/s/493720/ -- License: Attribution 3.0
+- Licence: CC BY 3.0 Unported. Full text in `licenses/CC-BY-3.0.txt`.
+- Imported as `ambience/spooky-forest.mp3` and looped during levels that
+  select the Spooky Forest ambience. Controlled by the Music volume slider.
+- Modifications: none.
+
 ## The Sound Guild — Footsteps Sounds Volume 02
 
 - Source: <https://the-sound-guild.itch.io/footsteps-sounds-02>

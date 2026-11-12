@@ -20,6 +20,8 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 - Grass footstep, soft landing and metal monster footsteps from The Sound Guild
   are in `public/assets/audio/` and are wired to movement and landing.
 - The title screen loops `public/assets/audio/music/8-bit-haunting.mp3`.
+- The Spooky Forest ambience loops in levels that select it, starting with
+  Blank Slab. It is CC BY 3.0, credited to marchon11 in `CREDITS.md`.
 
 ## Visual direction
 

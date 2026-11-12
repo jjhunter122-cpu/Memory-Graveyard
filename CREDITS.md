@@ -77,6 +77,16 @@ URL, intended use and modifications.
   - Date added: 2026-11-11
   - File: `public/assets/audio/music/8-bit-haunting.mp3`
 
+- **Spooky Forest ambience** — marchon11
+  - Credit line: "ambience spooky forest.mp3" by marchon11 -- https://freesound.org/s/493720/ -- License: Attribution 3.0
+  - Licence: Creative Commons Attribution 3.0 Unported (CC BY 3.0)
+  - Source: `https://freesound.org/s/493720/`
+  - Intended use: looping mid-game forest ambience
+  - Modifications: none
+  - Date added: 2026-11-11
+  - File: `public/assets/audio/ambience/spooky-forest.mp3`
+  - Licence text: `licenses/CC-BY-3.0.txt`
+
 The audio director and voice playback are still pinned for a later pass.
 
 ## Fonts & tools
@@ -86,6 +96,7 @@ The audio director and voice playback are still pinned for a later pass.
 ## Licence texts
 
 - `licenses/CC0-1.0.txt`
+- `licenses/CC-BY-3.0.txt`
 - `licenses/CC-BY-4.0.txt`
 
 Add any other licence text used by a shipped asset under `licenses/`.

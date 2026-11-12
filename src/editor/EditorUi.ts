@@ -7,6 +7,7 @@ import {
   presetForKey,
 } from '../game/level/sizes';
 import { ANALOG_FX_OPTIONS, normalizeAnalogFxPreset } from '../game/analogFx';
+import { AMBIENCE_TRACKS } from '../game/audio/ambienceTracks';
 import {
   CHARACTER_SCALE_OPTIONS,
   characterMetrics,
@@ -41,6 +42,7 @@ export interface EditorUiCallbacks {
   onBackground(id: string | undefined): void;
   onForeground(id: string | undefined): void;
   onAnalogFx(id: string | undefined): void;
+  onAmbience(id: string | undefined): void;
   onCharacterScale(scale: number): void;
   onCameraZoom(zoom: number): void;
   onCameraFollow(id: string): void;
@@ -168,6 +170,7 @@ export class EditorUi {
   private readonly backgroundSelect: HTMLSelectElement;
   private readonly foregroundSelect: HTMLSelectElement;
   private readonly analogSelect: HTMLSelectElement;
+  private readonly ambienceSelect: HTMLSelectElement;
   private readonly characterScaleSelect: HTMLSelectElement;
   private readonly playLeftInput: HTMLInputElement;
   private readonly playRightInput: HTMLInputElement;
@@ -286,6 +289,10 @@ export class EditorUi {
             <div class="ed-scenery">
               <label>Preset <select id="ed-analog" class="ed-layer"></select></label>
             </div>
+            <h3>Ambience</h3>
+            <div class="ed-scenery">
+              <label>Track <select id="ed-ambience" class="ed-layer"></select></label>
+            </div>
             <h3>Camera</h3>
             <div class="ed-scenery">
               <label>Follow <select id="ed-camera-follow" class="ed-layer"></select></label>
@@ -352,6 +359,7 @@ export class EditorUi {
     this.backgroundSelect = this.get<HTMLSelectElement>('ed-background');
     this.foregroundSelect = this.get<HTMLSelectElement>('ed-foreground');
     this.analogSelect = this.get<HTMLSelectElement>('ed-analog');
+    this.ambienceSelect = this.get<HTMLSelectElement>('ed-ambience');
     this.characterScaleSelect = this.get<HTMLSelectElement>('ed-character-scale');
     this.playLeftInput = this.get<HTMLInputElement>('ed-play-left');
     this.playRightInput = this.get<HTMLInputElement>('ed-play-right');
@@ -377,6 +385,16 @@ export class EditorUi {
       element.value = option.id;
       element.textContent = option.label;
       this.analogSelect.append(element);
+    }
+    const noAmbience = document.createElement('option');
+    noAmbience.value = '';
+    noAmbience.textContent = 'None';
+    this.ambienceSelect.append(noAmbience);
+    for (const track of AMBIENCE_TRACKS) {
+      const element = document.createElement('option');
+      element.value = track.id;
+      element.textContent = track.label;
+      this.ambienceSelect.append(element);
     }
     for (const option of CHARACTER_SCALE_OPTIONS) {
       const element = document.createElement('option');
@@ -528,6 +546,9 @@ export class EditorUi {
     this.analogSelect.addEventListener('change', () =>
       this.callbacks.onAnalogFx(this.analogSelect.value || undefined),
     );
+    this.ambienceSelect.addEventListener('change', () =>
+      this.callbacks.onAmbience(this.ambienceSelect.value || undefined),
+    );
     this.characterScaleSelect.addEventListener('change', () =>
       this.callbacks.onCharacterScale(Number(this.characterScaleSelect.value)),
     );
@@ -544,6 +565,7 @@ export class EditorUi {
     this.setBackground(level.background);
     this.setForeground(level.foreground);
     this.setAnalogFx(level.analogFx);
+    this.setAmbience(level.ambience);
     this.setCharacterScale(level.characterScale, level.tileSize);
     this.setCameraZoom(level.cameraZoom, level.tileSize);
     this.setCameraFollow(level.cameraFollow);
@@ -812,6 +834,10 @@ export class EditorUi {
 
   setAnalogFx(id: string | undefined): void {
     this.analogSelect.value = normalizeAnalogFxPreset(id) ?? '';
+  }
+
+  setAmbience(id: string | undefined): void {
+    this.ambienceSelect.value = id ?? '';
   }
 
   setCharacterScale(scale: number | undefined, tileSize: number): void {

@@ -110,6 +110,10 @@ export function setAnalogFx(level: LevelData, id: string | undefined): LevelData
   return setOptionalField(level, 'analogFx', id);
 }
 
+export function setAmbience(level: LevelData, id: string | undefined): LevelData {
+  return setOptionalField(level, 'ambience', id);
+}
+
 /** Clamps a play area so it always covers at least one tile inside the canvas. */
 export function clampPlayArea(
   area: PlayArea,
@@ -211,7 +215,7 @@ export function setCameraFollow(level: LevelData, id: string | undefined): Level
 
 function setOptionalField(
   level: LevelData,
-  key: 'background' | 'foreground' | 'analogFx',
+  key: 'background' | 'foreground' | 'analogFx' | 'ambience',
   value: string | undefined,
 ): LevelData {
   const next = value === '' || value === 'none' ? undefined : value;

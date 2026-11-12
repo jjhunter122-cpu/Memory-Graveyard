@@ -18,6 +18,7 @@ import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
 import { analogOverlay } from '../ui/analogFx';
 import { footstepAudio } from '../audio/footsteps';
+import { ambienceAudio } from '../audio/ambience';
 import { metalFootstepVolume } from '../audio/proximity';
 import {
   createGuardianAnimations,
@@ -98,6 +99,7 @@ export class PlayScene extends Scene {
   override onActivate(_context: unknown): void {
     setMode('playing');
     analogOverlay.setPreset(this.level.analogFx);
+    ambienceAudio.play(this.level.ambience);
     this.hud.setLevelName(this.level.name);
     this.hud.setVisible(this.options.showHud ?? true);
     this.hud.setThreat(
@@ -112,6 +114,7 @@ export class PlayScene extends Scene {
 
   override onDeactivate(): void {
     analogOverlay.clear();
+    ambienceAudio.stop();
     document.removeEventListener('keydown', this.onKeyDown);
     if (this.completeTimer !== null) {
       clearTimeout(this.completeTimer);

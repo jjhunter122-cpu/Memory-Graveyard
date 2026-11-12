@@ -48,6 +48,7 @@ describe('default level template', () => {
     expect(level.playArea).toEqual(DEFAULT_PLAY_AREA);
     expect(level.skybox).toBe('#0a0b10');
     expect(level.analogFx).toBe('vignette');
+    expect(level.ambience).toBe('spooky-forest');
     expect(level.characterScale).toBe(1.75);
     expect(level.cameraZoom).toBe(1);
     expect(level.cameraFollow).toBe('momentum');

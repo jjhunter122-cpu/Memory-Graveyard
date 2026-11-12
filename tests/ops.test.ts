@@ -8,6 +8,7 @@ import {
   renameLevel,
   resizeLevel,
   setAnalogFx,
+  setAmbience,
   setBackground,
   setForeground,
   setPlayArea,
@@ -147,5 +148,14 @@ describe('level operations', () => {
     expect(withFx.analogFx).toBe('vignette');
     expect(setAnalogFx(withFx, undefined).analogFx).toBeUndefined();
     expect(setAnalogFx(withFx, 'none').analogFx).toBeUndefined();
+  });
+
+  it('sets and clears the ambience track', () => {
+    const level = makeLevel();
+    const withAmbience = setAmbience(level, 'spooky-forest');
+    expect(withAmbience.ambience).toBe('spooky-forest');
+    expect(setAmbience(withAmbience, undefined).ambience).toBeUndefined();
+    expect(setAmbience(withAmbience, 'none').ambience).toBeUndefined();
+    expect(setAmbience(withAmbience, '').ambience).toBeUndefined();
   });
 });

@@ -54,6 +54,8 @@ export interface LevelData {
   foreground?: string;
   /** Optional analog-horror screen FX preset id. */
   analogFx?: string;
+  /** Optional looping ambience track id. Missing means no ambience. */
+  ambience?: string;
   /**
    * Character height multiplier for this level. 1 is the existing baseline;
    * 1.5, 1.75 and 2 make both the player and the monster that tall in tiles.
@@ -193,7 +195,7 @@ export function validateLevel(raw: unknown): LevelData {
     }
     result.skybox = obj.skybox;
   }
-  for (const key of ['background', 'foreground', 'analogFx'] as const) {
+  for (const key of ['background', 'foreground', 'analogFx', 'ambience'] as const) {
     const value = obj[key];
     if (value !== undefined) {
       if (typeof value !== 'string' || value.length === 0) {

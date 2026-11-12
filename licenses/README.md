@@ -3,6 +3,7 @@
 Keep the full text of every licence that applies to a shipped asset here.
 
 - `CC0-1.0.txt` — Creative Commons Zero 1.0 Universal
+- `CC-BY-3.0.txt` — Creative Commons Attribution 3.0 Unported
 - `CC-BY-4.0.txt` — Creative Commons Attribution 4.0 International
 - `LESED-Analog-Horror-Screen-FX-Free.txt` — LESED free-use overlay licence
 - `The-Sound-Guild-Footsteps-Volume-02.pdf` — Sound Guild pack licence and guide
