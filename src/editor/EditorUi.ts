@@ -103,17 +103,30 @@ interface TileGroup {
 }
 
 interface CharacterPreviewConfig {
-  sheet: 'hero' | 'ghost' | 'skeleton';
+  sheet: 'hero' | 'ghost' | 'skeleton' | 'guardian';
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
   displayWidth: number;
   displayHeight: number;
+  /** Vertical strips place frames down the image instead of across. */
+  vertical?: boolean;
+  /** Optional crop inside each frame, for padded sprite sheets. */
+  crop?: { x: number; y: number; width: number; height: number };
 }
 
 const CHARACTER_PREVIEWS: Partial<Record<EditorEntityType, CharacterPreviewConfig>> = {
   spawn: { sheet: 'hero', frameWidth: 90, frameHeight: 50, frameCount: 4, displayWidth: 54, displayHeight: 30 },
-  monster: { sheet: 'ghost', frameWidth: 32, frameHeight: 32, frameCount: 6, displayWidth: 40, displayHeight: 40 },
+  monster: {
+    sheet: 'guardian',
+    frameWidth: 120,
+    frameHeight: 120,
+    frameCount: 6,
+    displayWidth: 44,
+    displayHeight: 48,
+    vertical: true,
+    crop: { x: 30, y: 24, width: 64, height: 72 },
+  },
   skeleton: { sheet: 'skeleton', frameWidth: 44, frameHeight: 52, frameCount: 8, displayWidth: 40, displayHeight: 48 },
 };
 
@@ -125,6 +138,8 @@ interface EntityPreview {
   frameCount: number;
   displayWidth: number;
   displayHeight: number;
+  vertical: boolean;
+  crop?: { x: number; y: number; width: number; height: number };
   color: string;
   shape: 'circle' | 'square';
 }
@@ -613,18 +628,24 @@ export class EditorUi {
       frameCount: config?.frameCount ?? 1,
       displayWidth: config?.displayWidth ?? 0,
       displayHeight: config?.displayHeight ?? 0,
+      vertical: config?.vertical ?? false,
+      crop: config?.crop,
       color: ENTITY_COLORS[type],
       shape: type === 'exit' ? 'square' : 'circle',
     };
   }
 
-  private sheetFor(kind: 'hero' | 'ghost' | 'skeleton'): HTMLImageElement | undefined {
+  private sheetFor(
+    kind: 'hero' | 'ghost' | 'skeleton' | 'guardian',
+  ): HTMLImageElement | undefined {
     const source =
       kind === 'hero'
         ? this.textures.heroSheet
         : kind === 'ghost'
           ? this.textures.ghostSheet
-          : this.textures.skeletonSheet;
+          : kind === 'guardian'
+            ? this.textures.guardianIdleSheet
+            : this.textures.skeletonSheet;
     return source?.data;
   }
 
@@ -662,15 +683,22 @@ export class EditorUi {
 
     if (entry.sheet && entry.frameWidth > 0 && entry.frameHeight > 0 && entry.frameCount > 1) {
       const index = this.previewFrame % entry.frameCount;
-      const sourceX = index * entry.frameWidth;
+      const crop = entry.crop ?? {
+        x: 0,
+        y: 0,
+        width: entry.frameWidth,
+        height: entry.frameHeight,
+      };
+      const sourceX = entry.vertical ? crop.x : crop.x + index * entry.frameWidth;
+      const sourceY = entry.vertical ? crop.y + index * entry.frameHeight : crop.y;
       const dx = Math.round((entry.canvas.width - entry.displayWidth) / 2);
       const dy = Math.round((entry.canvas.height - entry.displayHeight) / 2);
       context.drawImage(
         entry.sheet,
         sourceX,
-        0,
-        entry.frameWidth,
-        entry.frameHeight,
+        sourceY,
+        crop.width,
+        crop.height,
         dx,
         dy,
         entry.displayWidth,

@@ -18,6 +18,10 @@ import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
 import { analogOverlay } from '../ui/analogFx';
 import { footstepAudio } from '../audio/footsteps';
+import {
+  createGuardianAnimations,
+  type GuardianAnimations,
+} from '../visuals/guardian';
 
 export type PlayOrigin = 'campaign' | 'levelSelect' | 'editor';
 
@@ -53,6 +57,10 @@ export class PlayScene extends Scene {
   private wasGrounded = true;
   private wasMoving = false;
   private fallSpeed = 0;
+  private guardianAnimations?: GuardianAnimations;
+  private guardianAnimationName: 'idle' | 'walk' | null = null;
+  private lastMonsterX = 0;
+  private monsterFacingRight = true;
   private paused = false;
   private completeTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -149,6 +157,19 @@ export class PlayScene extends Scene {
       this.follower = new TrailFollower(this.built.monsterSpawn);
       this.trail.reset(this.built.spawn);
       this.graceRemaining = MONSTER.graceSeconds;
+      this.lastMonsterX = this.monster.pos.x;
+      if (
+        this.built.monsterVariant === 'guardian' &&
+        this.textures.guardianIdleSheet &&
+        this.textures.guardianWalkSheet
+      ) {
+        this.guardianAnimations = createGuardianAnimations(
+          this.textures.guardianIdleSheet,
+          this.textures.guardianWalkSheet,
+        );
+        this.guardianAnimationName = 'idle';
+        this.monster.graphics.use(this.guardianAnimations.idle);
+      }
       this.add(this.monster);
     }
 
@@ -202,6 +223,7 @@ export class PlayScene extends Scene {
       this.hud.setThreat('SAFE', 'calm');
     }
 
+    this.updateMonsterVisual();
     this.cameraFollow.update(this.player.pos, dt, {
       vy: this.player.vel.y,
       grounded: this.player.controller.isGrounded,
@@ -436,6 +458,32 @@ export class PlayScene extends Scene {
     }
   }
 
+  private updateMonsterVisual(): void {
+    if (!this.monster || !this.guardianAnimations) {
+      return;
+    }
+    const dx = this.monster.pos.x - this.lastMonsterX;
+    if (Math.abs(dx) > 0.05) {
+      this.monsterFacingRight = dx > 0;
+    }
+    this.lastMonsterX = this.monster.pos.x;
+
+    this.setGuardianAnimation(this.graceRemaining > 0 ? 'idle' : 'walk');
+    const graphic = this.monster.graphics.current;
+    if (graphic) {
+      // The Guardian art faces left, so flip it when moving right.
+      graphic.flipHorizontal = this.monsterFacingRight;
+    }
+  }
+
+  private setGuardianAnimation(name: 'idle' | 'walk'): void {
+    if (!this.guardianAnimations || this.guardianAnimationName === name) {
+      return;
+    }
+    this.guardianAnimationName = name;
+    this.monster?.graphics.use(this.guardianAnimations[name]);
+  }
+
   private updateFootsteps(dt: number): void {
     const grounded = this.player.controller.isGrounded;
     const speed = Math.abs(this.player.vel.x);
@@ -505,6 +553,12 @@ export class PlayScene extends Scene {
     this.wasGrounded = true;
     this.wasMoving = false;
     this.fallSpeed = 0;
+    this.guardianAnimationName = null;
+    this.monsterFacingRight = true;
+    this.setGuardianAnimation('idle');
+    if (this.monster) {
+      this.lastMonsterX = this.monster.pos.x;
+    }
     this.cameraFollow.snap(this.player.pos);
     this.hud.setProgress(0, this.totalMemories);
 
@@ -515,6 +569,7 @@ export class PlayScene extends Scene {
         this.built.monsterSpawn.x,
         this.built.monsterSpawn.y,
       );
+      this.lastMonsterX = this.built.monsterSpawn.x;
       this.hud.setThreat('DORMANT', 'dormant');
     } else {
       this.hud.setThreat('SAFE', 'calm');

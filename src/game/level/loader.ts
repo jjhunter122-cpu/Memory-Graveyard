@@ -173,7 +173,7 @@ export type SlopeProbe = (
   halfWidth: number,
 ) => number | null;
 
-export type MonsterVariant = 'ghost' | 'skeleton';
+export type MonsterVariant = 'guardian' | 'ghost' | 'skeleton';
 
 export interface BuiltLevel {
   widthPx: number;
@@ -563,7 +563,7 @@ export function buildLevel(
       }
       case 'monster':
         monsterSpawn = { x, y };
-        monsterVariant = 'ghost';
+        monsterVariant = 'guardian';
         break;
       case 'skeleton':
         monsterSpawn = { x, y };

@@ -17,6 +17,10 @@ export const TEMP_ASSETS = true;
  */
 export const LEVEL_BACKGROUND = 'assets/TEMP/wallpaper_color.png';
 
+/** Placeholder Guardian monster sheets, pending licence approval. */
+export const GUARDIAN_IDLE_SHEET = 'assets/enemies/old-guardian/Old_Guardian_idle.png';
+export const GUARDIAN_WALK_SHEET = 'assets/enemies/old-guardian/Old_Guardian_walk.png';
+
 export interface GameTextures {
   /** Fallback wallpaper for levels without a skybox or scenery preset. */
   background?: ImageSource;
@@ -27,6 +31,9 @@ export interface GameTextures {
   heroSheet?: ImageSource;
   ghostSheet?: ImageSource;
   skeletonSheet?: ImageSource;
+  /** Placeholder Guardian idle/walk strips. */
+  guardianIdleSheet?: ImageSource;
+  guardianWalkSheet?: ImageSource;
   /** Scene-dressing art, keyed by path relative to `public/assets`. */
   scenery: Map<string, ImageSource>;
   /** Tile art, keyed by the manifest's `image` path. */
@@ -70,13 +77,23 @@ export function createGameTextures(base: string, manifest: AssetManifest): GameA
     ? new ImageSource(`${base}${LEVEL_BACKGROUND}`)
     : undefined;
 
+  const guardianIdleSheet = new ImageSource(`${base}${GUARDIAN_IDLE_SHEET}`);
+  const guardianWalkSheet = new ImageSource(`${base}${GUARDIAN_WALK_SHEET}`);
+
   const resources = [...tiles.values(), ...scenery.values()];
   if (background) {
     resources.push(background);
   }
+  resources.push(guardianIdleSheet, guardianWalkSheet);
 
   return {
-    textures: { background, scenery, tiles },
+    textures: {
+      background,
+      guardianIdleSheet,
+      guardianWalkSheet,
+      scenery,
+      tiles,
+    },
     resources,
   };
 }

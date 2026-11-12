@@ -44,6 +44,15 @@ and any processing notes here when the voice pass is complete.
   - Date added: 2026-11-08
   - Licence text: `public/assets/grunge/license.txt`
 
+- **Old Guardian** — placeholder
+  - Source: itch.io free asset pack; author and source URL not recorded.
+  - Licence: **not found** in the pack or the source page.
+  - Status: placeholder only, pending Prof/course approval.
+  - Intended use: current monster placeholder.
+  - Modifications: none
+  - Date added: 2026-11-11
+  - Do not publish or redistribute until the licence is confirmed.
+
 Temporary, unlicensed stand-ins live in `public/assets/TEMP/` and are **not for
 release**. See `public/assets/TEMP/README.md` for removal instructions.
 
