@@ -4,7 +4,7 @@ import type { GameTextures } from '../assets';
 import { VIEW } from '../config';
 import { buildLevel } from '../level/loader';
 import type { AssetManifest } from '../level/manifest';
-import { createLevel } from '../level/schema';
+import { createLevel, EMPTY_TILE } from '../level/schema';
 import {
   ACT_FLOOR_ROW,
   ACT_HEIGHT,
@@ -12,13 +12,14 @@ import {
   ACT_WIDTH,
   FLOOR_FILL_TILE,
   FLOOR_TOP_TILE,
+  generateFeatures,
   generatePits,
   isOverPit,
   type Pit,
 } from './generator';
 import {
   SHARD_START_X,
-  shardHeightAt,
+  shardRowOffset,
   shardSpacingAt,
 } from './stamina';
 
@@ -34,6 +35,8 @@ interface Act {
   actors: Actor[];
   pits: WorldPit[];
   shards: StaminaShard[];
+  /** World-space top surface per local tile column; -1 means a pit. */
+  surfaceTops: number[];
 }
 
 /**
@@ -94,29 +97,29 @@ export class ActStream {
     }
   }
 
-  /** Ground probe used by the player while streaming acts exist ahead. */
-  hasFloorAt(worldX: number, feetY: number, halfWidth: number): boolean {
-    const floorTop = ACT_FLOOR_ROW * ACT_TILE_SIZE;
-    if (feetY < floorTop - 2 || feetY > floorTop + 14) {
-      return false;
-    }
-
+  /** World-space top surface at an x, or null over a pit. */
+  surfaceAt(worldX: number): number | null {
     const act = this.acts.find(
       (candidate) => worldX >= candidate.startX && worldX < candidate.endX,
     );
     if (!act) {
-      return false;
+      return null;
     }
+    const tile = Math.floor((worldX - act.startX) / ACT_TILE_SIZE);
+    const surface = act.surfaceTops[tile];
+    return surface === undefined || surface < 0 ? null : surface;
+  }
 
-    const left = worldX - halfWidth;
-    const right = worldX + halfWidth;
-    for (const pit of act.pits) {
-      // The player is only unsupported when the whole foot span is over air.
-      if (left >= pit.startX && right <= pit.endX) {
-        return false;
+  /** Ground probe used by the player while streaming acts exist ahead. */
+  hasFloorAt(worldX: number, feetY: number, halfWidth: number): boolean {
+    const samples = [worldX, worldX - halfWidth, worldX + halfWidth];
+    for (const sample of samples) {
+      const surface = this.surfaceAt(sample);
+      if (surface !== null && feetY >= surface - 2 && feetY <= surface + 14) {
+        return true;
       }
     }
-    return true;
+    return false;
   }
 
   /** True when the player's centre is horizontally inside a pit. */
@@ -132,6 +135,7 @@ export class ActStream {
 
   private buildAct(index: number, startX: number): void {
     const pits = generatePits(this.seed, index);
+    const features = generateFeatures(this.seed, index, pits);
     const level = createLevel(
       `Act ${index + 1}`,
       ACT_WIDTH,
@@ -139,8 +143,9 @@ export class ActStream {
       ACT_TILE_SIZE,
     );
     const terrain = level.layers[0];
+    const data = terrain ? terrain.data.slice() : [];
+
     if (terrain) {
-      const data = terrain.data.slice();
       for (let x = 0; x < ACT_WIDTH; x += 1) {
         if (isOverPit(pits, x)) {
           continue;
@@ -148,13 +153,47 @@ export class ActStream {
         data[ACT_FLOOR_ROW * ACT_WIDTH + x] = FLOOR_TOP_TILE;
         data[(ACT_FLOOR_ROW + 1) * ACT_WIDTH + x] = FLOOR_FILL_TILE;
       }
+    }
+
+    const fillRaised = (start: number, width: number, topRow: number): void => {
+      for (let x = start; x < start + width; x += 1) {
+        for (let y = topRow; y < ACT_HEIGHT; y += 1) {
+          data[y * ACT_WIDTH + x] =
+            y === topRow ? FLOOR_TOP_TILE : FLOOR_FILL_TILE;
+        }
+      }
+    };
+
+    for (const section of features.raised) {
+      fillRaised(section.start, section.width, section.topRow);
+    }
+    for (const platform of features.floating) {
+      for (let x = platform.start; x < platform.start + platform.width; x += 1) {
+        for (let y = platform.topRow; y < ACT_FLOOR_ROW; y += 1) {
+          data[y * ACT_WIDTH + x] =
+            y === platform.topRow ? FLOOR_TOP_TILE : FLOOR_FILL_TILE;
+        }
+      }
+    }
+
+    const surfaceTops = new Array<number>(ACT_WIDTH).fill(-1);
+    for (let x = 0; x < ACT_WIDTH; x += 1) {
+      for (let y = 0; y < ACT_HEIGHT; y += 1) {
+        if (data[y * ACT_WIDTH + x] !== EMPTY_TILE) {
+          surfaceTops[x] = y * ACT_TILE_SIZE;
+          break;
+        }
+      }
+    }
+
+    if (terrain) {
       level.layers[0] = { ...terrain, data };
     }
     level.skybox = '#0a0b10';
     level.background = 'pixel-platformer-world-layers';
 
     const actEndX = startX + ACT_WIDTH * ACT_TILE_SIZE;
-    const shardSpecs: { tile: number; y: number }[] = [];
+    const shardSpecs: { tile: number; rowOffset: number }[] = [];
     while (this.nextShardX < actEndX) {
       let tile = Math.max(
         0,
@@ -166,7 +205,7 @@ export class ActStream {
       if (tile >= ACT_WIDTH) {
         break;
       }
-      shardSpecs.push({ tile, y: shardHeightAt(this.shardIndex) });
+      shardSpecs.push({ tile, rowOffset: shardRowOffset(this.shardIndex) });
       this.shardIndex += 1;
       this.nextShardX += shardSpacingAt(this.nextShardX);
     }
@@ -181,25 +220,31 @@ export class ActStream {
       actor.pos.x += startX;
     }
 
-    const shards = shardSpecs.map((spec) => {
+    const shards: StaminaShard[] = [];
+    for (const spec of shardSpecs) {
+      const surface = surfaceTops[spec.tile];
+      if (surface === undefined || surface < 0) {
+        continue;
+      }
       const shard = new StaminaShard(
         startX + spec.tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
-        spec.y * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+        surface - spec.rowOffset * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
       );
       this.scene.add(shard);
-      return shard;
-    });
+      shards.push(shard);
+    }
 
     this.acts.push({
       index,
       startX,
-      endX: startX + ACT_WIDTH * ACT_TILE_SIZE,
+      endX: actEndX,
       actors: [...actors, ...shards],
       pits: pits.map((pit: Pit) => ({
         startX: startX + pit.start * ACT_TILE_SIZE,
         endX: startX + (pit.start + pit.width) * ACT_TILE_SIZE,
       })),
       shards,
+      surfaceTops,
     });
   }
 

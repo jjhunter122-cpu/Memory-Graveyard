@@ -7,6 +7,7 @@ import {
   MAX_SPEED,
   MIN_PIT_SPACING,
   SPEED_RAMP_DISTANCE,
+  generateFeatures,
   generatePits,
   isOverPit,
   maxPitWidth,
@@ -61,5 +62,53 @@ describe('run generator', () => {
     expect(speedAt(SPEED_RAMP_DISTANCE * 2)).toBe(MAX_SPEED);
     expect(speedAt(15000)).toBeGreaterThan(BASE_SPEED);
     expect(speedAt(15000)).toBeLessThan(MAX_SPEED);
+  });
+});
+
+describe('act features', () => {
+  it('is deterministic for the same seed', () => {
+    const pits = generatePits(2024, 3);
+    expect(generateFeatures(2024, 3, pits)).toEqual(
+      generateFeatures(2024, 3, pits),
+    );
+  });
+
+  it('keeps raised sections on flat ground with safe margins', () => {
+    for (let act = 0; act < 12; act += 1) {
+      const pits = generatePits(777, act);
+      const features = generateFeatures(777, act, pits);
+      for (const section of features.raised) {
+        expect(section.width).toBeGreaterThanOrEqual(2);
+        expect(section.topRow === 14 || section.topRow === 15).toBe(true);
+        expect(section.start).toBeGreaterThanOrEqual(ACT_SAFE_START + 3);
+        expect(section.start + section.width).toBeLessThanOrEqual(
+          ACT_WIDTH - ACT_SAFE_END - 3,
+        );
+        for (let x = section.start; x < section.start + section.width; x += 1) {
+          expect(isOverPit(pits, x)).toBe(false);
+        }
+        for (const pit of pits) {
+          const before = section.start + section.width <= pit.start - 3;
+          const after = section.start >= pit.start + pit.width + 3;
+          expect(before || after).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('places floating platforms inside pits', () => {
+    for (let act = 0; act < 12; act += 1) {
+      const pits = generatePits(888, act);
+      const features = generateFeatures(888, act, pits);
+      for (const platform of features.floating) {
+        expect(platform.topRow === 14 || platform.topRow === 15).toBe(true);
+        const host = pits.find(
+          (pit) =>
+            platform.start >= pit.start &&
+            platform.start + platform.width <= pit.start + pit.width,
+        );
+        expect(host).toBeDefined();
+      }
+    }
   });
 });

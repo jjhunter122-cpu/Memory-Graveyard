@@ -25,6 +25,24 @@ export interface Pit {
   width: number;
 }
 
+export interface RaisedSection {
+  start: number;
+  width: number;
+  /** Tile row of the top surface: 15 is one tile up, 14 is two. */
+  topRow: number;
+}
+
+export interface FloatingPlatform {
+  start: number;
+  width: number;
+  topRow: number;
+}
+
+export interface ActFeatures {
+  raised: RaisedSection[];
+  floating: FloatingPlatform[];
+}
+
 /** Small deterministic PRNG so a run can be reproduced from its seed. */
 export function createRng(seed: number): () => number {
   let state = seed >>> 0;
@@ -66,6 +84,94 @@ export function generatePits(seed: number, actIndex: number): Pit[] {
 
 export function isOverPit(pits: readonly Pit[], tileX: number): boolean {
   return pits.some((pit) => tileX >= pit.start && tileX < pit.start + pit.width);
+}
+
+/**
+ * Solid raised sections on flat ground plus raised bridges over selected pits.
+ * All features stay at least three tiles from pit edges and the safe act ends.
+ */
+export function generateFeatures(
+  seed: number,
+  actIndex: number,
+  pits: readonly Pit[],
+): ActFeatures {
+  const rng = createRng((seed + actIndex * 0x85ebca6b) >>> 0);
+  const features: ActFeatures = { raised: [], floating: [] };
+
+  for (const pit of pits) {
+    if (pit.width < 3) {
+      continue;
+    }
+    if (rng() > 0.55) {
+      continue;
+    }
+    const topRow = actIndex >= 4 && rng() < 0.5 ? 14 : 15;
+    features.floating.push({ start: pit.start, width: pit.width, topRow });
+  }
+
+  const segments: { start: number; end: number }[] = [];
+  let cursor = ACT_SAFE_START;
+  for (const pit of pits) {
+    if (pit.start - cursor >= 12) {
+      segments.push({ start: cursor, end: pit.start });
+    }
+    cursor = pit.start + pit.width;
+  }
+  if (ACT_WIDTH - ACT_SAFE_END - cursor >= 12) {
+    segments.push({ start: cursor, end: ACT_WIDTH - ACT_SAFE_END });
+  }
+
+  const chance = Math.min(0.9, 0.55 + actIndex * 0.04);
+  for (const segment of segments) {
+    if (rng() > chance) {
+      continue;
+    }
+    const available = segment.end - segment.start - 6;
+    if (available < 2) {
+      continue;
+    }
+    const kind = rng();
+    if (kind < 0.4) {
+      const width = 2 + Math.floor(rng() * 2);
+      if (width > available) {
+        continue;
+      }
+      const start =
+        segment.start + 3 + Math.floor(rng() * (available - width + 1));
+      features.raised.push({ start, width, topRow: 15 });
+    } else if (kind < 0.75) {
+      const width = 4 + Math.floor(rng() * 5);
+      if (width > available) {
+        continue;
+      }
+      const start =
+        segment.start + 3 + Math.floor(rng() * (available - width + 1));
+      const topRow = actIndex >= 2 && rng() < 0.5 ? 14 : 15;
+      features.raised.push({ start, width, topRow });
+    } else {
+      const firstWidth = 3 + Math.floor(rng() * 2);
+      const secondWidth = 3 + Math.floor(rng() * 2);
+      const width = firstWidth + secondWidth;
+      if (width > available) {
+        continue;
+      }
+      const start =
+        segment.start + 3 + Math.floor(rng() * (available - width + 1));
+      const up = rng() < 0.5;
+      features.raised.push({
+        start,
+        width: firstWidth,
+        topRow: up ? 15 : 14,
+      });
+      features.raised.push({
+        start: start + firstWidth,
+        width: secondWidth,
+        topRow: up ? 14 : 15,
+      });
+    }
+  }
+
+  return features;
 }
 
 /** Shared player/monster pace. Both ramp together; the gap stays fixed. */

@@ -370,7 +370,9 @@ export class RunScene extends Scene {
   }
 
   private updateMonsterFootsteps(): void {
-    if (Math.abs(this.monster.pos.y - MONSTER_Y) > 24) {
+    const feet = this.monster.pos.y + MONSTER_RENDER_HEIGHT / 2;
+    const surface = this.stream.surfaceAt(this.monster.pos.x);
+    if (surface === null || Math.abs(feet - surface) > 24) {
       this.lastMonsterStepX = this.monster.pos.x;
       this.monsterFootstepDistance = 0;
       return;

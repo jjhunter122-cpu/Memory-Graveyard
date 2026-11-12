@@ -1,12 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ACT_FLOOR_ROW } from '../src/game/run/generator';
 import {
   LOW_STAMINA_SPEED,
   LOW_STAMINA_THRESHOLD,
   SHARD_MAX_SPACING,
   SHARD_MIN_SPACING,
   STAMINA_MAX,
-  shardHeightAt,
+  shardRowOffset,
   shardSpacingAt,
   staminaSpeedFactor,
 } from '../src/game/run/stamina';
@@ -26,9 +25,9 @@ describe('stamina', () => {
     expect(shardSpacingAt(10000)).toBeLessThan(SHARD_MAX_SPACING);
   });
 
-  it('alternates ground and air shards', () => {
-    expect(shardHeightAt(0)).toBe(ACT_FLOOR_ROW - 1);
-    expect(shardHeightAt(1)).toBe(ACT_FLOOR_ROW - 3);
-    expect(shardHeightAt(2)).toBe(ACT_FLOOR_ROW - 1);
+  it('alternates ground and air shard offsets', () => {
+    expect(shardRowOffset(0)).toBe(1);
+    expect(shardRowOffset(1)).toBe(3);
+    expect(shardRowOffset(2)).toBe(1);
   });
 });

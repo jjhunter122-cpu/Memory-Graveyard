@@ -1,5 +1,3 @@
-import { ACT_FLOOR_ROW } from './generator';
-
 /** Stamina tuning. Kept pure so the curve can be tested without Excalibur. */
 export const STAMINA_MAX = 100;
 export const STAMINA_DRAIN = 3;
@@ -24,9 +22,9 @@ export function shardSpacingAt(distancePx: number): number {
 }
 
 /**
- * Alternating shard heights: ground level is collected while running, the air
- * version needs a jump. Index 0 is the easy ground shard.
+ * Alternating shard heights relative to the local surface: one row above for
+ * ground pickups, three rows above for the jump pickups.
  */
-export function shardHeightAt(index: number): number {
-  return index % 2 === 0 ? ACT_FLOOR_ROW - 1 : ACT_FLOOR_ROW - 3;
+export function shardRowOffset(index: number): number {
+  return index % 2 === 0 ? 1 : 3;
 }
