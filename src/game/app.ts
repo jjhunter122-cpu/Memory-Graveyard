@@ -6,6 +6,7 @@ import { PlayScene, type PlayOrigin } from './scenes/PlayScene';
 import { RunScene } from './scenes/RunScene';
 import { EditorScene } from '../editor/EditorScene';
 import { TitleScene } from './menus/TitleScene';
+import { CreditsScene } from './menus/CreditsScene';
 import { LevelSelectScene } from './menus/LevelSelectScene';
 import { OptionsScene } from './menus/OptionsScene';
 import { SequenceScene } from './menus/SequenceScene';
@@ -73,18 +74,32 @@ export class GameApp {
     return this.show('options', this.optionsScene());
   }
 
+  showCredits(): Promise<void> {
+    return this.show(
+      'credits',
+      new CreditsScene({ onBack: () => void this.showTitle() }),
+    );
+  }
+
   showSequence(): Promise<void> {
     return this.show('sequence', this.sequenceScene());
   }
 
   startRun(): Promise<void> {
     const seed = Math.floor(Math.random() * 0xffffffff);
+    const bestScore = this.settings.load().highScore;
     return this.show(
       'run',
       new RunScene(this.manifest, this.textures, {
         seed,
+        bestScore,
         onRestart: () => void this.startRun(),
         onHome: () => void this.showTitle(),
+        onRunEnd: (score) => {
+          if (score > this.settings.load().highScore) {
+            this.settings.update({ highScore: score });
+          }
+        },
       }),
     );
   }
@@ -147,6 +162,7 @@ export class GameApp {
       textures: this.textures,
       onPlay: () => void this.startRun(),
       onOptions: () => void this.showOptions(),
+      onCredits: () => void this.showCredits(),
     });
   }
 
@@ -320,6 +336,7 @@ export class GameApp {
     analogOverlay.clear();
     const keepMusic =
       scene instanceof TitleScene ||
+      scene instanceof CreditsScene ||
       scene instanceof LevelSelectScene ||
       scene instanceof OptionsScene ||
       scene instanceof SequenceScene;

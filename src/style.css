@@ -925,6 +925,44 @@ body.mode-playing .stamina-ui {
   }
 }
 
+.run-score {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  display: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  pointer-events: none;
+  z-index: 6;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8b8fae;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.85);
+}
+
+body.mode-playing .run-score {
+  display: flex;
+}
+
+.run-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.run-score strong {
+  color: #7ce7ff;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+}
+
+.run-score-best strong {
+  color: #ffd166;
+  font-size: 11px;
+}
+
 .run-death {
   padding: 26px 36px;
   background: rgba(10, 11, 16, 0.94);
@@ -1016,6 +1054,48 @@ body.mode-menu .menu-ui.title-playing .menu-panel {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: #7ce7ff;
+}
+
+.credits-panel {
+  width: 580px;
+  max-width: calc(100vw - 40px);
+  max-height: 70vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.credits-panel .menu-heading {
+  text-align: center;
+}
+
+.credits-section {
+  margin: 16px 0 0;
+}
+
+.credits-section h3 {
+  margin: 0 0 5px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #7ce7ff;
+}
+
+.credits-section p {
+  margin: 0 0 5px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #cfd0e6;
+}
+
+.credits-section .credit-line {
+  margin-bottom: 9px;
+  font-size: 10px;
+  color: #8b8fae;
+  word-break: break-word;
+}
+
+.credits-panel .menu-buttons {
+  margin-top: 20px;
 }
 
 .option-row {

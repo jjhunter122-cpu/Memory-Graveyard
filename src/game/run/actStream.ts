@@ -1,7 +1,8 @@
 import type { Actor, Scene } from 'excalibur';
+import { MemoryPickup } from '../actors/MemoryPickup';
 import { StaminaShard } from '../actors/StaminaShard';
 import type { GameTextures } from '../assets';
-import { VIEW } from '../config';
+import { MEMORY, VIEW } from '../config';
 import { buildLevel } from '../level/loader';
 import type { AssetManifest } from '../level/manifest';
 import { createLevel, EMPTY_TILE } from '../level/schema';
@@ -22,6 +23,11 @@ import {
   shardRowOffset,
   shardSpacingAt,
 } from './stamina';
+import {
+  MEMORY_CLUSTER_SIZE,
+  MEMORY_SPACING,
+  MEMORY_START_X,
+} from './score';
 
 interface WorldPit {
   startX: number;
@@ -35,6 +41,7 @@ interface Act {
   actors: Actor[];
   pits: WorldPit[];
   shards: StaminaShard[];
+  memories: MemoryPickup[];
   /** World-space top surface per local tile column; -1 means a pit. */
   surfaceTops: number[];
 }
@@ -49,6 +56,7 @@ export class ActStream {
   private seed = 0;
   private nextShardX = SHARD_START_X;
   private shardIndex = 0;
+  private nextMemoryX = MEMORY_START_X;
 
   constructor(
     private readonly scene: Scene,
@@ -70,6 +78,7 @@ export class ActStream {
     this.seed = seed;
     this.nextShardX = SHARD_START_X;
     this.shardIndex = 0;
+    this.nextMemoryX = MEMORY_START_X;
     this.update(0);
   }
 
@@ -193,6 +202,32 @@ export class ActStream {
     level.background = 'pixel-platformer-world-layers';
 
     const actEndX = startX + ACT_WIDTH * ACT_TILE_SIZE;
+    const memorySpecs: { tile: number }[] = [];
+    while (this.nextMemoryX < actEndX) {
+      let tile = Math.max(
+        0,
+        Math.floor((this.nextMemoryX - startX) / ACT_TILE_SIZE),
+      );
+      while (tile + MEMORY_CLUSTER_SIZE <= ACT_WIDTH) {
+        let blocked = false;
+        for (let i = 0; i < MEMORY_CLUSTER_SIZE; i += 1) {
+          if (isOverPit(pits, tile + i)) {
+            blocked = true;
+            break;
+          }
+        }
+        if (!blocked) {
+          break;
+        }
+        tile += 1;
+      }
+      if (tile + MEMORY_CLUSTER_SIZE > ACT_WIDTH) {
+        break;
+      }
+      memorySpecs.push({ tile });
+      this.nextMemoryX += MEMORY_SPACING;
+    }
+
     const shardSpecs: { tile: number; rowOffset: number }[] = [];
     while (this.nextShardX < actEndX) {
       let tile = Math.max(
@@ -234,16 +269,34 @@ export class ActStream {
       shards.push(shard);
     }
 
+    const memories: MemoryPickup[] = [];
+    for (const spec of memorySpecs) {
+      for (let i = 0; i < MEMORY_CLUSTER_SIZE; i += 1) {
+        const tile = spec.tile + i;
+        const surface = surfaceTops[tile];
+        if (surface === undefined || surface < 0) {
+          continue;
+        }
+        const memory = new MemoryPickup(
+          startX + tile * ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+          surface - ACT_TILE_SIZE + ACT_TILE_SIZE / 2,
+        );
+        this.scene.add(memory);
+        memories.push(memory);
+      }
+    }
+
     this.acts.push({
       index,
       startX,
       endX: actEndX,
-      actors: [...actors, ...shards],
+      actors: [...actors, ...shards, ...memories],
       pits: pits.map((pit: Pit) => ({
         startX: startX + pit.start * ACT_TILE_SIZE,
         endX: startX + (pit.start + pit.width) * ACT_TILE_SIZE,
       })),
       shards,
+      memories,
       surfaceTops,
     });
   }
@@ -268,6 +321,30 @@ export class ActStream {
         ) {
           shard.kill();
           act.shards.splice(index, 1);
+          collected += 1;
+        }
+      }
+    }
+    return collected;
+  }
+
+  /** Collects memory orbs by body overlap, like the stamina shards. */
+  collectMemories(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+  ): number {
+    let collected = 0;
+    for (const act of this.acts) {
+      for (let index = act.memories.length - 1; index >= 0; index -= 1) {
+        const memory = act.memories[index]!;
+        if (
+          Math.abs(x - memory.pos.x) < width / 2 + MEMORY.radius &&
+          Math.abs(y - memory.pos.y) < height / 2 + MEMORY.radius
+        ) {
+          memory.kill();
+          act.memories.splice(index, 1);
           collected += 1;
         }
       }

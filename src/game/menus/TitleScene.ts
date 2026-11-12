@@ -32,6 +32,7 @@ export interface TitleCallbacks {
   textures: GameTextures;
   onPlay: () => void;
   onOptions: () => void;
+  onCredits: () => void;
 }
 
 export class TitleScene extends MenuScene {
@@ -121,14 +122,13 @@ export class TitleScene extends MenuScene {
           <button id="menu-options" class="menu-button">Options</button>
           <button id="menu-credits" class="menu-button">Credits</button>
         </div>
-        <p id="title-note" class="title-note" aria-live="polite"></p>
       </div>`;
   }
 
   protected bind(): void {
     this.click('menu-play', () => this.startRun());
     this.click('menu-options', () => this.callbacks.onOptions());
-    this.click('menu-credits', () => this.showCreditsNote());
+    this.click('menu-credits', () => this.callbacks.onCredits());
   }
 
   private startRun(): void {
@@ -147,13 +147,6 @@ export class TitleScene extends MenuScene {
     revive.events.once('end', () => this.callbacks.onPlay());
     this.monster.graphics.use(revive);
     revive.play();
-  }
-
-  private showCreditsNote(): void {
-    const note = document.getElementById('title-note');
-    if (note) {
-      note.textContent = 'Credits coming soon';
-    }
   }
 }
 

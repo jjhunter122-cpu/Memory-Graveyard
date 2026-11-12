@@ -25,6 +25,7 @@ import {
   STAMINA_MAX,
   staminaSpeedFactor,
 } from '../run/stamina';
+import { runScore } from '../run/score';
 import { analogOverlay } from '../ui/analogFx';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
@@ -48,6 +49,8 @@ export interface RunSceneOptions {
   seed: number;
   onRestart: () => void;
   onHome: () => void;
+  bestScore: number;
+  onRunEnd: (score: number) => void;
 }
 
 /**
@@ -69,6 +72,10 @@ export class RunScene extends Scene {
   private attackTimer = 0;
   private monsterYOffset = 0;
   private stamina = STAMINA_MAX;
+  private memories = 0;
+  private score = 0;
+  private bestScore = 0;
+  private scoreSaved = false;
   private footstepDistance = 0;
   private wasGrounded = true;
   private wasMoving = false;
@@ -138,7 +145,12 @@ export class RunScene extends Scene {
     this.hud.setVisible(false);
     this.hud.toast('W / SPACE JUMP · GREEN SHARDS REFILL STAMINA', 3600);
     this.stamina = STAMINA_MAX;
+    this.memories = 0;
+    this.score = 0;
+    this.bestScore = this.options.bestScore;
+    this.scoreSaved = false;
     this.updateStaminaUi();
+    this.updateScoreUi();
     this.clearDeath();
     document.addEventListener('keydown', this.onKeyDown);
   }
@@ -188,6 +200,21 @@ export class RunScene extends Scene {
       this.refillStamina(SHARD_REFILL * collected);
     }
 
+    const collectedMemories = this.stream.collectMemories(
+      this.player.pos.x,
+      this.player.pos.y,
+      this.player.width,
+      this.player.height,
+    );
+    if (collectedMemories > 0) {
+      this.memories += collectedMemories;
+    }
+    this.score = runScore(distancePx, this.memories);
+    if (this.score > this.bestScore) {
+      this.bestScore = this.score;
+    }
+    this.updateScoreUi();
+
     if (this.monster.pos.x >= this.player.pos.x - CATCH_RADIUS) {
       this.beginCaught();
       return;
@@ -216,6 +243,7 @@ export class RunScene extends Scene {
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.code === 'KeyR') {
       event.preventDefault();
+      this.recordScore();
       this.options.onRestart();
     }
   };
@@ -258,6 +286,7 @@ export class RunScene extends Scene {
   }
 
   private showDeath(cause: 'fell' | 'caught'): void {
+    this.recordScore();
     const title = cause === 'caught' ? 'CAUGHT' : 'YOU FELL';
     const ui = document.getElementById('run-ui');
     if (!ui) {
@@ -300,6 +329,25 @@ export class RunScene extends Scene {
         : percent <= 50
           ? 'mid'
           : 'high';
+  }
+
+  private updateScoreUi(): void {
+    const scoreEl = document.getElementById('run-score-value');
+    if (scoreEl) {
+      scoreEl.textContent = formatScore(this.score);
+    }
+    const bestEl = document.getElementById('run-best-value');
+    if (bestEl) {
+      bestEl.textContent = formatScore(this.bestScore);
+    }
+  }
+
+  private recordScore(): void {
+    if (this.scoreSaved) {
+      return;
+    }
+    this.scoreSaved = true;
+    this.options.onRunEnd(this.score);
   }
 
   private clearDeath(): void {
@@ -395,4 +443,8 @@ export class RunScene extends Scene {
       footstepAudio.playMetal(volume);
     }
   }
+}
+
+function formatScore(value: number): string {
+  return String(Math.max(0, Math.floor(value))).padStart(6, '0');
 }
