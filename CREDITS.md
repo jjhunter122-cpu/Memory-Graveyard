@@ -28,9 +28,11 @@ and any processing notes here when the voice pass is complete.
   - Licence: custom free-use licence. Use in games, videos, streams, trailers
     and apps is allowed; modification is allowed. The overlay files themselves
     may not be sold or shared alone or as part of another asset pack/template.
+  - Use confirmed for this project.
   - Asset page: `https://lesed.itch.io/analog-horror-screen-fx-free`
   - Creator page: `https://lesed.itch.io/`
   - Intended use: in-game Vignette
+  - Modifications: none
   - Date added: 2026-11-08
   - Licence text: `licenses/LESED-Analog-Horror-Screen-FX-Free.txt`
 
@@ -50,11 +52,16 @@ URL, intended use and modifications.
 
 ## Audio
 
-No permanent audio is included yet. The audio director and voice playback are
-pinned for a later pass.
+- **Footsteps Sounds — Volume 02** — The Sound Guild
+  - Licence: free for commercial use, unlimited projects, royalty-free.
+    The raw pack may not be resold or redistributed outside the game.
+  - Source: `https://the-sound-guild.itch.io/footsteps-sounds-02`
+  - Intended use: grass footstep SFX for the player
+  - Modifications: selected and renamed the grass samples
+  - Date added: 2026-11-11
+  - Licence text: `public/assets/audio/sound-guild/The-Sound-Guild-Footsteps-Volume-02.pdf`
 
-When licensed music or SFX is added, record each file here with author, licence,
-source URL, intended use and modifications.
+The audio director and voice playback are still pinned for a later pass.
 
 ## Fonts & tools
 
