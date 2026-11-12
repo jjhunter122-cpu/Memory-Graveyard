@@ -859,6 +859,27 @@ body.mode-menu .menu-ui {
   color: #cfd0e6;
 }
 
+.option-row em {
+  font-style: normal;
+  color: #7ce7ff;
+}
+
+.option-row.option-slider {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.option-row.option-slider > span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.option-row.option-slider input[type='range'] {
+  width: 100%;
+  accent-color: #7ce7ff;
+}
+
 /* ---- pause ---- */
 
 .pause-ui {

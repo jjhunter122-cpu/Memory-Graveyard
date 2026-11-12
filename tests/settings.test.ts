@@ -18,7 +18,25 @@ class FakeStorage implements StorageLike {
 describe('SettingsStore', () => {
   it('returns defaults when empty', () => {
     const settings = new SettingsStore(new FakeStorage());
-    expect(settings.load()).toEqual({ showHud: true, lastLevelId: null });
+    expect(settings.load()).toEqual({
+      showHud: true,
+      lastLevelId: null,
+      masterVolume: 1,
+      musicVolume: 0.32,
+      sfxVolume: 1,
+    });
+  });
+
+  it('clamps stored volumes to 0–1', () => {
+    const storage = new FakeStorage();
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ masterVolume: 3, musicVolume: -1, sfxVolume: 0.4 }),
+    );
+    const settings = new SettingsStore(storage).load();
+    expect(settings.masterVolume).toBe(1);
+    expect(settings.musicVolume).toBe(0);
+    expect(settings.sfxVolume).toBe(0.4);
   });
 
   it('updates and persists a single field', () => {

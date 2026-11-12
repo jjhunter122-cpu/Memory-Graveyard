@@ -20,11 +20,6 @@ export class TitleScene extends MenuScene {
     titleMusic.playTitle();
   }
 
-  override onDeactivate(): void {
-    titleMusic.stop();
-    super.onDeactivate();
-  }
-
   protected render(): string {
     return `
       <div class="menu-panel title-panel">

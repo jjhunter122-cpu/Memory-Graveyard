@@ -1,7 +1,7 @@
 import { Sound, WebAudio } from 'excalibur';
 
 const TITLE_MUSIC_PATH = 'assets/audio/music/8-bit-haunting.mp3';
-const TITLE_VOLUME = 0.35;
+const DEFAULT_TITLE_VOLUME = 0.32;
 
 /**
  * Title-screen music. Browsers block audio until a user gesture, so the track
@@ -14,6 +14,7 @@ class TitleMusic {
   private wanted = false;
   private playing = false;
   private gestureBound = false;
+  private volume = DEFAULT_TITLE_VOLUME;
 
   private readonly onGesture = (): void => {
     this.unbindGesture();
@@ -25,7 +26,7 @@ class TitleMusic {
   async load(base: string): Promise<void> {
     this.sound = new Sound({
       paths: [`${base}${TITLE_MUSIC_PATH}`],
-      volume: TITLE_VOLUME,
+      volume: this.volume,
       loop: true,
     });
     try {
@@ -48,6 +49,13 @@ class TitleMusic {
     this.bindGesture();
   }
 
+  setVolume(value: number): void {
+    this.volume = Math.min(1, Math.max(0, value));
+    if (this.sound) {
+      this.sound.volume = this.volume;
+    }
+  }
+
   stop(): void {
     this.wanted = false;
     this.playing = false;
@@ -60,7 +68,7 @@ class TitleMusic {
       return;
     }
     this.playing = true;
-    void this.sound.play(TITLE_VOLUME).catch(() => {
+    void this.sound.play(this.volume).catch(() => {
       this.playing = false;
     });
   }

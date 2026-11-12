@@ -9,7 +9,9 @@ import { LevelSelectScene } from './menus/LevelSelectScene';
 import { OptionsScene } from './menus/OptionsScene';
 import { SequenceScene } from './menus/SequenceScene';
 import type { DraftStore, LevelLibrary } from './storage/levels';
-import type { SettingsStore } from './storage/settings';
+import type { Settings, SettingsStore } from './storage/settings';
+import { titleMusic } from './audio/titleMusic';
+import { footstepAudio } from './audio/footsteps';
 import { analogOverlay } from './ui/analogFx';
 
 export interface StartOptions {
@@ -43,6 +45,7 @@ export class GameApp {
   ) {}
 
   async start(options: StartOptions): Promise<void> {
+    this.applyAudioSettings();
     const editor = options.startInEditor && options.initialLevel;
     const scene = editor
       ? this.editorScene(options.initialLevel as LevelData)
@@ -158,8 +161,14 @@ export class GameApp {
     const settings = this.settings.load();
     return new OptionsScene({
       showHud: settings.showHud,
+      masterVolume: settings.masterVolume,
+      musicVolume: settings.musicVolume,
+      sfxVolume: settings.sfxVolume,
       draftCount: this.library.draftsList().length,
       onChangeShowHud: (value) => this.settings.update({ showHud: value }),
+      onChangeMasterVolume: (value) => this.setVolumeSetting({ masterVolume: value }),
+      onChangeMusicVolume: (value) => this.setVolumeSetting({ musicVolume: value }),
+      onChangeSfxVolume: (value) => this.setVolumeSetting({ sfxVolume: value }),
       onClearDrafts: () => {
         for (const draft of this.library.draftsList()) {
           this.drafts.remove(draft.id);
@@ -290,8 +299,32 @@ export class GameApp {
     return `${base}-${this.counter}`;
   }
 
+  private applyAudioSettings(): Settings {
+    const settings = this.settings.load();
+    titleMusic.setVolume(settings.masterVolume * settings.musicVolume);
+    footstepAudio.setVolumeScale(settings.masterVolume * settings.sfxVolume);
+    return settings;
+  }
+
+  private setVolumeSetting(
+    patch: Partial<Pick<Settings, 'masterVolume' | 'musicVolume' | 'sfxVolume'>>,
+  ): void {
+    this.settings.update(patch);
+    this.applyAudioSettings();
+  }
+
   private async show(key: string, scene: Scene): Promise<void> {
     analogOverlay.clear();
+    const keepMusic =
+      scene instanceof TitleScene ||
+      scene instanceof LevelSelectScene ||
+      scene instanceof OptionsScene ||
+      scene instanceof SequenceScene;
+    if (keepMusic) {
+      titleMusic.playTitle();
+    } else {
+      titleMusic.stop();
+    }
     const previous = this.lastKey;
     const unique = this.uniqueKey(key);
     this.engine.addScene(unique, scene);

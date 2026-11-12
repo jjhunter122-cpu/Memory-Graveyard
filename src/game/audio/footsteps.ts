@@ -44,6 +44,11 @@ class FootstepAudio {
   private lastGrass = -1;
   private lastLanding = -1;
   private lastMetal = -1;
+  private volumeScale = 1;
+
+  setVolumeScale(scale: number): void {
+    this.volumeScale = Math.min(1, Math.max(0, scale));
+  }
 
   async load(base: string): Promise<void> {
     const grass = Array.from(
@@ -79,7 +84,10 @@ class FootstepAudio {
     this.lastGrass = index;
     const sound = this.grass[index];
     if (sound) {
-      void sound.play(volume).catch(() => undefined);
+      const effective = volume * this.volumeScale;
+      if (effective > 0) {
+        void sound.play(effective).catch(() => undefined);
+      }
     }
   }
 
@@ -91,7 +99,10 @@ class FootstepAudio {
     this.lastLanding = index;
     const sound = this.landing[index];
     if (sound) {
-      void sound.play(volume).catch(() => undefined);
+      const effective = volume * this.volumeScale;
+      if (effective > 0) {
+        void sound.play(effective).catch(() => undefined);
+      }
     }
   }
 
@@ -103,7 +114,10 @@ class FootstepAudio {
     this.lastMetal = index;
     const sound = this.metal[index];
     if (sound) {
-      void sound.play(volume).catch(() => undefined);
+      const effective = volume * this.volumeScale;
+      if (effective > 0) {
+        void sound.play(effective).catch(() => undefined);
+      }
     }
   }
 }
