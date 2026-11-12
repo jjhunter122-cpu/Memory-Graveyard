@@ -18,6 +18,7 @@ import { setMode } from '../ui/mode';
 import { debugOverlay } from '../ui/DebugOverlay';
 import { analogOverlay } from '../ui/analogFx';
 import { footstepAudio } from '../audio/footsteps';
+import { metalFootstepVolume } from '../audio/proximity';
 import {
   createGuardianAnimations,
   type GuardianAnimations,
@@ -552,8 +553,10 @@ export class PlayScene extends Scene {
     }
     this.monsterFootstepDistance = 0;
     const distance = this.distanceBetweenMonsterAndPlayer();
-    const volume = Math.max(0.16, Math.min(0.6, 0.6 - distance / 1500));
-    footstepAudio.playMetal(volume);
+    const volume = metalFootstepVolume(distance);
+    if (volume > 0) {
+      footstepAudio.playMetal(volume);
+    }
   }
 
   private setGuardianAnimation(name: 'idle' | 'walk' | 'attack'): void {
