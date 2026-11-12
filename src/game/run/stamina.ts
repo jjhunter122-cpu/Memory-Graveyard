@@ -12,13 +12,9 @@ export const SHARD_MIN_SPACING = 1600;
 export const SHARD_MAX_SPACING = 2600;
 const SHARD_RAMP_DISTANCE = 20000;
 
-/** 1 while healthy, falling to LOW_STAMINA_SPEED at empty. */
+/** Full speed until the bar is empty, then drop to the crawl speed. */
 export function staminaSpeedFactor(stamina: number): number {
-  if (stamina >= LOW_STAMINA_THRESHOLD) {
-    return 1;
-  }
-  const t = Math.max(0, Math.min(1, stamina / LOW_STAMINA_THRESHOLD));
-  return LOW_STAMINA_SPEED + (1 - LOW_STAMINA_SPEED) * t;
+  return stamina > 0 ? 1 : LOW_STAMINA_SPEED;
 }
 
 /** Shard gaps widen with distance to a cap, then stay there forever. */

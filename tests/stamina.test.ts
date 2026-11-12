@@ -12,16 +12,11 @@ import {
 } from '../src/game/run/stamina';
 
 describe('stamina', () => {
-  it('keeps full speed until the low threshold', () => {
+  it('keeps full speed until the bar is empty', () => {
     expect(staminaSpeedFactor(STAMINA_MAX)).toBe(1);
     expect(staminaSpeedFactor(LOW_STAMINA_THRESHOLD)).toBe(1);
-  });
-
-  it('slows linearly to the low speed', () => {
+    expect(staminaSpeedFactor(1)).toBe(1);
     expect(staminaSpeedFactor(0)).toBe(LOW_STAMINA_SPEED);
-    expect(staminaSpeedFactor(LOW_STAMINA_THRESHOLD / 2)).toBeCloseTo(
-      (1 + LOW_STAMINA_SPEED) / 2,
-    );
   });
 
   it('widens shard spacing to the cap', () => {
