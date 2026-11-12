@@ -190,6 +190,13 @@ export interface BuiltLevel {
   slopeProbe: SlopeProbe;
 }
 
+export interface BuildLevelOptions {
+  background?: boolean;
+  foreground?: boolean;
+  /** Streamed acts disable the bounds so they can join without invisible walls. */
+  worldBounds?: boolean;
+}
+
 function tileCenter(tile: number, tileSize: number): number {
   return tile * tileSize + tileSize / 2;
 }
@@ -399,6 +406,7 @@ export function buildLevel(
   level: LevelData,
   manifest: AssetManifest,
   textures?: GameTextures,
+  options: BuildLevelOptions = {},
 ): BuiltLevel {
   const tiles = tileIndex(manifest);
   const tileSize = level.tileSize;
@@ -482,9 +490,15 @@ export function buildLevel(
     return best;
   };
 
-  addBackground(scene, level, widthPx, heightPx, textures);
-  addForeground(scene, level, widthPx, heightPx, textures);
-  addWorldBounds(scene, playAreaPx, heightPx);
+  if (options.background !== false) {
+    addBackground(scene, level, widthPx, heightPx, textures);
+  }
+  if (options.foreground !== false) {
+    addForeground(scene, level, widthPx, heightPx, textures);
+  }
+  if (options.worldBounds !== false) {
+    addWorldBounds(scene, playAreaPx, heightPx);
+  }
 
   for (const layer of level.layers) {
     const grid = toGrid(layer.data, level.width, level.height);

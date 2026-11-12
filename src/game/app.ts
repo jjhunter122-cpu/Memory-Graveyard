@@ -78,7 +78,14 @@ export class GameApp {
   }
 
   startRun(): Promise<void> {
-    return this.show('run', new RunScene(this.manifest, this.textures));
+    const seed = Math.floor(Math.random() * 0xffffffff);
+    return this.show(
+      'run',
+      new RunScene(this.manifest, this.textures, {
+        seed,
+        onRestart: () => void this.startRun(),
+      }),
+    );
   }
 
   async playCampaign(): Promise<void> {

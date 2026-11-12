@@ -7,12 +7,16 @@ import type { GameTextures } from '../assets';
 import { CameraFollow } from '../camera/CameraFollow';
 import { findCameraFollowPreset } from '../camera/cameraFollowSettings';
 import { characterMetrics } from '../characterScale';
-import { TrailFollower, TrailRecorder } from '../chase/trail';
-import { MONSTER, VIEW } from '../config';
-import { buildLevel, type BuiltLevel } from '../level/loader';
+import { VIEW } from '../config';
 import type { AssetManifest } from '../level/manifest';
-import { createLevel } from '../level/schema';
 import { Player } from '../player/Player';
+import { ActStream } from '../run/actStream';
+import {
+  ACT_FLOOR_ROW,
+  ACT_HEIGHT,
+  ACT_TILE_SIZE,
+  speedAt,
+} from '../run/generator';
 import { analogOverlay } from '../ui/analogFx';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
@@ -21,39 +25,35 @@ import {
   type GuardianAnimations,
 } from '../visuals/guardian';
 
-const RUN_WIDTH = 480;
-const RUN_HEIGHT = 18;
-const RUN_TILE_SIZE = 32;
-const FLOOR_ROW = 16;
-/** Pixel Platformer World moss grass top + fill. */
-const FLOOR_TOP_TILE = 79;
-const FLOOR_FILL_TILE = 80;
 const START_X = 200;
-const AUTO_RUN_SPEED = 220;
-const MONSTER_START_X = 80;
 const CHARACTER_SCALE = 1.75;
 const MONSTER_RENDER_HEIGHT = 80;
+const MONSTER_GAP = 160;
+const FLOOR_TOP = ACT_FLOOR_ROW * ACT_TILE_SIZE;
+const MONSTER_Y = FLOOR_TOP - MONSTER_RENDER_HEIGHT / 2;
+const KILL_Y = FLOOR_TOP + 220;
 /** Keep the floor near the bottom of the screen instead of following jumps. */
-const CAMERA_Y = RUN_HEIGHT * RUN_TILE_SIZE - VIEW.height / 2;
+const CAMERA_Y = ACT_HEIGHT * ACT_TILE_SIZE - VIEW.height / 2;
+
+export interface RunSceneOptions {
+  seed: number;
+  onRestart: () => void;
+}
 
 /**
- * Movement lab for the new direction: a flat forest run, auto-run to the right,
- * one-button jump and the Guardian following behind. Stamina, memories, gaps and
- * chunks come in later passes.
+ * Endless auto-run: random forest acts, falling pits, a straight-line Guardian
+ * at a fixed gap and a fixed-height camera. Only pits kill in this pass.
  */
 export class RunScene extends Scene {
   private readonly hud = new Hud();
-  private readonly trail = new TrailRecorder(MONSTER.trailSpacing);
-  private built!: BuiltLevel;
+  private stream!: ActStream;
   private player!: Player;
   private monster!: Monster;
-  private follower!: TrailFollower;
   private cameraFollow!: CameraFollow;
   private guardianAnimations?: GuardianAnimations;
-  private guardianAnimationName: 'idle' | 'walk' | null = null;
-  private monsterYOffset = 0;
-  private monsterFacingRight = true;
-  private lastMonsterX = 0;
+  private guardianAnimationName: 'walk' | null = null;
+  private dead = false;
+  private falling = false;
   private footstepDistance = 0;
   private wasGrounded = true;
   private wasMoving = false;
@@ -61,55 +61,43 @@ export class RunScene extends Scene {
   private monsterFootstepDistance = 0;
   private monsterStepInitialized = false;
   private lastMonsterStepX = 0;
-  private lastMonsterStepY = 0;
 
   constructor(
     private readonly manifest: AssetManifest,
     private readonly textures: GameTextures,
+    private readonly options: RunSceneOptions,
   ) {
     super();
   }
 
   override onInitialize(_engine: Engine): void {
-    const level = createLevel('Run', RUN_WIDTH, RUN_HEIGHT, RUN_TILE_SIZE);
-    const terrain = level.layers[0];
-    if (terrain) {
-      const data = terrain.data.slice();
-      for (let x = 0; x < RUN_WIDTH; x += 1) {
-        data[FLOOR_ROW * RUN_WIDTH + x] = FLOOR_TOP_TILE;
-        data[(FLOOR_ROW + 1) * RUN_WIDTH + x] = FLOOR_FILL_TILE;
-      }
-      level.layers[0] = { ...terrain, data };
-    }
-    level.skybox = '#0a0b10';
-    level.background = 'pixel-platformer-world-layers';
-    this.built = buildLevel(this, level, this.manifest, this.textures);
+    this.stream = new ActStream(
+      this,
+      this.manifest,
+      this.textures,
+      this.options.seed,
+    );
 
-    const floorTop = FLOOR_ROW * RUN_TILE_SIZE;
-    const metrics = characterMetrics(CHARACTER_SCALE, RUN_TILE_SIZE);
-    const startY = floorTop - metrics.playerHeight / 2;
+    const metrics = characterMetrics(CHARACTER_SCALE, ACT_TILE_SIZE);
+    const startY = FLOOR_TOP - metrics.playerHeight / 2;
 
     this.player = new Player(
       START_X,
       startY,
-      this.built.groundProbe,
-      this.built.slopeProbe,
+      (centerX, feetY, halfWidth) =>
+        this.stream.hasFloorAt(centerX, feetY, halfWidth),
+      undefined,
       { width: metrics.playerWidth, height: metrics.playerHeight },
     );
-    this.player.setAutoRun(AUTO_RUN_SPEED);
+    this.player.setAutoRun(speedAt(0));
     this.add(this.player);
 
-    this.monsterYOffset = (metrics.playerHeight - MONSTER_RENDER_HEIGHT) / 2;
     this.monster = new Monster(
-      MONSTER_START_X,
-      startY + this.monsterYOffset,
+      START_X - MONSTER_GAP,
+      MONSTER_Y,
       { width: 67, height: MONSTER_RENDER_HEIGHT },
     );
     this.add(this.monster);
-
-    this.trail.reset({ x: START_X, y: startY });
-    this.follower = new TrailFollower({ x: MONSTER_START_X, y: startY });
-    this.lastMonsterX = this.monster.pos.x;
 
     const idle = this.textures.guardianIdleSheet;
     const walk = this.textures.guardianWalkSheet;
@@ -132,29 +120,37 @@ export class RunScene extends Scene {
     ambienceAudio.play('spooky-forest');
     this.hud.setVisible(false);
     this.hud.toast('W / SPACE JUMP · R RESTART', 3200);
+    this.clearDeath();
     document.addEventListener('keydown', this.onKeyDown);
   }
 
   override onDeactivate(): void {
     analogOverlay.clear();
     ambienceAudio.stop();
+    this.clearDeath();
     document.removeEventListener('keydown', this.onKeyDown);
   }
 
   override onPreUpdate(_engine: Engine, elapsed: number): void {
+    if (this.dead) {
+      return;
+    }
     const dt = elapsed / 1000;
+    const distancePx = Math.max(0, this.player.pos.x - START_X);
+    const speed = speedAt(distancePx);
 
-    this.trail.record(this.player.pos.x, this.player.pos.y);
-    const distance = this.distanceBetweenMonsterAndPlayer();
-    const speed =
-      distance > MONSTER.catchUpDistance
-        ? MONSTER.catchUpSpeed
-        : MONSTER.speed;
-    this.follower.update(this.trail.all, speed, dt);
-    this.monster.pos.setTo(
-      this.follower.pos.x,
-      this.follower.pos.y + this.monsterYOffset,
-    );
+    this.player.setAutoRun(speed);
+    this.stream.update(this.player.pos.x);
+    this.monster.pos.setTo(this.player.pos.x - MONSTER_GAP, MONSTER_Y);
+
+    if (
+      !this.falling &&
+      this.stream.isOverPitAt(this.player.pos.x) &&
+      this.player.pos.y + this.player.height / 2 > FLOOR_TOP + 2
+    ) {
+      this.falling = true;
+      this.player.setGhost(true);
+    }
 
     this.updateMonsterVisual();
     this.cameraFollow.update(this.player.pos, dt, {
@@ -164,63 +160,54 @@ export class RunScene extends Scene {
     this.camera.pos.y = CAMERA_Y;
     this.updateFootsteps(dt);
     this.updateMonsterFootsteps();
+    this.checkFall();
   }
 
   private readonly onKeyDown = (event: KeyboardEvent): void => {
     if (event.code === 'KeyR') {
       event.preventDefault();
-      this.restart();
+      this.options.onRestart();
     }
   };
 
-  private restart(): void {
-    const floorTop = FLOOR_ROW * RUN_TILE_SIZE;
-    const metrics = characterMetrics(CHARACTER_SCALE, RUN_TILE_SIZE);
-    const startY = floorTop - metrics.playerHeight / 2;
-
-    this.player.respawn(START_X, startY);
-    this.player.setAutoRun(AUTO_RUN_SPEED);
-    this.trail.reset({ x: START_X, y: startY });
-    this.follower.reset({ x: MONSTER_START_X, y: startY });
-    this.monster.pos.setTo(MONSTER_START_X, startY + this.monsterYOffset);
-    this.lastMonsterX = this.monster.pos.x;
-    this.cameraFollow.snap(this.player.pos);
-    this.camera.pos.y = CAMERA_Y;
-
-    this.footstepDistance = 0;
-    this.wasGrounded = true;
-    this.wasMoving = false;
-    this.fallSpeed = 0;
-    this.monsterFootstepDistance = 0;
-    this.monsterStepInitialized = false;
+  private checkFall(): void {
+    if (this.player.pos.y > KILL_Y) {
+      this.die();
+    }
   }
 
-  private distanceBetweenMonsterAndPlayer(): number {
-    return Math.hypot(
-      this.player.pos.x - this.monster.pos.x,
-      this.player.pos.y - (this.monster.pos.y - this.monsterYOffset),
-    );
+  private die(): void {
+    if (this.dead) {
+      return;
+    }
+    this.dead = true;
+    this.player.setFrozen(true);
+    const ui = document.getElementById('run-ui');
+    if (ui) {
+      ui.innerHTML =
+        '<div class="run-death"><h2>YOU FELL</h2><p><kbd>R</kbd> to run again</p></div>';
+    }
+  }
+
+  private clearDeath(): void {
+    const ui = document.getElementById('run-ui');
+    if (ui) {
+      ui.innerHTML = '';
+    }
   }
 
   private updateMonsterVisual(): void {
     if (!this.guardianAnimations) {
       return;
     }
-    const dx = this.monster.pos.x - this.lastMonsterX;
-    if (Math.abs(dx) > 0.05) {
-      this.monsterFacingRight = dx > 0;
-    }
-    this.lastMonsterX = this.monster.pos.x;
-
-    const name = Math.abs(dx) > 0.05 ? 'walk' : 'idle';
-    if (this.guardianAnimationName !== name) {
-      this.guardianAnimationName = name;
-      this.monster.graphics.use(this.guardianAnimations[name]);
+    if (this.guardianAnimationName !== 'walk') {
+      this.guardianAnimationName = 'walk';
+      this.monster.graphics.use(this.guardianAnimations.walk);
     }
     const graphic = this.monster.graphics.current;
     if (graphic) {
-      // The Guardian art faces right, so flip it when moving left.
-      graphic.flipHorizontal = !this.monsterFacingRight;
+      // The Guardian art faces right and the chase only moves right.
+      graphic.flipHorizontal = false;
     }
   }
 
@@ -272,20 +259,17 @@ export class RunScene extends Scene {
   private updateMonsterFootsteps(): void {
     if (!this.monsterStepInitialized) {
       this.lastMonsterStepX = this.monster.pos.x;
-      this.lastMonsterStepY = this.monster.pos.y;
       this.monsterStepInitialized = true;
       return;
     }
     const dx = this.monster.pos.x - this.lastMonsterStepX;
-    const dy = this.monster.pos.y - this.lastMonsterStepY;
     this.lastMonsterStepX = this.monster.pos.x;
-    this.lastMonsterStepY = this.monster.pos.y;
-    this.monsterFootstepDistance += Math.hypot(dx, dy);
+    this.monsterFootstepDistance += Math.abs(dx);
     if (this.monsterFootstepDistance < 46) {
       return;
     }
     this.monsterFootstepDistance = 0;
-    const volume = metalFootstepVolume(this.distanceBetweenMonsterAndPlayer());
+    const volume = metalFootstepVolume(MONSTER_GAP);
     if (volume > 0) {
       footstepAudio.playMetal(volume);
     }

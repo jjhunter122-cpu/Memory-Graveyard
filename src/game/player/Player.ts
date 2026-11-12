@@ -132,4 +132,11 @@ export class Player extends Actor {
   setAutoRun(speed: number): void {
     this.autoRunSpeed = speed;
   }
+
+  /** Disables world collision while a pit drop is in progress. */
+  setGhost(ghost: boolean): void {
+    this.body.collisionType = ghost
+      ? CollisionType.PreventCollision
+      : CollisionType.Active;
+  }
 }
