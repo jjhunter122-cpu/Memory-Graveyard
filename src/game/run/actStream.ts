@@ -121,7 +121,11 @@ export class ActStream {
 
   /** Ground probe used by the player while streaming acts exist ahead. */
   hasFloorAt(worldX: number, feetY: number, halfWidth: number): boolean {
-    const samples = [worldX, worldX - halfWidth, worldX + halfWidth];
+    // A narrow foot box, not the full body half-width: otherwise a player whose
+    // centre is already over a pit still counts as grounded because its rear or
+    // front edge touches the lip, and it glides across the gap.
+    const foot = Math.min(halfWidth, 4);
+    const samples = [worldX - foot, worldX + foot];
     for (const sample of samples) {
       const surface = this.surfaceAt(sample);
       if (surface !== null && feetY >= surface - 2 && feetY <= surface + 14) {

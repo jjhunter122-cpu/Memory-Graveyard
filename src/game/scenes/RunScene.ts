@@ -12,6 +12,7 @@ import { VIEW } from '../config';
 import type { AssetManifest } from '../level/manifest';
 import { Player } from '../player/Player';
 import { ActStream } from '../run/actStream';
+import { shouldStartPitFall } from '../run/fall';
 import {
   ACT_FLOOR_ROW,
   ACT_HEIGHT,
@@ -223,12 +224,9 @@ export class RunScene extends Scene {
       return;
     }
 
-    const frontX = this.player.pos.x + this.player.width / 2;
     const feetY = this.player.pos.y + this.player.height / 2;
-    const overPit =
-      this.stream.isOverPitAt(this.player.pos.x) ||
-      this.stream.isOverPitAt(frontX);
-    if (!this.falling && overPit && feetY >= FLOOR_TOP - 1) {
+    const overPit = this.stream.isOverPitAt(this.player.pos.x);
+    if (!this.falling && shouldStartPitFall(overPit, feetY, FLOOR_TOP)) {
       this.falling = true;
       this.player.setGhost(true);
     }

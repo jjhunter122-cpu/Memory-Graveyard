@@ -23,6 +23,7 @@ export class Player extends Actor {
   private groundTimer = 0;
   private dropTimer = 0;
   private frozen = false;
+  private ghosted = false;
   private autoRunSpeed = 0;
   private hero?: HeroAnimations;
   private animationName: keyof HeroAnimations | null = null;
@@ -76,11 +77,16 @@ export class Player extends Actor {
     const ignoreOneWay = risen || this.dropTimer > 0;
 
     const feetY = this.pos.y + height / 2;
+    // A ghosted player is falling into a pit: no tile probe and no ground
+    // latch, so gravity keeps pulling it down instead of re-grounding it on
+    // the far lip.
     const probeGrounded =
-      !risen && this.groundProbe
+      !this.ghosted && !risen && this.groundProbe
         ? this.groundProbe(this.pos.x, feetY, halfWidth, ignoreOneWay)
         : false;
-    this.controller.setGrounded(probeGrounded || this.groundTimer > 0);
+    this.controller.setGrounded(
+      !this.ghosted && (probeGrounded || this.groundTimer > 0),
+    );
 
     const input = readPlayerInput(engine.input.keyboard);
     const step = this.controller.update({ vx: this.vel.x, vy: this.vel.y }, input, dt);
@@ -110,8 +116,10 @@ export class Player extends Actor {
     this.groundTimer = 0;
     this.dropTimer = 0;
     this.frozen = false;
+    this.ghosted = false;
     this.deadLocked = false;
     this.animationName = null;
+    this.body.collisionType = CollisionType.Active;
     this.controller.reset();
     if (this.hero) {
       this.playAnimation('idle', true);
@@ -148,11 +156,19 @@ export class Player extends Actor {
     this.playAnimation('dead', true);
   }
 
-  /** Disables world collision while a pit drop is in progress. */
+  /**
+   * Disables world collision while a pit drop is in progress. Ground detection
+   * is disabled too, so the fall cannot be re-grounded inside the far floor.
+   */
   setGhost(ghost: boolean): void {
+    this.ghosted = ghost;
     this.body.collisionType = ghost
       ? CollisionType.PreventCollision
       : CollisionType.Active;
+    if (ghost) {
+      this.groundTimer = 0;
+      this.controller.reset();
+    }
   }
 
   private playAnimation(
