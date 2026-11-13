@@ -1,4 +1,4 @@
-import { Scene, type Engine } from 'excalibur';
+import { Scene, Vector, type Engine } from 'excalibur';
 import { Monster } from '../actors/Monster';
 import { ambienceAudio } from '../audio/ambience';
 import { footstepAudio } from '../audio/footsteps';
@@ -30,9 +30,10 @@ import { analogOverlay } from '../ui/analogFx';
 import { Hud } from '../ui/Hud';
 import { setMode } from '../ui/mode';
 import {
-  createGuardianAnimations,
-  type GuardianAnimations,
-} from '../visuals/guardian';
+  createShadeAnimations,
+  SHADE_GRAPHIC_OFFSET_Y,
+  type ShadeAnimations,
+} from '../visuals/shade';
 import { createHeroAnimations } from '../visuals/hero';
 
 const START_X = 200;
@@ -56,7 +57,7 @@ export interface RunSceneOptions {
 
 /**
  * Endless auto-run: random forest acts, falling pits, stamina bolts and a
- * straight-line Guardian that closes in when stamina runs out.
+ * straight-line Shade that closes in when stamina runs out.
  */
 export class RunScene extends Scene {
   private readonly hud = new Hud();
@@ -65,8 +66,8 @@ export class RunScene extends Scene {
   private player!: Player;
   private monster!: Monster;
   private cameraFollow!: CameraFollow;
-  private guardianAnimations?: GuardianAnimations;
-  private guardianAnimationName: 'walk' | null = null;
+  private shadeAnimations?: ShadeAnimations;
+  private shadeAnimationName: 'walk' | null = null;
   private dead = false;
   private caught = false;
   private falling = false;
@@ -127,13 +128,12 @@ export class RunScene extends Scene {
     this.add(this.monster);
     this.trail.reset({ x: this.player.pos.x, y: this.player.pos.y });
 
-    const idle = this.textures.guardianIdleSheet;
-    const walk = this.textures.guardianWalkSheet;
-    const attack = this.textures.guardianAttackSheet;
-    if (idle && walk && attack) {
-      this.guardianAnimations = createGuardianAnimations(idle, walk, attack);
-      this.guardianAnimationName = 'walk';
-      this.monster.graphics.use(this.guardianAnimations.walk);
+    const shadeSheet = this.textures.shadeSheet;
+    if (shadeSheet) {
+      this.shadeAnimations = createShadeAnimations(shadeSheet);
+      this.shadeAnimationName = 'walk';
+      this.monster.graphics.use(this.shadeAnimations.walk);
+      this.monster.graphics.offset = new Vector(0, SHADE_GRAPHIC_OFFSET_Y);
     }
 
     this.camera.zoom = 1;
@@ -276,8 +276,8 @@ export class RunScene extends Scene {
     this.player.setFrozen(true);
     this.player.playDeath();
     this.attackTimer = 1;
-    if (this.guardianAnimations) {
-      this.monster.graphics.use(this.guardianAnimations.attack);
+    if (this.shadeAnimations) {
+      this.monster.graphics.use(this.shadeAnimations.attack);
     } else {
       this.finishCaught();
     }
@@ -366,16 +366,16 @@ export class RunScene extends Scene {
   }
 
   private updateMonsterVisual(): void {
-    if (!this.guardianAnimations) {
+    if (!this.shadeAnimations) {
       return;
     }
-    if (this.guardianAnimationName !== 'walk') {
-      this.guardianAnimationName = 'walk';
-      this.monster.graphics.use(this.guardianAnimations.walk);
+    if (this.shadeAnimationName !== 'walk') {
+      this.shadeAnimationName = 'walk';
+      this.monster.graphics.use(this.shadeAnimations.walk);
     }
     const graphic = this.monster.graphics.current;
     if (graphic) {
-      // The Guardian art faces right and the chase only moves right.
+      // The Shade art faces right and the chase only moves right.
       graphic.flipHorizontal = false;
     }
   }

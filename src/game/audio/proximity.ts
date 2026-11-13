@@ -1,4 +1,4 @@
-/** Distance-based volume curve for the placeholder Guardian's metal steps. */
+/** Distance-based volume curve for the Shade's metal steps. */
 
 export const MONSTER_AUDIO = {
   /** Full volume within this distance of the player. */

@@ -8,7 +8,7 @@
 - "CC0 Currency Icons — silver coin" by AntumDeluge / OpenClipart, licensed CC0 1.0: https://opengameart.org/node/121237
 - "Lightning Bolt Icons/Buttons Collection — green bolt" by pix3lcat, licensed CC0 1.0: https://pix3lcat.github.io/
 - "Analog Horror Screen FX Free Sampler — Vignette" by LESED, licensed LESED Free Sampler (custom licence): https://lesed.itch.io/analog-horror-screen-fx-free
-- "Old Guardian" by Eddie's Workshop, licensed Free asset pack — free for personal and commercial use (credit appreciated): https://eddies-workshop.itch.io/old-guardian
+- "Dark Fantasy Monster Pack 2" (Monster 1, used as the Shade) by zneeke, licensed custom free licence — commercial use and modification permitted; the art may not be resold or redistributed on its own, used to train AI, or used in crypto/NFT/p2e/meta projects: https://zneeke.itch.io/dark-fantasy-monster-pack-2
 - "Footsteps Sounds Volume 02" by The Sound Guild, licensed CC0 1.0: https://the-sound-guild.itch.io/footsteps-sounds-02
 - "8-bit Haunting" by the Memory Graveyard project team (AI-generated with Suno), licensed project-owned: created in-house
 - "Spooky Forest Ambience" by marchon11, licensed CC BY 3.0: https://freesound.org/s/493720/
@@ -20,8 +20,12 @@
   confirmed CC0 1.0 by the author in the pack's public comments.
 - Pixel Platformer World is a free/public-domain pack that permits personal and
   commercial use; the pack itself may not be resold.
-- Old Guardian is a free asset pack that permits personal and commercial use.
-  Credit is appreciated but not required by the author.
+- Dark Fantasy Monster Pack 2 is a free asset pack that permits commercial use
+  and modification. The asset may not be resold, repackaged or redistributed on
+  its own (including modified), used in game-making tools or templates, used to
+  train AI, or used in crypto/NFT/p2e/meta projects. The full text is in
+  `licenses/Dark-Fantasy-Monster-Pack-2.txt`. The pack page states that no
+  generative AI was used.
 - The LESED Vignette uses a custom free-sampler licence. It permits use and
   modification in games, but the overlay files may not be redistributed on
   their own. The full text is in
@@ -35,6 +39,7 @@
 - `licenses/CC-BY-3.0.txt`
 - `licenses/CC-BY-4.0.txt`
 - `licenses/LESED-Analog-Horror-Screen-FX-Free.txt`
+- `licenses/Dark-Fantasy-Monster-Pack-2.txt`
 - `licenses/The-Sound-Guild-Footsteps-Volume-02.pdf`
 
 ## Code and tools

@@ -1,4 +1,4 @@
-import type { Engine } from 'excalibur';
+import { Vector, type Engine } from 'excalibur';
 import { MenuScene } from './MenuScene';
 import { titleMusic } from '../audio/titleMusic';
 import { analogOverlay } from '../ui/analogFx';
@@ -10,9 +10,10 @@ import { createLevel } from '../level/schema';
 import { Monster } from '../actors/Monster';
 import { Player } from '../player/Player';
 import {
-  createGuardianDeathAnimations,
-  type GuardianDeathAnimations,
-} from '../visuals/guardian';
+  createShadeAnimations,
+  SHADE_GRAPHIC_OFFSET_Y,
+  type ShadeAnimations,
+} from '../visuals/shade';
 import { createHeroAnimations } from '../visuals/hero';
 import { VIEW } from '../config';
 
@@ -38,7 +39,7 @@ export interface TitleCallbacks {
 
 export class TitleScene extends MenuScene {
   private monster?: Monster;
-  private death?: GuardianDeathAnimations;
+  private shade?: ShadeAnimations;
   private starting = false;
 
   constructor(private readonly callbacks: TitleCallbacks) {
@@ -108,10 +109,11 @@ export class TitleScene extends MenuScene {
     });
     this.add(this.monster);
 
-    const deathSheet = this.callbacks.textures.guardianDeathSheet;
-    if (deathSheet) {
-      this.death = createGuardianDeathAnimations(deathSheet);
-      this.monster.graphics.use(this.death.still);
+    const shadeSheet = this.callbacks.textures.shadeSheet;
+    if (shadeSheet) {
+      this.shade = createShadeAnimations(shadeSheet);
+      this.monster.graphics.use(this.shade.idle);
+      this.monster.graphics.offset = new Vector(0, SHADE_GRAPHIC_OFFSET_Y);
     }
 
     this.camera.zoom = 1;
@@ -146,14 +148,14 @@ export class TitleScene extends MenuScene {
     titleMusic.stop();
     this.root?.classList.add('title-playing');
 
-    const revive = this.death?.revive;
-    if (!revive || !this.monster) {
+    const sink = this.shade?.death;
+    if (!sink || !this.monster) {
       this.callbacks.onPlay();
       return;
     }
-    revive.events.once('end', () => this.callbacks.onPlay());
-    this.monster.graphics.use(revive);
-    revive.play();
+    sink.events.once('end', () => this.callbacks.onPlay());
+    this.monster.graphics.use(sink);
+    sink.play();
   }
 }
 

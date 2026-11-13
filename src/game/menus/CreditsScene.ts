@@ -34,8 +34,8 @@ export class CreditsScene extends PreviewMenuScene {
           <p class="credit-line">https://opengameart.org/node/121237</p>
           <p>Lightning Bolt Icons/Buttons Collection (green bolt) — pix3lcat (pix3lcat.github.io). CC0 1.0.</p>
           <p class="credit-line">https://pix3lcat.github.io/</p>
-          <p>Old Guardian — Eddie's Workshop. Free for personal and commercial use; credit appreciated.</p>
-          <p class="credit-line">https://eddies-workshop.itch.io/old-guardian</p>
+          <p>Dark Fantasy Monster Pack 2 (Monster 1, the Shade) — zneeke. Free for personal and commercial use; the art may not be resold or redistributed on its own, or used to train AI.</p>
+          <p class="credit-line">https://zneeke.itch.io/dark-fantasy-monster-pack-2</p>
           <div class="credits-license">
             <p class="license-heading">Analog Horror Screen FX Free Sampler — License</p>
             <p class="license-copyright">Copyright (c) 2026 LESED (lesed.itch.io)</p>

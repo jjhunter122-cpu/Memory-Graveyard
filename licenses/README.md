@@ -6,6 +6,7 @@ Keep the full text of every licence that applies to a shipped asset here.
 - `CC-BY-3.0.txt` — Creative Commons Attribution 3.0 Unported
 - `CC-BY-4.0.txt` — Creative Commons Attribution 4.0 International
 - `LESED-Analog-Horror-Screen-FX-Free.txt` — LESED free-use overlay licence
+- `Dark-Fantasy-Monster-Pack-2.txt` — zneeke Dark Fantasy Monster Pack 2 licence
 - `The-Sound-Guild-Footsteps-Volume-02.pdf` — Sound Guild pack licence and guide
   (also kept at `public/assets/audio/sound-guild/`)
 

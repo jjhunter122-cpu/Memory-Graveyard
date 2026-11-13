@@ -2,22 +2,13 @@ import { ImageSource } from 'excalibur';
 import type { AssetManifest } from './level/manifest';
 import { sceneryImagePaths } from './scenery';
 
-/** Placeholder Guardian monster sheets, pending licence approval. */
-export const GUARDIAN_IDLE_SHEET =
-  'assets/enemies/old-guardian/Old_Guardian_idle.png';
-export const GUARDIAN_WALK_SHEET =
-  'assets/enemies/old-guardian/Old_Guardian_walk.png';
-export const GUARDIAN_ATTACK_SHEET =
-  'assets/enemies/old-guardian/Old_Guardian_attack_1.png';
-export const GUARDIAN_DEATH_SHEET =
-  'assets/enemies/old-guardian/Old_Guardian_death.png';
+/** Dark Fantasy Monster Pack 2 (Monster 1) by zneeke. */
+export const SHADE_SHEET =
+  'assets/enemies/dark-fantasy-monster-2/pack-2-m1.png';
 
 export interface GameTextures {
-  /** Placeholder Guardian idle/walk/attack strips. */
-  guardianIdleSheet?: ImageSource;
-  guardianWalkSheet?: ImageSource;
-  guardianAttackSheet?: ImageSource;
-  guardianDeathSheet?: ImageSource;
+  /** The Shade's idle/walk/attack/death frames, sliced in visuals/shade.ts. */
+  shadeSheet?: ImageSource;
   /** Pixel Platformer World character frames. */
   heroIdle: ImageSource[];
   heroRun: ImageSource[];
@@ -68,10 +59,7 @@ export function createGameTextures(
     scenery.set(path, new ImageSource(`${base}assets/${path}`));
   }
 
-  const guardianIdleSheet = new ImageSource(`${base}${GUARDIAN_IDLE_SHEET}`);
-  const guardianWalkSheet = new ImageSource(`${base}${GUARDIAN_WALK_SHEET}`);
-  const guardianAttackSheet = new ImageSource(`${base}${GUARDIAN_ATTACK_SHEET}`);
-  const guardianDeathSheet = new ImageSource(`${base}${GUARDIAN_DEATH_SHEET}`);
+  const shadeSheet = new ImageSource(`${base}${SHADE_SHEET}`);
 
   const heroFrame = (file: string): ImageSource =>
     new ImageSource(
@@ -97,10 +85,7 @@ export function createGameTextures(
 
   const resources = [...tiles.values(), ...scenery.values()];
   resources.push(
-    guardianIdleSheet,
-    guardianWalkSheet,
-    guardianAttackSheet,
-    guardianDeathSheet,
+    shadeSheet,
     ...heroIdle,
     ...heroRun,
     ...heroJump,
@@ -112,10 +97,7 @@ export function createGameTextures(
 
   return {
     textures: {
-      guardianIdleSheet,
-      guardianWalkSheet,
-      guardianAttackSheet,
-      guardianDeathSheet,
+      shadeSheet,
       heroIdle,
       heroRun,
       heroJump,

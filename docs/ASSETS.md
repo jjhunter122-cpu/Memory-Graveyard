@@ -9,12 +9,14 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
   the six forest backgrounds and the player idle/run/jump/landing/death frames.
 - Tiles use a 32px grid: the 16px moss art is scaled 2× into each cell.
 - The player uses the Pixel Platformer World character. The monster is the
-  **Old Guardian** by Eddie's Workshop, a free asset pack cleared for personal
-  and commercial use.
+  **Shade**, drawn from Monster 1 of **Dark Fantasy Monster Pack 2** by zneeke,
+  a free sheet cleared for commercial use and modification.
 - The LESED **Vignette** is the only screen effect and lives in
   `public/assets/analog-fx/`. Its custom licence is recorded in `CREDITS.md`.
-- The Old Guardian sprite strips in `public/assets/enemies/old-guardian/` are
-  credited to Eddie's Workshop and may be used freely in this project.
+- The Shade's 48×48 silhouette sheet lives in
+  `public/assets/enemies/dark-fantasy-monster-2/`. It may be used in this
+  project but not resold or redistributed on its own; see
+  `licenses/Dark-Fantasy-Monster-Pack-2.txt`.
 - Grass footsteps, soft landings and metal monster footsteps from The Sound
   Guild are wired to movement. The pack is CC0 1.0, confirmed by the author in
   the pack's public comments.
@@ -43,7 +45,7 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 | --- | --- |
 | Tile | 32×32 |
 | Player frame | around 32×48 |
-| Monster frame | around 48×64 |
+| Monster frame | 48×48 (Shade sheet), scaled up in game |
 | Pickup | 16–32 px, readable in one colour |
 
 Sprite sheets should use consistent frame sizes and transparent PNGs. Player
@@ -54,7 +56,8 @@ and monster are side-view and may be flipped horizontally.
 - **Tiles:** moss grass top and fill.
 - **Backgrounds:** six forest layers.
 - **Characters:** player idle / run / jump / landing / death.
-- **Monster:** Guardian idle / walk / attack / death (placeholder).
+- **Monster (Shade):** idle / walk / attack / death frames from Monster 1 of
+  Dark Fantasy Monster Pack 2, scaled 4.5×.
 - **Pickups:** silver coin and green bolt.
 - **UI:** DOM text, coin/bolt icons, Vignette overlay.
 
@@ -73,10 +76,12 @@ Preferred order:
   CC0/CC-BY. It permits use in games and modification, with credit recorded in
   `CREDITS.md`. The overlay files may not be redistributed on their own, so
   revisit this exception if the repository is made public.
-- **Old Guardian** and **The Sound Guild Footsteps Volume 02** are credited
-  third-party assets. Old Guardian is free for personal and commercial use;
-  the footsteps pack is CC0 1.0. Keep the credit lines and do not redistribute
-  the raw packs on their own.
+- **Dark Fantasy Monster Pack 2** and **The Sound Guild Footsteps Volume 02**
+  are credited third-party assets. The monster pack permits commercial use and
+  modification but may not be resold, repackaged or redistributed on its own
+  (including modified), used to train AI, or used in crypto/NFT/p2e/meta
+  projects. The footsteps pack is CC0 1.0. Keep the credit lines and do not
+  redistribute the raw packs on their own.
 
 Every shipped asset needs an entry in `CREDITS.md` with:
 
@@ -110,7 +115,7 @@ public/assets/
     Background/                    forest layers 1–6
     Character/Sprite/              hero frames
     LICENSE.txt
-  enemies/old-guardian/            placeholder monster
+  enemies/dark-fantasy-monster-2/   the Shade sheet + licence notice
   audio/                           music, ambience, footsteps
   analog-fx/                       LESED vignette
   ui/                              coin, bolt, licence notices

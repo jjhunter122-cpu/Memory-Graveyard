@@ -51,8 +51,8 @@ Everything is client-side; there is no backend.
 - Each act adds pits, raised ground and floating platforms.
 - **Coins** are worth 100 points each, on top of 1 point per 10 px travelled.
 - **Green bolts** refill 25 stamina. Stamina drains continuously; at zero the
-  player slows to a crawl and the Guardian closes the gap.
-- The **Guardian** follows the trail the player has already run, including every
+  player slows to a crawl and the Shade closes the gap.
+- The **Shade** follows the trail the player has already run, including every
   jump and drop.
 - Falling into a pit shows **YOU FELL**; being caught shows **CAUGHT**. Both offer
   Retry or Back to Home Menu.
@@ -65,7 +65,7 @@ src/
   main.ts                     boot: manifest + settings + engine
   game/
     app.ts                    title / options / credits / run scene graph
-    assets.ts                 Pixel pack, hero frames, Guardian, coin, bolt
+    assets.ts                 Pixel pack, hero frames, Shade, coin, bolt
     config.ts                 gameplay tunables + palette
     physics/collisionGroups.ts bitmask collision groups
     player/
@@ -94,11 +94,11 @@ src/
     menus/                    Title / Options / Credits / Preview (DOM)
     storage/                  settings + safe localStorage
     ui/                       analog FX, toast HUD, mode helpers
-    visuals/                  Guardian and hero animation builders
+    visuals/                  Shade and hero animation builders
 public/
   assets/manifest.json        the two used moss tiles
   assets/pixel-platformer-world/  moss tiles, forest backgrounds, hero frames
-  assets/enemies/old-guardian/    placeholder Guardian (licence pending)
+  assets/enemies/dark-fantasy-monster-2/  Shade sprite sheet
   assets/audio/               music, ambience, footsteps
   assets/analog-fx/           LESED Vignette
   assets/ui/                  coin, bolt and licence notices
@@ -139,13 +139,13 @@ licenses/                     full licence texts (CC0, CC-BY)
   licences and review flow.
 - [`licenses/`](licenses/) holds the full licence texts (CC0 and CC-BY).
 - The forest uses the Pixel Platformer World moss tiles and six backdrop layers.
-- The Old Guardian and the Sound Guild footsteps are still placeholders pending
-  course approval; they are credited but not redistributed as standalone packs.
+- The Sound Guild footsteps are still a placeholder pending course approval;
+  the pack is credited but not redistributed as a standalone pack.
 
 ## Known issues
 
 See [`docs/KNOWN_ISSUES.md`](docs/KNOWN_ISSUES.md). The main open item is the
-Guardian/footstep licence confirmation.
+footstep licence confirmation.
 
 ## Testing
 

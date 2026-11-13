@@ -7,7 +7,7 @@
 ```text
 pixel-platformer-world/  moss tiles, forest backgrounds, hero frames, licence
 audio/                   music, ambience, footsteps and licence
-enemies/                 placeholder Guardian monster sheets, licence pending
+enemies/                 the Shade sprite sheet and its licence notice
 analog-fx/               LESED Vignette overlay + licence
 ui/                      coin, bolt and licence notices
 ```

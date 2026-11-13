@@ -10,7 +10,7 @@
 **Memory Graveyard** is a one-button endless platformer about outrunning the
 forest's memory of you. The player auto-runs through a procedurally streamed
 forest, jumps pits, collects coins for score and grabs green bolts to keep
-stamina up. A Guardian follows the exact trail the player has already run, so
+stamina up. A Shade follows the exact trail the player has already run, so
 the player's own path becomes the threat.
 
 The target experience is a short, readable action loop: every few seconds there
@@ -25,7 +25,7 @@ retrying immediately after a death.
 Title ─► Play ─► Run ─► collect coins / spend stamina / dodge pits
                     │
                     ├─ fall into a pit ─► YOU FELL ─┐
-                    └─ Guardian catches ─► CAUGHT ──┤
+                    └─ Shade catches ─► CAUGHT ──┤
                                                     ▼
                                    Retry ───────────┘
                                      │
@@ -33,7 +33,7 @@ Title ─► Play ─► Run ─► collect coins / spend stamina / dodge pits
 ```
 
 - The player starts a run from the title screen.
-- The run continues until a pit or the Guardian ends it.
+- The run continues until a pit or the Shade ends it.
 - The score and best score are shown during the run; the best score persists.
 - Retry starts a new seed immediately; Home returns to the title, Options or
   Credits.
@@ -55,7 +55,7 @@ read next gap ─► jump / hold ─► land ─► collect coins ─► check s
   variable-height cut, so short taps and held jumps feel different.
 - **Collect:** coins sit in short clusters worth 100 points each.
 - **Manage:** stamina drains constantly; green bolts refill 25 points. At zero,
-  the player slows and the Guardian closes the gap.
+  the player slows and the Shade closes the gap.
 - **Repeat:** the camera keeps the player moving right, the stream builds new
   acts ahead and recycles old ones behind.
 
@@ -72,12 +72,12 @@ player reaches the later sections.
 | Time | What the player is doing | Systems in play |
 | --- | --- | --- |
 | 0:00–0:45 | Starts from the title, learns that the character auto-runs, makes the first jumps. | Title, auto-run, jump, coyote time, jump buffer |
-| 0:45–2:00 | Meets the first coin cluster and the first pit. The Guardian is visible behind but not yet a threat. | Coins, first pit, trail recording, camera follow |
+| 0:45–2:00 | Meets the first coin cluster and the first pit. The Shade is visible behind but not yet a threat. | Coins, first pit, trail recording, camera follow |
 | 2:00–3:30 | Stamina bar becomes noticeable. The first green bolt appears on the ground; the next appears in the air. | Stamina drain, ground/air bolt placement, 25-point refill |
 | 3:30–5:00 | Raised ground and floating platforms break up the floor. Pits get wider. The player starts planning two jumps ahead. | Raised sections, floating platforms, pit width scaling |
 | 5:00–6:30 | Run speed has ramped up. Coin clusters are harder to line up and jumps need earlier input. | Speed curve (220 → 360 px/s), score per distance |
-| 6:30–8:00 | Score chase. The player weighs grabbing a risky coin cluster against keeping enough stamina to stay ahead. | Score, best score, stamina pressure, Guardian gap |
-| 8:00–9:30 | A mistake ends the run. The death screen shows how far the run got; the player retries with a new seed. | Pit fall, Guardian catch, Retry, new seed |
+| 6:30–8:00 | Score chase. The player weighs grabbing a risky coin cluster against keeping enough stamina to stay ahead. | Score, best score, stamina pressure, Shade gap |
+| 8:00–9:30 | A mistake ends the run. The death screen shows how far the run got; the player retries with a new seed. | Pit fall, Shade catch, Retry, new seed |
 | 9:30–10:00 | A second run applies one lesson from the first. The best score is visible on the title screen. | Persistent high score, title return, replay loop |
 
 Expected shape of a first ten minutes:
@@ -96,10 +96,10 @@ Expected shape of a first ten minutes:
 | **Pixel Platformer World** moss tiles | The floor, raised sections and floating platforms | 16×16 pixel art scaled 2× into the 32px grid; the moss top reads clearly against the dark forest and the fill tile gives platforms weight |
 | **Pixel Platformer World** forest backgrounds (6 layers) | Parallax backdrop for every act | Layered silhouettes create depth without hiding the play line; the muted red/green palette matches the haunted-forest tone |
 | **Pixel Platformer World** character frames | Idle, run, jump, landing and death animation | Side-view frames with a readable silhouette; the run cycle sells the auto-run and the death frame gives failure weight |
-| **Old Guardian** by Eddie's Workshop | The pursuer | 64×64 pixel monster with idle, walk, attack and death strips; it is large enough to feel threatening behind the player |
+| **Dark Fantasy Monster Pack 2** by zneeke | The Shade, the pursuer | 48×48 silhouette frames (idle, walk, attack, death) scaled 4.5×; the black body and white eyes read as a shadow that is clearly larger than the player |
 | **Silver coin** by AntumDeluge / OpenClipart (CC0) | Score pickup and score icon | A simple metallic circle reads at 24px against moss and forest; the same icon appears in the HUD |
 | **Green bolt** by pix3lcat (CC0) | Stamina pickup and stamina icon | Bright green separates it from the coin and matches the stamina bar; the bolt shape is readable at 26px |
-| **Footsteps / ambience / title music** | Movement feedback and mood | Grass steps and soft landings confirm ground contact; metal steps make the Guardian audible; the forest ambience and title loop set the tone |
+| **Footsteps / ambience / title music** | Movement feedback and mood | Grass steps and soft landings confirm ground contact; metal steps make the Shade audible; the forest ambience and title loop set the tone |
 | **LESED Vignette** | Screen framing | Darkens the edges, keeps attention on the play line and reinforces the analog-horror presentation |
 
 The old editor asset packs (TEMP, Grunge, DRYFIT and the unused room/tile art)
@@ -113,7 +113,7 @@ were removed from the final build. The old editor/campaign version is kept in
   jumpable with a full jump.
 - **Stamina:** drains at 3 points per second; a bolt refills 25.
 - **Low stamina:** full speed until the bar hits zero, then a 0.55× crawl.
-- **Guardian:** follows the recorded trail; it closes in when stamina runs out
+- **Shade:** follows the recorded trail; it closes in when stamina runs out
   and ends the run on contact.
 - **Coin spacing:** clusters appear every ~1,800 px, with three coins per
   cluster.
@@ -129,7 +129,7 @@ window gets tighter.
 - **Toast:** one short control reminder at the start of a run.
 - **Death screens:** `YOU FELL` or `CAUGHT`, with Retry and Back to Home Menu.
 - **Audio:** title music, looping forest ambience, grass footsteps, landing
-  thumps and metal Guardian footsteps.
+  thumps and metal Shade footsteps.
 - **Vignette:** applied on the title, menus and run.
 - **Menus:** title, options and credits use the same forest stage with a slow
   camera drift and a reverse slide when returning.
@@ -140,7 +140,7 @@ Included:
 
 - Endless procedural forest with pits, raised sections and floating platforms.
 - Coins, stamina bolts, stamina drain, score and persistent high score.
-- Guardian trail chase, pit falls, catch animation and death screens.
+- Shade trail chase, pit falls, catch animation and death screens.
 - Title, Options (three volume sliders), Credits and Run.
 - Audio, Vignette, responsive canvas and DOM HUD.
 

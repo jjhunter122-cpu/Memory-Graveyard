@@ -20,7 +20,7 @@ const CAMERA_Y = 306;
 
 /**
  * Menu background showing a random slice of the endless run: forest, terrain,
- * green shards and silver coins, with no player or Guardian. The camera eases
+ * green shards and silver coins, with no player or Shade. The camera eases
  * from the home composition into the act, then drifts.
  */
 export abstract class PreviewMenuScene extends MenuScene {

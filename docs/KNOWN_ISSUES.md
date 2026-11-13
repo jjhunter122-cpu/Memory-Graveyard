@@ -4,13 +4,12 @@ Small quirks and open decisions we are deliberately leaving for later.
 
 ## Third-party placeholder assets
 
-The **Old Guardian** monster and **The Sound Guild Footsteps Volume 02** are
-credited placeholder assets. Old Guardian is free for personal and commercial
-use from Eddie's Workshop; the footsteps pack is CC0 1.0, confirmed by the
-author in the pack's public comments.
+**The Sound Guild Footsteps Volume 02** is a credited placeholder asset. The
+footsteps pack is CC0 1.0, confirmed by the author in the pack's public
+comments.
 
-Status: **licences resolved**. Both are credited in `CREDITS.md`. They remain
-placeholder-quality art/audio and can be replaced later without code changes.
+Status: **licence resolved**. It is credited in `CREDITS.md`. The audio remains
+placeholder-quality and can be replaced later without code changes.
 
 ## Leaderboard is deferred
 

@@ -1,5 +1,9 @@
 # Playtest report
 
+> Historical note: these sessions predate the monster swap. The pursuer is now
+> the **Shade** (Dark Fantasy Monster Pack 2 by zneeke); any "Guardian" below
+> refers to its earlier placeholder.
+
 Two developer playtest sessions were run on the final direction, plus a review
 of the week's iteration. Both sessions used the real browser build (`pnpm dev`)
 at `127.0.0.1:5173` and checked the run, HUD and menus.
