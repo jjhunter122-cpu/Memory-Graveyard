@@ -4,28 +4,38 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 
 ## Current state
 
-- **Pixel Platformer World** is imported in `public/assets/pixel-platformer-world/`
-  and is the current tile and background set.
-- **Grunge** is imported in `public/assets/grunge/` as a test set and corridor
-  background.
-- New levels use a 32px grid with 16px Pixel art scaled into each cell.
-- `public/assets/TEMP/` still contains **unlicensed** stand-ins gated by
-  `TEMP_ASSETS` in `src/game/assets.ts`. They must not ship.
-- Player and monster visuals are still placeholder rectangles; the Pixel
-  character sprites are imported but not wired yet.
-- The LESED Vignette is in `public/assets/analog-fx/` and is the default
-  screen effect for new levels. Its custom licence is recorded in `CREDITS.md`.
-- Grass footstep and soft landing samples from The Sound Guild are in
-  `public/assets/audio/` and are wired to grounded movement and landing.
+- **Pixel Platformer World** is the shipped art set in
+  `public/assets/pixel-platformer-world/`. The run uses only the two moss tiles,
+  the six forest backgrounds and the player idle/run/jump/landing/death frames.
+- Tiles use a 32px grid: the 16px moss art is scaled 2× into each cell.
+- The player uses the Pixel Platformer World character. The monster is the
+  **Old Guardian** by Eddie's Workshop, a free asset pack cleared for personal
+  and commercial use.
+- The LESED **Vignette** is the only screen effect and lives in
+  `public/assets/analog-fx/`. Its custom licence is recorded in `CREDITS.md`.
+- The Old Guardian sprite strips in `public/assets/enemies/old-guardian/` are
+  credited to Eddie's Workshop and may be used freely in this project.
+- Grass footsteps, soft landings and metal monster footsteps from The Sound
+  Guild are wired to movement. The pack is CC0 1.0, confirmed by the author in
+  the pack's public comments.
+- The title screen loops `public/assets/audio/music/8-bit-haunting.mp3`.
+- The Spooky Forest Ambience loops during the run. It is CC BY 3.0, credited to
+  marchon11 in `CREDITS.md`.
+- The score pickup and score icon use the CC0 silver coin from `CC0 Currency
+  Icons` (AntumDeluge / OpenClipart). The stamina pickups and HUD use the CC0
+  green bolt from pix3lcat. Both are CC0 1.0 and credited in `CREDITS.md`.
+- The old editor-only packs (TEMP, Grunge, DRYFIT), extra room backgrounds and
+  unused character frames were removed from the final tree. They remain
+  recoverable from the `archive/old-system-2026-11-12` tag.
 
 ## Visual direction
 
 - **Pixel art** for tiles, characters, props and UI.
 - **Side-view 2D platformer**, not top-down.
-- **32×32 px** native tiles. 16×16 packs are acceptable only if scaled 2×.
+- **32×32 px** native tiles. 16×16 packs are acceptable when scaled 2×.
 - Muted, limited palette; readable silhouettes at small size.
-- Analog-horror mood comes from presentation — scanlines, grain, vignette,
-  flicker and sound — not from noisy art.
+- Analog-horror mood comes from presentation — vignette, grain, flicker and
+  sound — not from noisy art.
 
 ## Target sizes
 
@@ -34,21 +44,19 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
 | Tile | 32×32 |
 | Player frame | around 32×48 |
 | Monster frame | around 48×64 |
-| Props | tile-aligned where possible |
+| Pickup | 16–32 px, readable in one colour |
 
 Sprite sheets should use consistent frame sizes and transparent PNGs. Player
 and monster are side-view and may be flipped horizontally.
 
-## Required first kit
+## Current kit
 
-- **Tiles:** floor, wall, ceiling, carpet, platform edges, trim.
-- **Slopes:** 45° one-tile triangle and a 2-tile-wide gentle ramp, both
-  directions. These need custom collision support before import.
-- **Props:** door, exit sign, locker, desk, chair, vent, light fixture, boxes.
-- **Characters:** player idle / walk / run / jump / fall; sprint and slide are
-  optional.
-- **Monster:** idle / walk / run / catch; search is optional.
-- **Later:** hide-spot props and monster search animation.
+- **Tiles:** moss grass top and fill.
+- **Backgrounds:** six forest layers.
+- **Characters:** player idle / run / jump / landing / death.
+- **Monster:** Guardian idle / walk / attack / death (placeholder).
+- **Pickups:** silver coin and green bolt.
+- **UI:** DOM text, coin/bolt icons, Vignette overlay.
 
 ## Licence policy
 
@@ -62,10 +70,13 @@ Preferred order:
 ### Recorded exceptions
 
 - **LESED Analog Horror Screen FX — Free Sampler** is a custom licence, not
-  CC0/CC-BY. It is allowed for this project because it explicitly permits use
-  in games and modification, with credit recorded in `CREDITS.md`. The overlay
-  files may not be redistributed on their own, so revisit this exception if the
-  repository is ever made public.
+  CC0/CC-BY. It permits use in games and modification, with credit recorded in
+  `CREDITS.md`. The overlay files may not be redistributed on their own, so
+  revisit this exception if the repository is made public.
+- **Old Guardian** and **The Sound Guild Footsteps Volume 02** are credited
+  third-party assets. Old Guardian is free for personal and commercial use;
+  the footsteps pack is CC0 1.0. Keep the credit lines and do not redistribute
+  the raw packs on their own.
 
 Every shipped asset needs an entry in `CREDITS.md` with:
 
@@ -83,10 +94,9 @@ one is included.
 ## Candidate review workflow
 
 1. Send the **asset-page URL** first, not only a preview image.
-2. We verify author, licence, terms and whether the pack is side-view.
-3. Download the pack into `ASSETS HERE/candidates/<pack-name>/` — outside the
-   repo.
-4. We inspect PNG dimensions, transparency, frame grid, palette and file sizes.
+2. Verify author, licence, terms and whether the pack is side-view.
+3. Download candidates outside the repo.
+4. Inspect PNG dimensions, transparency, frame grid, palette and file sizes.
 5. Approve one pack, then import it into `public/assets/` with a credits entry.
 6. Do a one-screen style test before committing to the whole art direction.
 
@@ -94,19 +104,17 @@ one is included.
 
 ```text
 public/assets/
-  manifest.json
-  tiles/
-  props/
-  characters/
-  ui/
-  TEMP/          unlicensed stand-ins, never ship
+  manifest.json                    the two used moss tiles
+  pixel-platformer-world/
+    tiles/                         moss top + fill
+    Background/                    forest layers 1–6
+    Character/Sprite/              hero frames
+    LICENSE.txt
+  enemies/old-guardian/            placeholder monster
+  audio/                           music, ambience, footsteps
+  analog-fx/                       LESED vignette
+  ui/                              coin, bolt, licence notices
 ```
 
-The manifest maps tile ids to `image` and optional `source` rectangles. A tile
-can fall back to its placeholder `color` if no image is available.
-
-## TEMP policy
-
-Anything without a verified licence goes in `public/assets/TEMP/` and stays
-behind `TEMP_ASSETS`. Do not mix TEMP assets into permanent folders, even
-temporarily.
+The manifest maps tile ids to `image`. A tile falls back to its placeholder
+`color` if no image is available.

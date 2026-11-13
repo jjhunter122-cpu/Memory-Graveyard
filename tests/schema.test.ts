@@ -3,8 +3,6 @@ import {
   createLevel,
   EMPTY_TILE,
   LevelValidationError,
-  parseLevel,
-  serializeLevel,
   validateLevel,
 } from '../src/game/level/schema';
 
@@ -17,63 +15,17 @@ describe('level schema', () => {
     expect(level.layers[0]?.collide).toBe(true);
   });
 
-  it('round-trips through serialize/parse', () => {
-    const level = createLevel('Loop', 2, 2, 16);
-    level.entities.push({ type: 'spawn', x: 0, y: 0 });
-    level.layers[0]!.data[0] = 1;
-    level.skybox = '#102030';
-    expect(parseLevel(serializeLevel(level))).toEqual(level);
+  it('accepts the run backdrop and skybox ids', () => {
+    const level = createLevel('Forest', 2, 2, 32);
+    level.background = 'pixel-platformer-world-layers';
+    level.skybox = '#0a0b10';
+    expect(validateLevel(level)).toEqual(level);
   });
 
-  it('round-trips background, foreground and analog FX ids', () => {
-    const level = createLevel('Scenery', 2, 2, 32);
-    level.background = 'pixel-platformer-world-flat';
-    level.foreground = 'pixel-platformer-world-room-1';
-    level.analogFx = 'vignette';
-    expect(parseLevel(serializeLevel(level))).toEqual(level);
-  });
-
-  it('rejects empty scenery or analog FX ids', () => {
-    const level = createLevel('Scenery', 2, 2, 32);
-    expect(() =>
-      validateLevel({ ...level, background: '' }),
-    ).toThrow(/background/);
-    expect(() =>
-      validateLevel({ ...level, foreground: '' }),
-    ).toThrow(/foreground/);
-    expect(() =>
-      validateLevel({ ...level, analogFx: '' }),
-    ).toThrow(/analogFx/);
-  });
-
-  it('round-trips a playable area', () => {
-    const level = createLevel('Playable', 20, 12, 32);
-    level.playArea = { x: 2, y: 3, width: 16, height: 8 };
-    expect(parseLevel(serializeLevel(level))).toEqual(level);
-  });
-
-  it('rejects playable areas outside the canvas', () => {
-    const level = createLevel('Playable', 10, 10, 32);
-    expect(() =>
-      validateLevel({ ...level, playArea: { x: 0, y: 0, width: 11, height: 4 } }),
-    ).toThrow(/playArea/);
-    expect(() =>
-      validateLevel({ ...level, playArea: { x: 0, y: 0, width: 0, height: 4 } }),
-    ).toThrow(/playArea/);
-  });
-
-  it('rejects a malformed skybox colour', () => {
-    const bad = {
-      version: 1,
-      name: 'x',
-      tileSize: 32,
-      width: 1,
-      height: 1,
-      layers: [{ name: 't', collide: true, data: [1] }],
-      entities: [],
-      skybox: 'yellow',
-    };
-    expect(() => validateLevel(bad)).toThrow(/skybox/);
+  it('rejects an empty backdrop or malformed skybox', () => {
+    const level = createLevel('Forest', 2, 2, 32);
+    expect(() => validateLevel({ ...level, background: '' })).toThrow(/background/);
+    expect(() => validateLevel({ ...level, skybox: 'yellow' })).toThrow(/skybox/);
   });
 
   it('rejects an unknown version', () => {
@@ -88,7 +40,6 @@ describe('level schema', () => {
       width: 2,
       height: 2,
       layers: [{ name: 't', collide: true, data: [1, 2, 3] }],
-      entities: [],
     };
     expect(() => validateLevel(bad)).toThrow(/4 entries/);
   });
@@ -101,25 +52,12 @@ describe('level schema', () => {
       width: 1,
       height: 1,
       layers: [{ name: 't', collide: true, data: [-2] }],
-      entities: [],
     };
     expect(() => validateLevel(bad)).toThrow(LevelValidationError);
   });
 
-  it('rejects entities with fractional tile coordinates', () => {
-    const bad = {
-      version: 1,
-      name: 'x',
-      tileSize: 32,
-      width: 1,
-      height: 1,
-      layers: [{ name: 't', collide: true, data: [1] }],
-      entities: [{ type: 'spawn', x: 0.5, y: 0 }],
-    };
-    expect(() => validateLevel(bad)).toThrow(LevelValidationError);
-  });
-
-  it('rejects malformed JSON', () => {
-    expect(() => parseLevel('{ not json')).toThrow(LevelValidationError);
+  it('rejects an empty level name', () => {
+    const level = createLevel('Forest', 1, 1, 32);
+    expect(() => validateLevel({ ...level, name: '' })).toThrow(/name/);
   });
 });

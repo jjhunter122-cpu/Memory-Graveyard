@@ -18,31 +18,72 @@ class FakeStorage implements StorageLike {
 describe('SettingsStore', () => {
   it('returns defaults when empty', () => {
     const settings = new SettingsStore(new FakeStorage());
-    expect(settings.load()).toEqual({ showHud: true, lastLevelId: null });
+    expect(settings.load()).toEqual({
+      highScore: 0,
+      masterVolume: 1,
+      musicVolume: 0.32,
+      sfxVolume: 1,
+    });
+  });
+
+  it('clamps stored volumes to 0–1', () => {
+    const storage = new FakeStorage();
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ masterVolume: 3, musicVolume: -1, sfxVolume: 0.4 }),
+    );
+    const settings = new SettingsStore(storage).load();
+    expect(settings.masterVolume).toBe(1);
+    expect(settings.musicVolume).toBe(0);
+    expect(settings.sfxVolume).toBe(0.4);
+  });
+
+  it('keeps the high score a non-negative integer', () => {
+    const storage = new FakeStorage();
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ highScore: 1234.9 }),
+    );
+    expect(new SettingsStore(storage).load().highScore).toBe(1234);
+
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ highScore: -50 }),
+    );
+    expect(new SettingsStore(storage).load().highScore).toBe(0);
   });
 
   it('updates and persists a single field', () => {
     const settings = new SettingsStore(new FakeStorage());
-    settings.update({ showHud: false });
-    expect(settings.load().showHud).toBe(false);
-    expect(settings.load().lastLevelId).toBeNull();
+    settings.update({ musicVolume: 0.5 });
+    expect(settings.load().musicVolume).toBe(0.5);
+    expect(settings.load().highScore).toBe(0);
   });
 
-  it('remembers the last level', () => {
-    const settings = new SettingsStore(new FakeStorage());
-    settings.update({ lastLevelId: 'test-course' });
-    expect(settings.load().lastLevelId).toBe('test-course');
+  it('ignores retired fields from older saves', () => {
+    const storage = new FakeStorage();
+    storage.setItem(
+      'memory-graveyard:settings:v1',
+      JSON.stringify({ showHud: false, lastLevelId: 'test-course', highScore: 9 }),
+    );
+    const loaded = new SettingsStore(storage).load();
+    expect(loaded).toEqual({
+      highScore: 9,
+      masterVolume: 1,
+      musicVolume: 0.32,
+      sfxVolume: 1,
+    });
   });
 
   it('falls back to defaults on corrupt data', () => {
     const storage = new FakeStorage();
     storage.setItem('memory-graveyard:settings:v1', 'nonsense');
-    expect(new SettingsStore(storage).load().showHud).toBe(true);
+    expect(new SettingsStore(storage).load().highScore).toBe(0);
   });
 
   it('works without storage', () => {
     const settings = new SettingsStore(null);
-    expect(settings.update({ showHud: false }).showHud).toBe(false);
-    expect(settings.load().showHud).toBe(true);
+    expect(settings.update({ musicVolume: 0.4 }).musicVolume).toBe(0.4);
+    expect(settings.load().musicVolume).toBe(0.32);
   });
 });

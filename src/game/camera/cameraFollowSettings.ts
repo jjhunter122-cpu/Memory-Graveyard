@@ -1,6 +1,6 @@
 /**
- * Camera-follow presets. These are plain data so the editor can list them
- * without importing Excalibur.
+ * Camera-follow presets. These are plain data so scenes can list them without
+ * importing Excalibur.
  */
 
 export type CameraFollowId = 'current' | 'soft' | 'momentum' | 'impact';

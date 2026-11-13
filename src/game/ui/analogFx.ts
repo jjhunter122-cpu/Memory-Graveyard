@@ -3,8 +3,8 @@ import { ANALOG_FX_BASE, normalizeAnalogFxPreset } from '../analogFx';
 const VIGNETTE_PATH = `${import.meta.env.BASE_URL}${ANALOG_FX_BASE}/vignette/640x360/vignette_000.png`;
 
 /**
- * Screen-space analog-horror overlay. Only PlayScene activates it; the editor
- * stores the level setting but never renders the effect.
+ * Screen-space analog-horror overlay. Title, options, credits and the run use
+ * the Vignette preset.
  */
 class AnalogOverlay {
   private root: HTMLElement | null = null;

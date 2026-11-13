@@ -1,77 +1,46 @@
 # Known issues
 
-Small quirks we are deliberately leaving for later.
+Small quirks and open decisions we are deliberately leaving for later.
 
-## Wall-top corner clip
+## Third-party placeholder assets
 
-Holding a direction into a solid wall while jumping can occasionally resolve the
-player onto the wall's top edge, even when the wall is too tall to jump. Movement
-through the wall is still blocked; the player simply lands on top of it.
+The **Old Guardian** monster and **The Sound Guild Footsteps Volume 02** are
+credited placeholder assets. Old Guardian is free for personal and commercial
+use from Eddie's Workshop; the footsteps pack is CC0 1.0, confirmed by the
+author in the pack's public comments.
 
-Likely cause: Arcade AABB corner resolution choosing the vertical axis when the
-player is pressed against a tile corner.
+Status: **licences resolved**. Both are credited in `CREDITS.md`. They remain
+placeholder-quality art/audio and can be replaced later without code changes.
 
-Status: **documented only**. A fix needs a reproducible test case and should not
-destabilise normal jumping or ground detection.
+## Leaderboard is deferred
 
-## Memory fragments stay collected after retry
+Only the local high score is stored. There is no online leaderboard or score
+submission.
 
-Repro:
+Status: **out of scope for this submission**.
 
-1. Play a level with memory fragments.
-2. Collect one.
-3. Die, then choose Retry.
+## No slopes
 
-Actual: the HUD counter resets, but the collected fragment does not return.
+The manifest still describes generic tile collision, but the run only uses
+axis-aligned moss tiles. Sloped surfaces are not implemented and are not needed
+by the endless acts.
 
-Expected: every fragment returns on retry/restart.
+Status: **documented only**.
 
-Likely cause: `Memory.kill()` / `unkill()` not restoring the actor or its
-collision state, or the restart order not resetting fragments correctly.
+## Occasional wall-top corner clip
 
-Status: **documented; fix pending** while fragments remain optional.
+Holding into a solid wall while jumping can occasionally resolve the player onto
+the wall's top edge. Movement through the wall stays blocked.
 
-## Stacked one-way platforms trap the player
+Likely cause: Arcade AABB corner resolution choosing the vertical axis at a tile
+corner.
 
-Repro:
+Status: **documented only**. The endless run has no vertical wall faces to catch
+on, so this is low priority.
 
-1. Place two plank/one-way platforms one tile apart vertically.
-2. Walk or jump into the narrow space between them.
+## Audio unlock needs a gesture
 
-Actual: the player jitters or catches between the two platforms instead of
-standing cleanly on the lower one or passing through the gap. The monster's
-trail can also bunch up, making it appear to slow down.
+Browsers require a real pointer or key gesture before WebAudio starts. The game
+unlocks audio on the first click or key press.
 
-Expected: the player can stand on the lower platform or move through the gap
-without colliding repeatedly.
-
-Likely cause: the one-way collision slab and the player's rising/falling group
-swap create an unresolved overlap in a gap that is too tight for the player
-body. The trail records the jitter, which slows the follower.
-
-Status: **documented; fix pending**.
-
-## One-way platform top-edge snap
-
-Repro:
-
-1. Jump into a plank/platform so the player barely clips its top edge.
-2. Keep moving into the edge.
-
-Actual: the player snaps up onto the platform surface instead of being blocked
-or falling past it.
-
-Expected: the player either lands normally from above or is stopped by the edge;
-no free teleport onto the platform.
-
-Likely cause: Arcade AABB corner resolution choosing the vertical axis when the
-player's feet overlap the platform's top edge by a few pixels. This is closely
-related to the wall-top corner clip.
-
-Status: **documented; fix pending**.
-
-## Slopes are not implemented
-
-The manifest and editor only support axis-aligned collision. Sloped tiles need a
-custom surface resolver or stepped colliders; see `docs/ASSETS.md` for asset
-requirements.
+Status: **expected browser behaviour**.

@@ -2,8 +2,10 @@ import { Sound } from 'excalibur';
 
 const GRASS_COUNT = 7;
 const LANDING_COUNT = 4;
+const METAL_COUNT = 7;
 const FOOTSTEP_VOLUME = 0.65;
 const LANDING_VOLUME = 0.72;
+const METAL_VOLUME = 0.55;
 
 function grassPath(base: string, index: number): string {
   const frame = String(index).padStart(2, '0');
@@ -13,6 +15,11 @@ function grassPath(base: string, index: number): string {
 function landingPath(base: string, index: number): string {
   const frame = String(index).padStart(2, '0');
   return `${base}assets/audio/sound-guild/footsteps/landing/soft-${frame}.wav`;
+}
+
+function metalPath(base: string, index: number): string {
+  const frame = String(index).padStart(2, '0');
+  return `${base}assets/audio/sound-guild/footsteps/metal/metal-${frame}.wav`;
 }
 
 function pickRandom(length: number, lastIndex: number): number {
@@ -33,8 +40,15 @@ function pickRandom(length: number, lastIndex: number): number {
 class FootstepAudio {
   private grass: Sound[] = [];
   private landing: Sound[] = [];
+  private metal: Sound[] = [];
   private lastGrass = -1;
   private lastLanding = -1;
+  private lastMetal = -1;
+  private volumeScale = 1;
+
+  setVolumeScale(scale: number): void {
+    this.volumeScale = Math.min(1, Math.max(0, scale));
+  }
 
   async load(base: string): Promise<void> {
     const grass = Array.from(
@@ -45,12 +59,20 @@ class FootstepAudio {
       { length: LANDING_COUNT },
       (_, index) => new Sound(landingPath(base, index + 1)),
     );
+    const metal = Array.from(
+      { length: METAL_COUNT },
+      (_, index) => new Sound(metalPath(base, index + 1)),
+    );
     const results = await Promise.allSettled(
-      [...grass, ...landing].map((sound) => sound.load()),
+      [...grass, ...landing, ...metal].map((sound) => sound.load()),
     );
     this.grass = grass.filter((_, index) => results[index]?.status === 'fulfilled');
     this.landing = landing.filter(
       (_, index) => results[grass.length + index]?.status === 'fulfilled',
+    );
+    this.metal = metal.filter(
+      (_, index) =>
+        results[grass.length + landing.length + index]?.status === 'fulfilled',
     );
   }
 
@@ -62,7 +84,10 @@ class FootstepAudio {
     this.lastGrass = index;
     const sound = this.grass[index];
     if (sound) {
-      void sound.play(volume).catch(() => undefined);
+      const effective = volume * this.volumeScale;
+      if (effective > 0) {
+        void sound.play(effective).catch(() => undefined);
+      }
     }
   }
 
@@ -74,7 +99,25 @@ class FootstepAudio {
     this.lastLanding = index;
     const sound = this.landing[index];
     if (sound) {
-      void sound.play(volume).catch(() => undefined);
+      const effective = volume * this.volumeScale;
+      if (effective > 0) {
+        void sound.play(effective).catch(() => undefined);
+      }
+    }
+  }
+
+  playMetal(volume: number = METAL_VOLUME): void {
+    if (this.metal.length === 0) {
+      return;
+    }
+    const index = pickRandom(this.metal.length, this.lastMetal);
+    this.lastMetal = index;
+    const sound = this.metal[index];
+    if (sound) {
+      const effective = volume * this.volumeScale;
+      if (effective > 0) {
+        void sound.play(effective).catch(() => undefined);
+      }
     }
   }
 }

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { TrailFollower, TrailRecorder } from '../src/game/chase/trail';
+import {
+  TrailFollower,
+  TrailRecorder,
+  trailYAt,
+} from '../src/game/chase/trail';
 
 describe('trail recorder', () => {
   it('starts at the spawn point and only records distance-spaced points', () => {
@@ -16,6 +20,41 @@ describe('trail recorder', () => {
     trail.reset({ x: 0, y: 0 });
     trail.record(0, 12);
     expect(trail.all[1]).toEqual({ x: 0, y: 12 });
+  });
+
+  it('prunes old points while keeping a segment around x', () => {
+    const trail = new TrailRecorder(1);
+    trail.reset({ x: 0, y: 0 });
+    for (let x = 1; x <= 10; x += 1) {
+      trail.record(x, x * 10);
+    }
+    trail.pruneBefore(5);
+    expect(trail.all[0]!.x).toBeLessThanOrEqual(5);
+    expect(trail.all[1]!.x).toBeGreaterThanOrEqual(5);
+    expect(trail.size).toBeLessThan(11);
+  });
+});
+
+describe('trail y sampling', () => {
+  const points = [
+    { x: 10, y: 5 },
+    { x: 20, y: 15 },
+  ];
+
+  it('clamps before the first point', () => {
+    expect(trailYAt(points, 0)).toBe(5);
+  });
+
+  it('interpolates between points', () => {
+    expect(trailYAt(points, 15)).toBe(10);
+  });
+
+  it('clamps after the last point', () => {
+    expect(trailYAt(points, 30)).toBe(15);
+  });
+
+  it('returns null with no path', () => {
+    expect(trailYAt([], 10)).toBeNull();
   });
 });
 
