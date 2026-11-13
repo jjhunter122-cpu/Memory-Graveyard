@@ -127,9 +127,9 @@ licenses/                     full licence texts (CC0, CC-BY)
 - **Deterministic ground probe.** Arcade does not report a resting ground contact
   on every step, so the player probes the act surface directly. A short event
   latch bridges gaps; coyote time keeps jumps forgiving.
-- **Pit detection uses the front edge.** The player starts falling as soon as
-  either their centre or leading edge leaves the floor, which avoids wedging on
-  the pit wall.
+- **Pit detection uses the player's centre.** The fall starts once the centre
+  is over the pit at floor level. The falling player stops using the ground
+  probe, so it cannot re-ground on the far lip and glide through tiles.
 - **DOM menus and HUD over the canvas** keep labels crisp at any resolution.
 
 ## Assets & credits
@@ -137,6 +137,7 @@ licenses/                     full licence texts (CC0, CC-BY)
 - [`CREDITS.md`](CREDITS.md) records every shipped asset.
 - [`docs/ASSETS.md`](docs/ASSETS.md) defines the 32px pixel-art targets, accepted
   licences and review flow.
+- [`docs/PAGES.md`](docs/PAGES.md) records the GitHub Pages issues and fixes.
 - [`licenses/`](licenses/) holds the full licence texts (CC0 and CC-BY).
 - The forest uses the Pixel Platformer World moss tiles and six backdrop layers.
 - The Sound Guild footsteps are still a placeholder pending course approval;
