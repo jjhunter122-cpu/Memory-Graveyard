@@ -34,6 +34,8 @@ export class CreditsScene extends PreviewMenuScene {
           <p class="credit-line">https://opengameart.org/node/121237</p>
           <p>Lightning Bolt Icons/Buttons Collection (green bolt) — pix3lcat (pix3lcat.github.io). CC0 1.0.</p>
           <p class="credit-line">https://pix3lcat.github.io/</p>
+          <p>Old Guardian — Eddie's Workshop. Free for personal and commercial use; credit appreciated.</p>
+          <p class="credit-line">https://eddies-workshop.itch.io/old-guardian</p>
           <div class="credits-license">
             <p class="license-heading">Analog Horror Screen FX Free Sampler — License</p>
             <p class="license-copyright">Copyright (c) 2026 LESED (lesed.itch.io)</p>
@@ -55,9 +57,8 @@ export class CreditsScene extends PreviewMenuScene {
           <p>Spooky Forest Ambience — marchon11</p>
           <p class="credit-line">License: Attribution 3.0 (CC BY 3.0)</p>
           <p class="credit-line">"ambience spooky forest.mp3" by marchon11 -- https://freesound.org/s/493720/ -- License: Attribution 3.0</p>
-          <p>Footsteps Sounds Volume 02 — The Sound Guild. Free for commercial use; the raw pack may not be redistributed. Final course approval pending.</p>
+          <p>Footsteps Sounds Volume 02 — The Sound Guild. CC0 1.0; the raw pack may not be redistributed.</p>
           <p class="credit-line">https://the-sound-guild.itch.io/footsteps-sounds-02</p>
-          <p>Old Guardian — placeholder monster. Licence pending course approval; do not redistribute separately.</p>
         </div>
 
         <div class="menu-buttons">
