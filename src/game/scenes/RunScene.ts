@@ -306,6 +306,7 @@ export class RunScene extends Scene {
           <button id="run-home" class="menu-button">Back to Home Menu</button>
         </div>
       </div>`;
+    ui.classList.add('is-open');
     document
       .getElementById('run-retry')
       ?.addEventListener('click', () => this.options.onRestart());
@@ -359,6 +360,7 @@ export class RunScene extends Scene {
   private clearDeath(): void {
     const ui = document.getElementById('run-ui');
     if (ui) {
+      ui.classList.remove('is-open');
       ui.innerHTML = '';
     }
   }

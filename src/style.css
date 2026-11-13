@@ -231,7 +231,9 @@ body.mode-menu .menu-ui {
   pointer-events: none;
 }
 
-body.mode-playing .run-ui:not(:empty) {
+/* Visibility is an explicit class rather than `:not(:empty)`: Firefox does not
+   restyle the element when it is filled after being cleared while hidden. */
+body.mode-playing .run-ui.is-open {
   display: flex;
 }
 
