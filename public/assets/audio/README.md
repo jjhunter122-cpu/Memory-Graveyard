@@ -17,8 +17,8 @@
 
 ## The Sound Guild — Footsteps Sounds Volume 02
 
-- Source: <https://the-sound-guild.itch.io/footsteps-sounds-02>
-- Licence: free for commercial use, unlimited projects, royalty-free.
+- Author: The Sound Guild (<https://the-sound-guild.itch.io/footsteps-sounds-02>)
+- Licence: CC0 1.0 (confirmed by the author in the pack's public comments).
 - The raw pack may not be resold or redistributed outside the game.
 - Full licence/guide: `The-Sound-Guild-Footsteps-Volume-02.pdf`
 - Imported set: seven grass footstep WAVs, renamed as

@@ -1,8 +1,9 @@
-# Old Guardian — placeholder
+# Old Guardian
 
-- Source: itch.io free asset pack.
-- Author: unknown.
-- Licence: no licence file was included and none was visible on the source page.
-- Status: **placeholder only**, pending course/Prof approval.
-- Do not publish or redistribute outside the private project until the licence is confirmed.
-- Remove this folder and the guardian code if approval is denied; the monster falls back to the placeholder rectangle.
+- Asset: **Old Guardian**
+- Author: Eddie's Workshop (<https://eddies-workshop.itch.io>)
+- Source: <https://eddies-workshop.itch.io/old-guardian>
+- Licence: free asset pack — the author permits personal and commercial use.
+  Credit is appreciated but not required.
+- Status: credited placeholder monster used by the final build.
+- Do not redistribute the raw pack on its own.

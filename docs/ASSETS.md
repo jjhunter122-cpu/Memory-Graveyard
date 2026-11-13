@@ -8,14 +8,16 @@ Rules and targets for bringing art, audio and voice into Memory Graveyard.
   `public/assets/pixel-platformer-world/`. The run uses only the two moss tiles,
   the six forest backgrounds and the player idle/run/jump/landing/death frames.
 - Tiles use a 32px grid: the 16px moss art is scaled 2× into each cell.
-- The player uses the Pixel Platformer World character. The monster remains the
-  placeholder **Old Guardian**, pending course licence approval.
+- The player uses the Pixel Platformer World character. The monster is the
+  **Old Guardian** by Eddie's Workshop, a free asset pack cleared for personal
+  and commercial use.
 - The LESED **Vignette** is the only screen effect and lives in
   `public/assets/analog-fx/`. Its custom licence is recorded in `CREDITS.md`.
-- The Old Guardian sprite strips in `public/assets/enemies/old-guardian/` are a
-  placeholder with licence pending. They are not redistributed separately.
+- The Old Guardian sprite strips in `public/assets/enemies/old-guardian/` are
+  credited to Eddie's Workshop and may be used freely in this project.
 - Grass footsteps, soft landings and metal monster footsteps from The Sound
-  Guild are wired to movement. Their licence is also pending approval.
+  Guild are wired to movement. The pack is CC0 1.0, confirmed by the author in
+  the pack's public comments.
 - The title screen loops `public/assets/audio/music/8-bit-haunting.mp3`.
 - The Spooky Forest Ambience loops during the run. It is CC BY 3.0, credited to
   marchon11 in `CREDITS.md`.
@@ -71,9 +73,10 @@ Preferred order:
   CC0/CC-BY. It permits use in games and modification, with credit recorded in
   `CREDITS.md`. The overlay files may not be redistributed on their own, so
   revisit this exception if the repository is made public.
-- **Old Guardian** and **The Sound Guild Footsteps Volume 02** are placeholders
-  awaiting course confirmation. Keep them credited and do not redistribute the
-  raw packs.
+- **Old Guardian** and **The Sound Guild Footsteps Volume 02** are credited
+  third-party assets. Old Guardian is free for personal and commercial use;
+  the footsteps pack is CC0 1.0. Keep the credit lines and do not redistribute
+  the raw packs on their own.
 
 Every shipped asset needs an entry in `CREDITS.md` with:
 

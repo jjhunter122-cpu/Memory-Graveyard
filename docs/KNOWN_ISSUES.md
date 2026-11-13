@@ -2,15 +2,15 @@
 
 Small quirks and open decisions we are deliberately leaving for later.
 
-## Guardian and footstep licence confirmation
+## Third-party placeholder assets
 
-The **Old Guardian** monster and **The Sound Guild Footsteps Volume 02** are still
-placeholders. Course approval could not be confirmed while the campus servers
-were down.
+The **Old Guardian** monster and **The Sound Guild Footsteps Volume 02** are
+credited placeholder assets. Old Guardian is free for personal and commercial
+use from Eddie's Workshop; the footsteps pack is CC0 1.0, confirmed by the
+author in the pack's public comments.
 
-Status: **pending confirmation**. If either is rejected, replace the asset and
-update `CREDITS.md`, `docs/ASSETS.md` and `public/assets/ui/` records. Do not
-redistribute the raw packs.
+Status: **licences resolved**. Both are credited in `CREDITS.md`. They remain
+placeholder-quality art/audio and can be replaced later without code changes.
 
 ## Leaderboard is deferred
 

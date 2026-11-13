@@ -1,23 +1,19 @@
 # Memory Graveyard
 
+![Memory Graveyard gameplay](docs/screenshot.jpg)
+
 An endless side-scrolling forest run. The forest remembers you, and something
 made of its discarded memories is always just behind. Coins feed the score,
 green bolts feed your stamina, and a missed jump is the end.
 
-Built with:
+## Controls
 
-- **Excalibur.js** 0.32 (Arcade physics solver)
-- **TypeScript** 7
-- **Vite** 8
-- **Vitest** 5
-- **pnpm**
+| Action | Keyboard |
+| --- | --- |
+| Jump | `Space` or `W` |
+| Restart run | `R` |
 
-Everything is client-side; there is no backend.
-
-> **Branch:** the final product lives on the local `new-direction` branch. It is
-> not pushed or merged yet. The previous editor/campaign build is preserved in
-> [`archive/old-system`](archive/old-system/) and tagged
-> `archive/old-system-2026-11-12`.
+The player auto-runs. Arrow keys are intentionally unbound.
 
 ## Run it
 
@@ -35,14 +31,19 @@ pnpm build      # static production build in dist/
 pnpm preview
 ```
 
-## Controls
+Built with:
 
-| Action | Keyboard |
-| --- | --- |
-| Jump | `Space` or `W` |
-| Restart run | `R` |
+- **Excalibur.js** 0.32 (Arcade physics solver)
+- **TypeScript** 7
+- **Vite** 8
+- **Vitest** 5
+- **pnpm**
 
-The player auto-runs. Arrow keys are intentionally unbound.
+Everything is client-side; there is no backend.
+
+> **Branch:** the final product lives on `main`. The previous editor/campaign
+> build is preserved in [`archive/old-system`](archive/old-system/) and tagged
+> `archive/old-system-2026-11-12`.
 
 ## How a run works
 
